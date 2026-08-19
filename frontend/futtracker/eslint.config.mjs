@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Artefactos de `vercel build` (Build Output API). Generados y minificados.
+    ".vercel/**",
   ]),
 ]);
 
