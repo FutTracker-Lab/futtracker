@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# futtracker — app web
 
-## Getting Started
+App Next.js (App Router) del proyecto. Es el Root Directory del proyecto de
+Vercel: todos los comandos corren desde acá.
 
-First, run the development server:
+**El setup completo está en el [README de la raíz](../../README.md)** —
+ambientes, variables de entorno, base de datos y flujo de promoción. Esta
+página es solo la referencia rápida.
+
+## Correr en local
 
 ```bash
+npm install
+cp .env.example .env.local   # completar antes de seguir
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+El paso del `.env.local` **no es opcional**. `next.config.ts` valida las
+variables al arrancar, así que con el archivo vacío `npm run dev` corta con un
+mensaje que dice qué falta. Es a propósito: es preferible a levantar la app
+apuntando a `undefined` y descubrirlo en la primera request.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Los valores para trabajar contra el stack local salen de `supabase status`
+(hay que tener Docker corriendo y haber hecho `supabase start` desde la raíz
+del repo).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo en localhost:3000 |
+| `npm run build` | Build de producción |
+| `npm run typecheck` | `next typegen` + `tsc --noEmit` |
+| `npm run lint` | ESLint |
+| `npm run test` | Vitest, una corrida |
+| `npm run test:watch` | Vitest en watch |
+| `npm run db:types` | Regenera `lib/supabase/database.types.ts` contra la base local |
 
-To learn more about Next.js, take a look at the following resources:
+Los primeros cuatro son los que gatea el CI antes de desplegar.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dónde va cada cosa
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/                      rutas y páginas (App Router)
+lib/env/public.ts         variables públicas, validadas con Zod
+lib/env/server.ts         variables privadas, marcado con `server-only`
+lib/supabase/client.ts    cliente para Client Components
+lib/supabase/server.ts    cliente para Server Components y Server Actions
+lib/supabase/proxy.ts     refresh de sesión que consume proxy.ts
+proxy.ts                  se llama así, no middleware.ts (ver AGENTS.md)
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Los tres clientes de `lib/supabase/` son el **único** lugar donde se llama a
+`createBrowserClient` o `createServerClient`. Instanciarlos sueltos termina en
+sesiones que no se refrescan.
