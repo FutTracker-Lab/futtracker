@@ -5,11 +5,17 @@ on:
     branches: [main, dev]
     paths:
       - "frontend/futtracker/**"
+      # Un cambio solo en /supabase antes no disparaba nada: ni CI ni deploy.
+      # Ahora que la carpeta tiene migraciones vivas, eso deja sin chequear
+      # justo los cambios de schema. El costo es un redeploy de mas cuando el
+      # cambio es solo de base; barato al lado de mergear a ciegas.
+      - "supabase/**"
       - ".github/workflows/vercel.yml"
   pull_request:
     branches: [main, dev]
     paths:
       - "frontend/futtracker/**"
+      - "supabase/**"
       - ".github/workflows/vercel.yml"
   workflow_dispatch:
 
@@ -34,6 +40,18 @@ jobs:
       run:
         working-directory: frontend/futtracker
 
+    # Valores de descarte. `next.config.ts` importa lib/env/public.ts, asi que
+    # `next typegen` valida las variables antes de tipar. Este job no produce
+    # ningun artefacto desplegable: solo tipa, lintea y testea, y para eso no
+    # necesita apuntar a un Supabase real.
+    #
+    # La validacion que importa corre en el job de deploy, donde `vercel build`
+    # usa las variables reales que bajo `vercel pull`. Si ahi falta alguna, el
+    # deploy falla y no publica nada.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+
     steps:
       - uses: actions/checkout@v4
 
@@ -55,10 +73,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # Todavia no hay test runner. `--if-present` devuelve 0 mientras no
-      # exista el script, y empieza a gatear solo cuando lo agreguen.
+      # Vitest. Sin `--if-present`: con ese flag, borrar o renombrar el script
+      # `test` dejaba el paso en verde con cero tests corridos, que es
+      # exactamente lo que un gate no tiene que hacer. Los e2e de Playwright
+      # que pide T17 todavia faltan.
       - name: Tests
-        run: npm run test --if-present
+        run: npm run test
 
   deploy:
     name: Build & Deploy (Vercel CLI)
