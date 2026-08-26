@@ -32,12 +32,27 @@ const schema = z.object({
       "sb_publishable_",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY tiene que ser una clave publishable (arranca con sb_publishable_)",
     ),
+  // Origen público de la app, sin barra final. Lo consumen los redirects de
+  // Supabase Auth (`emailRedirectTo`, `resetPasswordForEmail`), que se arman
+  // en el servidor, donde no existe `window.location.origin`. No tiene default:
+  // un fallback silencioso mandaría los mails de producción a localhost.
+  // El valor tiene que estar en la allowlist de Supabase Auth, que matchea
+  // exacto: `127.0.0.1` y `localhost` son dos entradas distintas.
+  NEXT_PUBLIC_SITE_URL: z
+    .url(
+      "NEXT_PUBLIC_SITE_URL tiene que ser una URL válida: http://127.0.0.1:3000 en local, o el dominio del deploy",
+    )
+    .refine(
+      (valor) => !valor.endsWith("/"),
+      "NEXT_PUBLIC_SITE_URL no lleva barra final: se concatena con rutas que ya arrancan con /",
+    ),
 });
 
 const valores = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
 };
 
 // Se chequea antes del schema para poder dar el remedio exacto. Si cayera en
