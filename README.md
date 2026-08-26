@@ -8,7 +8,7 @@ Next.js (App Router) + TypeScript + Supabase, hosteada en Vercel.
 ```
 frontend/futtracker/    la app Next.js (es el root del proyecto de Vercel)
 supabase/               config, migraciones y edge functions
-docs/                   notas de deploy
+docs/                   notas de deploy y de auth
 .github/workflows/      CI y CD
 ```
 
@@ -59,6 +59,16 @@ misma migración que la crea, y su política de `select` exige sesión iniciada.
 > Consecuencia práctica: **no te apoyes en el trigger de la nube.** Una tabla a
 > la que se le olvide el `enable row level security` queda protegida en dev
 > pero abierta en local, así que RLS se declara siempre en la migración.
+
+### Auth
+
+Email + password contra Supabase Auth. En local no hace falta confirmar el mail
+y los mails quedan en Mailpit (http://127.0.0.1:54324).
+
+**En dev y prod hay configuración que se carga a mano en el dashboard** —
+allowlist de redirect URLs, confirmación de email y SMTP. Está toda en
+**[docs/auth.md](docs/auth.md)**, junto con las decisiones de diseño (por qué
+un email ya registrado responde igual que uno nuevo) y la deuda conocida.
 
 ### Linkear el CLI
 
