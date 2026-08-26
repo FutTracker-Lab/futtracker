@@ -70,4 +70,10 @@ with check (auth.uid() = id);
 -- Sin esto PostgREST devuelve 42501 aunque RLS esté bien: el proyecto no
 -- expone las tablas nuevas automáticamente. Sin `insert`: la única alta la
 -- hace el trigger de arriba, que es definer y no pasa por los grants.
-grant select, update on table public.profiles to authenticated;
+grant select on table public.profiles to authenticated;
+
+-- El update va por columna y no por tabla. La política de RLS controla QUÉ
+-- FILA se toca, nunca QUÉ COLUMNA, así que con un grant sobre la tabla entera
+-- el propio usuario podía cambiarse el `role` con un PATCH y ascenderse a
+-- delegate. El rol se elige en el registro y no se edita después.
+grant update (full_name, avatar_path) on table public.profiles to authenticated;

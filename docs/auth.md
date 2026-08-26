@@ -96,6 +96,36 @@ El piso tampoco cubre el camino de input inválido: la validación de Zod corta
 antes, así que un input mal formado responde más rápido. No filtra existencia
 de cuentas, pero es observable.
 
+### El rol no se puede editar después del registro
+
+Es el supuesto 3 de las decisiones del Sprint 1: el rol se elige en el alta y
+quien necesite los dos se crea dos cuentas.
+
+Hacer cumplir eso **no** es cuestión de la política de RLS. La política de
+`update` de `profiles` controla qué *fila* toca cada usuario (`auth.uid() =
+id`), pero no dice nada sobre qué *columnas*. Con un `grant update` sobre la
+tabla entera, cualquier jugador podía ascenderse solo:
+
+```
+PATCH /rest/v1/profiles?id=eq.<su-id>   {"role":"delegate"}
+```
+
+Sin Server Action de por medio, con la clave publishable, desde el navegador.
+
+Por eso el grant va **por columna**:
+
+```sql
+grant update (full_name, avatar_path) on table public.profiles to authenticated;
+```
+
+`role` y `email` quedan fuera y PostgREST devuelve `42501` si alguien los manda
+en el body. Si algún día hace falta un flujo de cambio de rol, la salida no es
+ampliar este grant: es una función `security definer` que valide la transición.
+
+Esto importa más allá de `profiles`. T04a.1 decide si alguien puede crear su
+fila de `players` mirando `profiles.role`; con el rol editable, ese chequeo no
+protegía nada.
+
 ### Los errores son claves de i18n, no texto
 
 Las actions devuelven `auth.errors.invalidCredentials`, no "Email o password
