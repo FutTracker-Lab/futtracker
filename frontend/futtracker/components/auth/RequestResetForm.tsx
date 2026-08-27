@@ -46,7 +46,7 @@ export default function RequestResetForm() {
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="recover-email" className="text-sm font-medium">
+        <label htmlFor="recover-email" className="text-sm font-medium text-zinc-900">
           {t("auth.fields.email")}
         </label>
         <input

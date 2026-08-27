@@ -11,7 +11,7 @@ export default async function ActualizarPasswordPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
-      <h1 className="text-xl font-semibold">{t("title")}</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">{t("title")}</h1>
       <UpdatePasswordForm />
     </div>
   );

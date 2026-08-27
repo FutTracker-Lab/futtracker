@@ -201,7 +201,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
         {tab === "sign-in" ? (
           <form action={signInAction} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <label htmlFor="signin-email" className="text-sm font-medium">
+              <label htmlFor="signin-email" className="text-sm font-medium text-zinc-900">
                 {t("auth.fields.email")}
                 <RequiredMark />
               </label>
@@ -215,7 +215,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="signin-password" className="text-sm font-medium">
+              <label htmlFor="signin-password" className="text-sm font-medium text-zinc-900">
                 {t("auth.fields.password")}
                 <RequiredMark />
               </label>
@@ -239,7 +239,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
         ) : (
           <form action={signUpAction} className="flex flex-col gap-4">
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm font-medium">
+              <legend className="mb-1 text-sm font-medium text-zinc-900">
                 {t("auth.fields.roleLabel")}
                 <RequiredMark />
               </legend>
@@ -253,7 +253,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
                   className="peer sr-only"
                 />
                 <div className="rounded-md border border-zinc-300 p-3 text-sm peer-checked:border-brand peer-checked:bg-brand-tint">
-                  <p className="font-medium">{t("auth.fields.roleplayer")}</p>
+                  <p className="font-medium text-zinc-900">{t("auth.fields.roleplayer")}</p>
                   <p className="text-zinc-500">
                     {t("auth.fields.roleplayerDescription")}
                   </p>
@@ -267,7 +267,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
                   className="peer sr-only"
                 />
                 <div className="rounded-md border border-zinc-300 p-3 text-sm peer-checked:border-brand peer-checked:bg-brand-tint">
-                  <p className="font-medium">{t("auth.fields.roledelegate")}</p>
+                  <p className="font-medium text-zinc-900">{t("auth.fields.roledelegate")}</p>
                   <p className="text-zinc-500">
                     {t("auth.fields.roledelegateDescription")}
                   </p>
@@ -275,7 +275,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               </label>
             </fieldset>
             <div className="flex flex-col gap-1">
-              <label htmlFor="signup-fullname" className="text-sm font-medium">
+              <label htmlFor="signup-fullname" className="text-sm font-medium text-zinc-900">
                 {t("auth.fields.fullName")}
                 <RequiredMark />
               </label>
@@ -289,7 +289,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="signup-email" className="text-sm font-medium">
+              <label htmlFor="signup-email" className="text-sm font-medium text-zinc-900">
                 {t("auth.fields.email")}
                 <RequiredMark />
               </label>
@@ -303,7 +303,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="signup-password" className="text-sm font-medium">
+              <label htmlFor="signup-password" className="text-sm font-medium text-zinc-900">
                 {t("auth.fields.password")}
                 <RequiredMark />
               </label>
@@ -320,7 +320,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="signup-confirm" className="text-sm font-medium">
+              <label htmlFor="signup-confirm" className="text-sm font-medium text-zinc-900">
                 {t("auth.fields.confirmPassword")}
                 <RequiredMark />
               </label>
@@ -333,7 +333,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
                 className={inputClass}
               />
             </div>
-            <label className="flex items-start gap-2 text-sm">
+            <label className="flex items-start gap-2 text-sm text-zinc-900">
               <input type="checkbox" name="terms" className="mt-1" />
               {t("auth.terms")}
             </label>

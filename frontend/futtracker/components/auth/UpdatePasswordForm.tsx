@@ -74,7 +74,7 @@ export default function UpdatePasswordForm() {
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="update-password" className="text-sm font-medium">
+        <label htmlFor="update-password" className="text-sm font-medium text-zinc-900">
           {t("auth.fields.password")}
         </label>
         <input
@@ -90,7 +90,7 @@ export default function UpdatePasswordForm() {
         </span>
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="update-confirm" className="text-sm font-medium">
+        <label htmlFor="update-confirm" className="text-sm font-medium text-zinc-900">
           {t("auth.fields.confirmPassword")}
         </label>
         <input
