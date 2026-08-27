@@ -47,7 +47,7 @@ function walk(dir, files = []) {
   return files;
 }
 
-function findUsedKeys(files) {
+function findUsedKeys(files, definedKeys) {
   // Matchea useTranslations("ns") / getTranslations("ns") seguido, en
   // cualquier punto posterior del archivo, de t("clave"). Aproximado pero
   // suficiente para un catálogo chico: cruza namespace de la llamada más
@@ -55,6 +55,13 @@ function findUsedKeys(files) {
   const used = new Set();
   const namespaceCallRe = /(?:useTranslations|getTranslations)\(\s*["'`]([\w.-]+)["'`]\s*\)/g;
   const tCallRe = /\bt\(\s*["'`]([\w.-]+)["'`]/g;
+  // Claves usadas dinámicamente: `t(result.error)` donde `result.error` es
+  // una unión de literales (ej. AuthErrorKey). No hay forma barata de seguir
+  // esa referencia estáticamente, así que cualquier clave completa (con
+  // punto) que aparezca como string literal en cualquier lado del archivo
+  // cuenta como usada. Menos estricto para "no usada", pero "usada y no
+  // definida" sigue cubierto por tCallRe de arriba.
+  const anyDottedLiteralRe = /["'`]([\w-]+(?:\.[\w-]+)+)["'`]/g;
 
   for (const file of files) {
     const content = readFileSync(file, "utf8");
@@ -64,6 +71,9 @@ function findUsedKeys(files) {
       const key = match[1];
       used.add(namespace ? `${namespace}.${key}` : key);
     }
+    for (const match of content.matchAll(anyDottedLiteralRe)) {
+      if (definedKeys.has(match[1])) used.add(match[1]);
+    }
   }
   return used;
 }
@@ -71,7 +81,7 @@ function findUsedKeys(files) {
 const messages = JSON.parse(readFileSync(MESSAGES_PATH, "utf8"));
 const definedKeys = new Set(flattenKeys(messages));
 const files = SCAN_DIRS.flatMap((dir) => walk(join(ROOT, dir)));
-const usedKeys = findUsedKeys(files);
+const usedKeys = findUsedKeys(files, definedKeys);
 
 const missing = [...usedKeys].filter((k) => !definedKeys.has(k));
 const unused = [...definedKeys].filter((k) => !usedKeys.has(k));

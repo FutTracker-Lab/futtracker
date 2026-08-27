@@ -3,5 +3,64 @@
     "title": "FutTracker",
     "subtitle": "Seguimiento de jugadores y equipos de fútbol amateur.",
     "status": "El proyecto está en construcción."
+  },
+  "auth": {
+    "brandPanel": {
+      "logoInitials": "FT",
+      "logoCaption": "FutTracker · MVP",
+      "title": "El fútbol amateur, con perfil propio.",
+      "subtitle": "Armá tu perfil, cargá tus partidos y dejá que los equipos de tu zona te encuentren.",
+      "bullet1": "Perfil con posiciones, trayectoria y highlights",
+      "bullet2": "Búsqueda por posición, zona y horarios",
+      "bullet3": "Invitaciones a pruebas y postulaciones",
+      "note": "Una cuenta sirve para jugar y para dirigir: el modo se cambia después."
+    },
+    "tabs": {
+      "signIn": "Entrar",
+      "signUp": "Crear cuenta"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "fullName": "Nombre completo",
+      "roleLabel": "¿Cómo vas a usar FutTracker?",
+      "roleplayer": "Como jugador",
+      "roleplayerDescription": "Armás tu perfil, cargás partidos y te postulás a equipos.",
+      "roledelegate": "Como delegado",
+      "roledelegateDescription": "Creás el equipo, publicás vacantes y recibís postulaciones."
+    },
+    "hints": {
+      "password": "Al menos 8 caracteres, con una mayúscula y un número."
+    },
+    "terms": "Acepto los términos y la política de privacidad.",
+    "signUpNotice": "Después de crear la cuenta vas directo a completar tu perfil: sin perfil no aparecés en las búsquedas.",
+    "actions": {
+      "signIn": "Entrar",
+      "signUp": "Crear cuenta",
+      "signOut": "Cerrar sesión",
+      "sendResetLink": "Enviar enlace",
+      "updatePassword": "Guardar contraseña",
+      "forgotPassword": "Olvidé mi contraseña"
+    },
+    "validation": {
+      "passwordMismatch": "Las contraseñas no coinciden.",
+      "passwordWeak": "Al menos 8 caracteres, con una mayúscula y un número.",
+      "termsRequired": "Tenés que aceptar los términos para continuar."
+    },
+    "errors": {
+      "invalidInput": "Revisá los datos ingresados.",
+      "invalidCredentials": "Email o contraseña incorrectos.",
+      "unexpected": "Ocurrió un error inesperado. Probá de nuevo."
+    },
+    "recover": {
+      "title": "Recuperar contraseña",
+      "description": "Ingresá tu email y te enviamos un enlace para restablecerla.",
+      "submitted": "Si el email existe, te enviamos un enlace para restablecer la contraseña."
+    },
+    "updatePasswordScreen": {
+      "title": "Actualizar contraseña",
+      "success": "Contraseña actualizada. Ya podés iniciar sesión con ella."
+    }
   }
 }

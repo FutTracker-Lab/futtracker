@@ -34,7 +34,40 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      // Stub temporal: espeja la migración de T03a
+      // (20260824184355_profiles_and_auth.sql), que todavía no está mergeada
+      // a esta rama. `npm run db:types` reemplaza esto por el real apenas el
+      // PR de T03a se mergee y se corra `supabase migration up` local.
+      profiles: {
+        Row: {
+          id: string
+          role: "player" | "delegate"
+          full_name: string
+          email: string
+          avatar_path: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          role: "player" | "delegate"
+          full_name: string
+          email: string
+          avatar_path?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          role?: "player" | "delegate"
+          full_name?: string
+          email?: string
+          avatar_path?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
