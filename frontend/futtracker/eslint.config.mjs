@@ -5,6 +5,15 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    // FUT-82: ningún string literal en JSX, todo texto va a
+    // messages/es-AR.json vía next-intl. `noStrings` solo mira los hijos de
+    // texto de un elemento JSX, no atributos como `className` o `href`.
+    files: ["**/*.tsx"],
+    rules: {
+      "react/jsx-no-literals": ["error", { noStrings: true, ignoreProps: true }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

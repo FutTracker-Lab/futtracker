@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // Importar acá es lo que hace que la validación corra en tiempo de build.
 // Next evalúa este archivo después de cargar los .env y antes de compilar.
@@ -8,8 +9,10 @@ import type { NextConfig } from "next";
 // que es exactamente el fallo silencioso que FUT-82 pide evitar.
 import "./lib/env/public";
 
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
 const nextConfig: NextConfig = {
   /* config options here */
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
