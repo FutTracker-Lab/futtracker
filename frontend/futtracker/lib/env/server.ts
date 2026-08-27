@@ -26,11 +26,11 @@ const parsed = schema.safeParse({
 });
 
 if (!parsed.success) {
-  const detalle = parsed.error.issues
+  const details = parsed.error.issues
     .map((issue) => `  · ${issue.message}`)
     .join("\n");
 
-  throw new Error(`Variables de entorno de servidor inválidas:\n${detalle}`);
+  throw new Error(`Variables de entorno de servidor inválidas:\n${details}`);
 }
 
 export const serverEnv = parsed.data;

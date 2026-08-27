@@ -118,13 +118,32 @@ Por eso el grant va **por columna**:
 grant update (full_name, avatar_path) on table public.profiles to authenticated;
 ```
 
-`role` y `email` quedan fuera y PostgREST devuelve `42501` si alguien los manda
-en el body. Si algún día hace falta un flujo de cambio de rol, la salida no es
-ampliar este grant: es una función `security definer` que valide la transición.
+`role` queda fuera y PostgREST devuelve `42501` si alguien lo manda en el body.
+Si algún día hace falta un flujo de cambio de rol, la salida no es ampliar este
+grant: es una función `security definer` que valide la transición.
 
 Esto importa más allá de `profiles`. T04a.1 decide si alguien puede crear su
 fila de `players` mirando `profiles.role`; con el rol editable, ese chequeo no
 protegía nada.
+
+### `profiles` no guarda el email
+
+El email vive solo en `auth.users`. La primera versión de la tabla lo copiaba
+en `profiles`, para poder listar perfiles sin tocar el schema `auth`, que no
+está expuesto por la API. Dos problemas con eso:
+
+- La copia la escribía el trigger de alta y nada la volvía a tocar. El día que
+  exista un flujo de cambio de email, `auth.users.email` se actualiza y la
+  copia queda vieja, en silencio.
+- El `grant select` es sobre la tabla entera y la política de lectura es
+  `auth.role() = 'authenticated'`. O sea que cualquier usuario logueado podía
+  leer el mail de todos los demás.
+
+El propio usuario tiene el suyo en la sesión, que es el único caso que la app
+necesita hoy. Si más adelante un delegado tiene que ver el contacto de sus
+jugadores, eso es una exposición deliberada y se resuelve con una vista o una
+función `security definer` que muestre solo a quien corresponda — no
+devolviendo la columna a todo el mundo.
 
 ### Los errores son claves de i18n, no texto
 
@@ -134,16 +153,6 @@ reenviado tal cual al usuario filtra detalles del backend y no se puede
 traducir.
 
 ## Deuda técnica conocida
-
-**`profiles.email` duplica `auth.users.email`.** Hoy se llena una sola vez,
-desde el trigger `handle_new_user`, y nada lo vuelve a tocar. El día que exista
-un flujo de cambio de email, `auth.users.email` se actualiza y
-`profiles.email` queda viejo, en silencio.
-
-Cuando llegue ese momento, las opciones son un trigger sobre
-`auth.users` para el `update`, o borrar la columna y leer el mail de la sesión.
-Se dejó duplicado para poder listar perfiles sin tocar el schema `auth`, que no
-está expuesto por la API.
 
 **`handle_new_user` depende del metadata del alta.** `full_name` y `role` salen
 de `raw_user_meta_data`, y las dos columnas son `not null`. Un alta que no pase

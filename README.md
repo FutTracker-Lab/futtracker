@@ -115,3 +115,21 @@ npm run test
 El CI (`.github/workflows/vercel.yml`) corre esos tres pasos como gate antes
 de desplegar, y publica con `vercel deploy --prebuilt`.
 
+### Tests de RLS
+
+Aparte, y a mano antes de abrir un PR que toque políticas:
+
+```bash
+supabase start
+cd frontend/futtracker && npm run test:rls
+```
+
+Ejercitan las políticas contra el stack local, con sesiones reales y a través
+de PostgREST — el único camino que también pasa por los `grant`, que es donde
+una política correcta igual puede fallar. Van fuera de `npm run test` porque
+necesitan Docker, que el CI todavía no levanta. **Mientras eso siga así, correr
+este comando es responsabilidad de quien abre el PR.**
+
+Solo corren si `NEXT_PUBLIC_SUPABASE_URL` apunta a localhost: dan de alta
+usuarios, y contra un proyecto de la nube ensuciarían `dev` o `prod`.
+

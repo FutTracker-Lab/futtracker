@@ -32,8 +32,3 @@ export type RequestPasswordResetInput = z.infer<
   typeof requestPasswordResetSchema
 >;
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
-
-export const REDIRECT_BY_ROLE: Record<Role, string> = {
-  player: "/jugadores/mi-perfil",
-  delegate: "/equipos/mi-equipo",
-};

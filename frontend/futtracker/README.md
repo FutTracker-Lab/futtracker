@@ -34,6 +34,7 @@ del repo).
 | `npm run lint` | ESLint |
 | `npm run test` | Vitest, una corrida |
 | `npm run test:watch` | Vitest en watch |
+| `npm run test:rls` | Tests de RLS contra el stack local (pide `supabase start`) |
 | `npm run db:types` | Regenera `lib/supabase/database.types.ts` contra la base local |
 
 Los primeros cuatro son los que gatea el CI antes de desplegar.

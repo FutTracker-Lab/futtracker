@@ -1,8 +1,16 @@
 "use server";
 
-import { publicEnv } from "@/lib/env/public";
 import {
+  INVALID_CREDENTIALS,
+  INVALID_INPUT,
+  MINIMUM_DURATION_MS,
+  PASSWORD_RESET_REDIRECT,
   REDIRECT_BY_ROLE,
+  SIGN_UP_REDIRECT,
+  UNEXPECTED,
+  type ActionResult,
+} from "@/lib/auth/constants";
+import {
   requestPasswordResetSchema,
   roleSchema,
   signInSchema,
@@ -13,28 +21,6 @@ import {
   type SignUpInput,
 } from "@/lib/auth/schemas";
 import { createClient } from "@/lib/supabase/server";
-
-// Claves de i18n, nunca texto para el usuario. Como unión y no como `string`
-// para que un typo lo corte el typecheck y no aparezca crudo en pantalla.
-export type AuthErrorKey =
-  | "auth.errors.invalidInput"
-  | "auth.errors.invalidCredentials"
-  | "auth.errors.unexpected";
-
-export type ActionResult =
-  | { ok: true; redirectTo?: string }
-  | { ok: false; error: AuthErrorKey };
-
-const INVALID_INPUT: AuthErrorKey = "auth.errors.invalidInput";
-const INVALID_CREDENTIALS: AuthErrorKey = "auth.errors.invalidCredentials";
-const UNEXPECTED: AuthErrorKey = "auth.errors.unexpected";
-
-// Piso de duración para que un email registrado y uno nuevo tarden lo mismo.
-// Sin esto, la diferencia de tiempos delata cuáles están dados de alta.
-const MINIMUM_DURATION_MS = 700;
-
-const SIGN_UP_REDIRECT = `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/callback`;
-const PASSWORD_RESET_REDIRECT = `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/actualizar-password`;
 
 async function withMinimumDuration<T>(
   promise: Promise<T>,

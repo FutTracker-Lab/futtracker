@@ -11,20 +11,20 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Es un chequeo optimista de UX, no la autorización: esa la hacen RLS y los
  * chequeos dentro de cada Server Action.
  */
-const SUBARBOLES_PROTEGIDOS = ["/jugadores", "/equipos"];
+const PROTECTED_ROUTES = ["/jugadores", "/equipos"];
 
-function requiereSesion(pathname: string): boolean {
-  const enSubarbolProtegido = SUBARBOLES_PROTEGIDOS.some(
-    (prefijo) => pathname === prefijo || pathname.startsWith(`${prefijo}/`),
+function requiresSession(pathname: string): boolean {
+  const isProtected = PROTECTED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
-  return enSubarbolProtegido || pathname.endsWith("/editar");
+  return isProtected || pathname.endsWith("/editar");
 }
 
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
 
-  if (user || !requiereSesion(request.nextUrl.pathname)) {
+  if (user || !requiresSession(request.nextUrl.pathname)) {
     return response;
   }
 
