@@ -65,6 +65,39 @@ test.describe("pantalla de login", () => {
   });
 });
 
+test.describe("navegación por teclado en /login", () => {
+  test("todos los campos y el botón son alcanzables con Tab, con foco visible", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+
+    // Orden esperado en el DOM: tab "Entrar" -> tab "Crear cuenta" -> email
+    // -> contraseña -> "Olvidé mi contraseña" -> botón "Entrar". FUT-84,
+    // criterio 9: alcanzable solo con teclado, con foco visible en cada paso.
+    const expectedOrder = [
+      page.getByRole("tab", { name: "Entrar" }),
+      page.getByRole("tab", { name: "Crear cuenta" }),
+      page.getByLabel("Email"),
+      page.getByLabel("Contraseña *", { exact: true }),
+      page.getByRole("link", { name: "Olvidé mi contraseña" }),
+      page.getByRole("button", { name: "Entrar" }),
+    ];
+
+    for (const locator of expectedOrder) {
+      await page.keyboard.press("Tab");
+      await expect(locator).toBeFocused();
+
+      // "Foco visible" en la práctica: el elemento enfocado tiene un anillo
+      // (box-shadow) o un outline real, no `outline: none` sin reemplazo.
+      const hasVisibleFocus = await locator.evaluate((el) => {
+        const style = window.getComputedStyle(el);
+        return style.boxShadow !== "none" || style.outlineStyle !== "none";
+      });
+      expect(hasVisibleFocus).toBe(true);
+    }
+  });
+});
+
 test("la pantalla de recuperar clave pide el email", async ({ page }) => {
   await page.goto("/recuperar-clave");
   await expect(
