@@ -13,13 +13,17 @@ const INITIAL_STATE: ActionResult = { ok: true };
 // FUT-84, pendiente de sumarse al schema compartido de T03a.
 const STRONG_PASSWORD_RE = /^(?=.*[A-Z])(?=.*\d).+$/;
 
+// Mismas clases que AuthForm.tsx — ver nota en RequestResetForm.tsx.
+const inputClass =
+  "rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-zinc-900 px-4 py-2 font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900"
+      className="w-full rounded-md bg-brand px-4 py-2.5 font-medium text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
     >
       {label}
     </button>
@@ -65,14 +69,14 @@ export default function UpdatePasswordForm() {
 
   if (succeeded) {
     return (
-      <p role="status" className="text-sm text-zinc-700 dark:text-zinc-300">
+      <p role="status" className="text-sm text-zinc-700">
         {t("auth.updatePasswordScreen.success")}
       </p>
     );
   }
 
   return (
-    <form action={action} className="flex w-full max-w-sm flex-col gap-4">
+    <form action={action} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label htmlFor="update-password" className="text-sm font-medium text-zinc-900">
           {t("auth.fields.password")}
@@ -83,11 +87,9 @@ export default function UpdatePasswordForm() {
           type="password"
           autoComplete="new-password"
           required
-          className="rounded-md border border-zinc-300 px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:border-zinc-700"
+          className={inputClass}
         />
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          {t("auth.hints.password")}
-        </span>
+        <span className="text-xs text-zinc-500">{t("auth.hints.password")}</span>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="update-confirm" className="text-sm font-medium text-zinc-900">
@@ -99,11 +101,11 @@ export default function UpdatePasswordForm() {
           type="password"
           autoComplete="new-password"
           required
-          className="rounded-md border border-zinc-300 px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:border-zinc-700"
+          className={inputClass}
         />
       </div>
       {errorMessage ? (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-300">
+        <p role="alert" className="text-sm text-red-700">
           {errorMessage}
         </p>
       ) : null}
