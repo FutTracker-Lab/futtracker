@@ -10,6 +10,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.test.ts", "**/*.test.tsx"],
-    exclude: ["node_modules/**", ".next/**", ".vercel/**"],
+    // Los `.rls.test.ts` necesitan el stack local de Supabase corriendo, que
+    // el CI no tiene. Van por `npm run test:rls`, con su propia config.
+    exclude: [
+      "node_modules/**",
+      ".next/**",
+      ".vercel/**",
+      "**/*.rls.test.ts",
+    ],
   },
 });

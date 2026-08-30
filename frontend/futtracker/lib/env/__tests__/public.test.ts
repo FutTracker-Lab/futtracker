@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const URL_VALIDA = "https://abcdefghijklmnop.supabase.co";
 const CLAVE_VALIDA = "sb_publishable_ejemplo";
+const SITE_URL_VALIDA = "http://127.0.0.1:3000";
 
 /**
  * `lib/env/public.ts` valida al importarse, no al llamarse. Por eso cada caso
@@ -11,6 +12,9 @@ const CLAVE_VALIDA = "sb_publishable_ejemplo";
 describe("publicEnv", () => {
   beforeEach(() => {
     vi.resetModules();
+    // Valor por defecto para que cada caso aísle la variable que está
+    // ejercitando. Los casos que la ejercitan a ella la pisan.
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", SITE_URL_VALIDA);
   });
 
   afterEach(() => {
@@ -25,6 +29,30 @@ describe("publicEnv", () => {
 
     expect(publicEnv.NEXT_PUBLIC_SUPABASE_URL).toBe(URL_VALIDA);
     expect(publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).toBe(CLAVE_VALIDA);
+    expect(publicEnv.NEXT_PUBLIC_SITE_URL).toBe(SITE_URL_VALIDA);
+  });
+
+  it("exige NEXT_PUBLIC_SITE_URL en vez de asumir un default", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", URL_VALIDA);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", CLAVE_VALIDA);
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
+
+    await expect(import("@/lib/env/public")).rejects.toThrow(
+      /NEXT_PUBLIC_SITE_URL/,
+    );
+  });
+
+  /**
+   * Se concatena con rutas que ya arrancan con `/`. Con barra final saldría
+   * `https://sitio.com//auth/callback`, que no matchea la allowlist de
+   * Supabase Auth y hace rebotar el link del mail.
+   */
+  it("rechaza NEXT_PUBLIC_SITE_URL con barra final", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", URL_VALIDA);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", CLAVE_VALIDA);
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://futtracker.vercel.app/");
+
+    await expect(import("@/lib/env/public")).rejects.toThrow(/barra final/);
   });
 
   it("falla con un mensaje explícito si falta la clave publishable", async () => {

@@ -32,25 +32,40 @@ const schema = z.object({
       "sb_publishable_",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY tiene que ser una clave publishable (arranca con sb_publishable_)",
     ),
+  // Origen público de la app, sin barra final. Lo consumen los redirects de
+  // Supabase Auth (`emailRedirectTo`, `resetPasswordForEmail`), que se arman
+  // en el servidor, donde no existe `window.location.origin`. No tiene default:
+  // un fallback silencioso mandaría los mails de producción a localhost.
+  // El valor tiene que estar en la allowlist de Supabase Auth, que matchea
+  // exacto: `127.0.0.1` y `localhost` son dos entradas distintas.
+  NEXT_PUBLIC_SITE_URL: z
+    .url(
+      "NEXT_PUBLIC_SITE_URL tiene que ser una URL válida: http://127.0.0.1:3000 en local, o el dominio del deploy",
+    )
+    .refine(
+      (value) => !value.endsWith("/"),
+      "NEXT_PUBLIC_SITE_URL no lleva barra final: se concatena con rutas que ya arrancan con /",
+    ),
 });
 
-const valores = {
+const values = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
 };
 
 // Se chequea antes del schema para poder dar el remedio exacto. Si cayera en
 // la validación genérica, el mensaje diría "no es una URL válida" y mandaría a
 // buscar el problema al lugar equivocado.
-const marcadasSensitive = Object.entries(valores)
-  .filter(([, valor]) => valor === PLACEHOLDER_SENSITIVE)
-  .map(([nombre]) => nombre);
+const markedSensitive = Object.entries(values)
+  .filter(([, value]) => value === PLACEHOLDER_SENSITIVE)
+  .map(([name]) => name);
 
-if (marcadasSensitive.length > 0) {
+if (markedSensitive.length > 0) {
   throw new Error(
     `Estas variables llegaron con el literal "${PLACEHOLDER_SENSITIVE}":\n` +
-      marcadasSensitive.map((nombre) => `  · ${nombre}`).join("\n") +
+      markedSensitive.map((name) => `  · ${name}`).join("\n") +
       "\n\nEstán marcadas como Sensitive en Vercel, y con el flujo --prebuilt " +
       "`vercel build` corre en el runner, no en la infraestructura de Vercel, " +
       "así que `vercel pull` no puede bajar su valor real.\n" +
@@ -58,15 +73,15 @@ if (marcadasSensitive.length > 0) {
   );
 }
 
-const parsed = schema.safeParse(valores);
+const parsed = schema.safeParse(values);
 
 if (!parsed.success) {
-  const detalle = parsed.error.issues
+  const details = parsed.error.issues
     .map((issue) => `  · ${issue.message}`)
     .join("\n");
 
   throw new Error(
-    `Faltan variables de entorno públicas o están mal cargadas:\n${detalle}\n\n` +
+    `Faltan variables de entorno públicas o están mal cargadas:\n${details}\n\n` +
       "Copiá .env.example a .env.local y completá los valores (Supabase → Project Settings → API).\n" +
       "En Vercel se cargan en el dashboard del proyecto, no como secrets de GitHub.",
   );

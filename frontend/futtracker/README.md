@@ -34,6 +34,7 @@ del repo).
 | `npm run lint` | ESLint |
 | `npm run test` | Vitest, una corrida |
 | `npm run test:watch` | Vitest en watch |
+| `npm run test:rls` | Tests de RLS contra el stack local (pide `supabase start`) |
 | `npm run db:types` | Regenera `lib/supabase/database.types.ts` contra la base local |
 
 Los primeros cuatro son los que gatea el CI antes de desplegar.
@@ -42,6 +43,8 @@ Los primeros cuatro son los que gatea el CI antes de desplegar.
 
 ```
 app/                      rutas y páginas (App Router)
+app/(auth)/actions.ts     Server Actions de auth (alta, login, reset)
+lib/auth/schemas.ts       schemas de Zod y redirects por rol
 lib/env/public.ts         variables públicas, validadas con Zod
 lib/env/server.ts         variables privadas, marcado con `server-only`
 lib/supabase/client.ts    cliente para Client Components
@@ -49,6 +52,9 @@ lib/supabase/server.ts    cliente para Server Components y Server Actions
 lib/supabase/proxy.ts     refresh de sesión que consume proxy.ts
 proxy.ts                  se llama así, no middleware.ts (ver AGENTS.md)
 ```
+
+La configuración de auth por ambiente y las decisiones detrás de las actions
+están en [docs/auth.md](../../docs/auth.md).
 
 Los tres clientes de `lib/supabase/` son el **único** lugar donde se llama a
 `createBrowserClient` o `createServerClient`. Instanciarlos sueltos termina en
