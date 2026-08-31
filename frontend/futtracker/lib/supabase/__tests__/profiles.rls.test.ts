@@ -1,48 +1,17 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { publicEnv } from "@/lib/env/public";
-import type { Database } from "@/lib/supabase/database.types";
-
-type Client = SupabaseClient<Database>;
-
-const { NEXT_PUBLIC_SUPABASE_URL: URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: KEY } =
-  publicEnv;
-
-/**
- * Freno de mano. Estos tests dan de alta usuarios, así que apuntar a un
- * proyecto de la nube ensuciaría `dev` o, peor, `prod`. Si la URL no es local,
- * el archivo entero no corre.
- */
-const IS_LOCAL = /^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(URL);
-
-function newClient(): Client {
-  return createClient<Database>(URL, KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-async function signUpUser(role: "player" | "delegate") {
-  const client = newClient();
-  const email = `rls-${crypto.randomUUID()}@example.com`;
-
-  const { data, error } = await client.auth.signUp({
-    email,
-    password: "password123",
-    options: { data: { full_name: "Usuario RLS", role } },
-  });
-
-  if (error || !data.user) {
-    throw new Error(`No se pudo dar de alta al usuario: ${error?.message}`);
-  }
-
-  return { client, id: data.user.id, email };
-}
+import {
+  IS_LOCAL,
+  newClient,
+  signUpUser,
+  type Client,
+  type TestUser,
+} from "@/lib/supabase/__tests__/rls-client";
 
 describe.skipIf(!IS_LOCAL)("RLS de public.profiles", () => {
   let anon: Client;
-  let playerA: Awaited<ReturnType<typeof signUpUser>>;
-  let playerB: Awaited<ReturnType<typeof signUpUser>>;
+  let playerA: TestUser;
+  let playerB: TestUser;
 
   beforeAll(async () => {
     anon = newClient();
