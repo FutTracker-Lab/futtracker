@@ -23,13 +23,13 @@ concurrency:
   group: vercel-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
 jobs:
   # Gate. `deploy` declara `needs: verify`, y eso lo enforcea Actions: no
   # depende de branch protection ni de permisos de admin sobre el repo.
+  #
+  # Es lo unico que corre en un PR: ningun secret de Vercel entra a este job,
+  # asi que el check pasa igual aunque quien abre el PR no tenga acceso a los
+  # secrets del repo (caso tipico: PR desde un fork).
   verify:
     name: Typecheck, lint & tests
     runs-on: ubuntu-latest
@@ -47,7 +47,8 @@ jobs:
     #
     # La validacion que importa corre en el job de deploy, donde `vercel build`
     # usa las variables reales que bajo `vercel pull`. Si ahi falta alguna, el
-    # deploy falla y no publica nada.
+    # deploy falla despues del merge y no publica nada: la rama queda mergeada
+    # pero el sitio publicado sigue siendo el anterior.
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
@@ -84,10 +85,13 @@ jobs:
   deploy:
     name: Build & Deploy (Vercel CLI)
     needs: verify
+    # En un PR no se deploya: solo corre el chequeo. El build y el deploy pasan
+    # una vez que el merge aterriza en dev o en main, que son las unicas ramas
+    # que disparan `push` aca arriba.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
 
     # La app no vive en la raiz del repo. No hay workspace npm en la raiz, asi
     # que el directorio de la app es el root del proyecto Vercel: todos los
@@ -95,6 +99,13 @@ jobs:
     defaults:
       run:
         working-directory: frontend/futtracker
+
+    # El token es un secret del repo, no de quien mergea: el deploy se atribuye
+    # siempre a la cuenta de Vercel que emitio el token, sea quien sea el actor.
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -107,6 +118,7 @@ jobs:
           # El lockfile no esta en la raiz: sin esto el cache no resuelve.
           cache-dependency-path: frontend/futtracker/package-lock.json
 
+      # main -> production. dev y `workflow_dispatch` -> preview.
       - name: Resolve deployment target
         id: target
         run: |
@@ -124,38 +136,16 @@ jobs:
       # pull -> build -> deploy. El orden importa: `pull` baja las env vars al
       # runner y `build` las inlinea. Invertirlo da un build verde y roto.
       - name: Pull Vercel project settings
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           vercel pull --yes \
             --environment=${{ steps.target.outputs.environment }} \
             --token="$VERCEL_TOKEN"
 
       - name: Build project artifacts
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build ${{ steps.target.outputs.flag }} --token="$VERCEL_TOKEN"
 
       - name: Deploy prebuilt artifacts
-        id: deploy
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           URL=$(vercel deploy --prebuilt ${{ steps.target.outputs.flag }} \
             --token="$VERCEL_TOKEN")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### Vercel: [$URL]($URL)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Comment preview URL on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        env:
-          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 Preview: ${process.env.DEPLOY_URL}`,
-            });
