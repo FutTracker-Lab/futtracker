@@ -34,6 +34,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      players: {
+        Row: {
+          bio: string | null
+          birth_date: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          height_cm: number | null
+          id: string
+          is_seeking_team: boolean
+          latitude: number | null
+          longitude: number | null
+          phone: string | null
+          position: string | null
+          preferred_foot: string | null
+          province: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          bio?: string | null
+          birth_date?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          height_cm?: number | null
+          id: string
+          is_seeking_team?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          position?: string | null
+          preferred_foot?: string | null
+          province?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          bio?: string | null
+          birth_date?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          height_cm?: number | null
+          id?: string
+          is_seeking_team?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          position?: string | null
+          preferred_foot?: string | null
+          province?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_path: string | null
