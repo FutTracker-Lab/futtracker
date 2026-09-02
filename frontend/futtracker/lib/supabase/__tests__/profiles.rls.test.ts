@@ -87,6 +87,44 @@ describe.skipIf(!IS_LOCAL)("RLS de public.profiles", () => {
       expect(data?.role).toBe("player");
     });
 
+    it("puede guardar un avatar bajo su propia carpeta", async () => {
+      const { data } = await playerA.client
+        .from("profiles")
+        .update({ avatar_path: `${playerA.id}/avatar.png` })
+        .eq("id", playerA.id)
+        .select("avatar_path");
+
+      expect(data).toEqual([{ avatar_path: `${playerA.id}/avatar.png` }]);
+    });
+
+    it("NO puede apuntar su avatar al de otro jugador", async () => {
+      const { error } = await playerA.client
+        .from("profiles")
+        .update({ avatar_path: `${playerB.id}/avatar.png` })
+        .eq("id", playerA.id);
+
+      expect(error?.code).toBe("42501");
+    });
+
+    it("NO puede escaparse de su carpeta con ..", async () => {
+      const { error } = await playerA.client
+        .from("profiles")
+        .update({ avatar_path: `${playerA.id}/../${playerB.id}/avatar.png` })
+        .eq("id", playerA.id);
+
+      expect(error?.code).toBe("42501");
+    });
+
+    it("puede volver a dejar el avatar en null", async () => {
+      const { data } = await playerA.client
+        .from("profiles")
+        .update({ avatar_path: null })
+        .eq("id", playerA.id)
+        .select("avatar_path");
+
+      expect(data).toEqual([{ avatar_path: null }]);
+    });
+
     it("NO puede insertar una fila a mano", async () => {
       const { error } = await playerA.client.from("profiles").insert({
         id: crypto.randomUUID(),
