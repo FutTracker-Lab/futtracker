@@ -152,11 +152,22 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### Vercel: [$URL]($URL)" >> "$GITHUB_STEP_SUMMARY"
 
-      # Cada deploy a dev estrena URL. El alias es la unica fija, y es la que
-      # tienen cargada la allowlist de Supabase y NEXT_PUBLIC_SITE_URL. main no
-      # lo necesita: `--prod` asigna el dominio de produccion solo.
+      # La allowlist de Supabase tiene esta URL fija, no la de cada deploy.
       - name: Alias dev deployment
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/dev'
         run: |
-          vercel alias set "${{ steps.deploy.outputs.url }}" \
-            futtracker-dev.vercel.app --token="$VERCEL_TOKEN"
+          if ! vercel alias set "${{ steps.deploy.outputs.url }}" \
+            futtracker-dev.vercel.app --token="$VERCEL_TOKEN"; then
+            {
+              echo "### Fallo el alias, no el deploy"
+              echo ""
+              echo "El deploy publico bien: ${{ steps.deploy.outputs.url }}"
+              echo ""
+              echo "futtracker-dev.vercel.app sigue apuntando al deploy anterior;"
+              echo "usa el link de arriba mientras tanto. Para arreglarlo, volve a"
+              echo "correr el workflow desde Actions. Si vuelve a fallar, revisa en"
+              echo "Vercel que el dominio siga asignado a este proyecto."
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            exit 1
+          fi
