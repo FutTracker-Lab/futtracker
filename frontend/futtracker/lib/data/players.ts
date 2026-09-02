@@ -3,17 +3,13 @@ import { z } from "zod";
 
 import type { Database, Tables } from "@/lib/supabase/database.types";
 
-/**
- * El módulo recibe el cliente en vez de crearlo: así no importa
- * `lib/supabase/server`, que es server-only, y los schemas los puede usar
- * también un formulario en el navegador.
- *
- * La autorización no está acá, está en las políticas de RLS de `players`.
- */
 
 type Client = SupabaseClient<Database>;
 
 export type Player = Tables<"players">;
+
+const AVATARS_BUCKET = "avatars";
+const AVATAR_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
 
 export const POSITIONS = [
   "arquero",
@@ -81,6 +77,25 @@ export async function getMyPlayer(client: Client): Promise<Player | null> {
   }
 
   return getPlayerById(client, user.id);
+}
+
+export async function getAvatarSignedUrl(
+  client: Client,
+  path: string | null,
+): Promise<string | null> {
+  if (!path) {
+    return null;
+  }
+
+  const { data, error } = await client.storage
+    .from(AVATARS_BUCKET)
+    .createSignedUrl(path, AVATAR_SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    throw error;
+  }
+
+  return data.signedUrl;
 }
 
 /**
