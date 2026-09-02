@@ -41,6 +41,12 @@ select
   now()
 from auth.users u;
 
+-- Va por `update`: las filas de `profiles` las crea el trigger, no este seed.
+-- El archivo lo sube el CLI desde `supabase/avatars/` (ver `config.toml`).
+update public.profiles
+set avatar_path = '11111111-1111-4111-8111-111111111111/avatar.png'
+where id = '11111111-1111-4111-8111-111111111111';
+
 insert into public.players (
   id, birth_date, position, preferred_foot, height_cm, weight_kg,
   city, province, country, latitude, longitude, bio, phone, is_seeking_team
