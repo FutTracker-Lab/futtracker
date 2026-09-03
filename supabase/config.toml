@@ -133,6 +133,15 @@ file_size_limit = "2MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 objects_path = "./avatars"
 
+# El bucket lo crea la migracion. Los limites van repetidos porque el reset
+# ACTUALIZA el bucket: lo que no se declara aca vuelve al default global de
+# 50 MiB y local deja de coincidir con dev.
+[storage.buckets.team-crests]
+public = false
+file_size_limit = "2MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+objects_path = "./team-crests"
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true
