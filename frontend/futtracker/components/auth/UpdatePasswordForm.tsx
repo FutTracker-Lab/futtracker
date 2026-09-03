@@ -25,13 +25,15 @@ export default function UpdatePasswordForm() {
   const [clientError, setClientError] = useState<string | null>(null);
   const [succeeded, setSucceeded] = useState(false);
 
+  // Controlados por el mismo motivo que AuthForm.tsx: un <form action={...}>
+  // no controlado se resetea apenas la action termina, sea éxito o error.
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   async function handleSubmit(
     _prev: ActionResult,
-    formData: FormData,
+    _formData: FormData,
   ): Promise<ActionResult> {
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
-
     if (password !== confirmPassword) {
       setClientError("Las contraseñas no coinciden.");
       return INITIAL_STATE;
@@ -76,6 +78,8 @@ export default function UpdatePasswordForm() {
         autoComplete="new-password"
         required
         hint="Al menos 8 caracteres, con una mayúscula y un número."
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
       />
       <TextField
         id="update-confirm"
@@ -84,6 +88,8 @@ export default function UpdatePasswordForm() {
         label="Confirmar contraseña"
         autoComplete="new-password"
         required
+        value={confirmPassword}
+        onChange={(event) => setConfirmPassword(event.target.value)}
       />
       {errorMessage ? (
         <p role="alert" className="text-sm text-red-700">

@@ -35,15 +35,26 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
   const [tab, setTab] = useState<Tab>(initialTab);
   const [clientError, setClientError] = useState<string | null>(null);
 
+  // Inputs controlados a propósito: React resetea un <form action={...}>
+  // no controlado apenas la action termina, incluso cuando devuelve un
+  // error — no solo en éxito. Sin esto, cualquier error (contraseñas
+  // distintas, credenciales inválidas, términos sin aceptar) borraba todo
+  // el formulario en vez de dejar los datos para corregir.
+  const [signInEmail, setSignInEmail] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<Role>("player");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   async function handleSignIn(
     _prev: ActionResult,
-    formData: FormData,
+    _formData: FormData,
   ): Promise<ActionResult> {
-    const input: SignInInput = {
-      email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
-    };
-
+    const input: SignInInput = { email: signInEmail, password: signInPassword };
     const result = await signIn(input);
 
     if (result.ok) {
@@ -55,13 +66,8 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
 
   async function handleSignUp(
     _prev: ActionResult,
-    formData: FormData,
+    _formData: FormData,
   ): Promise<ActionResult> {
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
-    const acceptedTerms = formData.get("terms") === "on";
-    const role = formData.get("role") as Role | null;
-
     if (password !== confirmPassword) {
       setClientError("Las contraseñas no coinciden.");
       return INITIAL_STATE;
@@ -77,20 +83,9 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
       return INITIAL_STATE;
     }
 
-    if (!role) {
-      setClientError("Elegí cómo vas a usar FutTracker.");
-      return INITIAL_STATE;
-    }
-
     setClientError(null);
 
-    const input: SignUpInput = {
-      email: String(formData.get("email") ?? ""),
-      password,
-      fullName: String(formData.get("fullName") ?? ""),
-      role,
-    };
-
+    const input: SignUpInput = { email: signUpEmail, password, fullName, role };
     const result = await signUp(input);
 
     if (result.ok) {
@@ -149,7 +144,16 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
 
         {tab === "sign-in" ? (
           <form action={signInAction} className="flex flex-col gap-4">
-            <TextField id="signin-email" name="email" type="email" label="Email" autoComplete="email" required />
+            <TextField
+              id="signin-email"
+              name="email"
+              type="email"
+              label="Email"
+              autoComplete="email"
+              required
+              value={signInEmail}
+              onChange={(event) => setSignInEmail(event.target.value)}
+            />
             <TextField
               id="signin-password"
               name="password"
@@ -157,6 +161,8 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               label="Contraseña"
               autoComplete="current-password"
               required
+              value={signInPassword}
+              onChange={(event) => setSignInPassword(event.target.value)}
             />
             <a href="/recuperar-clave" className="self-end text-sm text-brand hover:underline">
               Olvidé mi contraseña
@@ -173,7 +179,15 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
                 </span>
               </legend>
               <label className="block cursor-pointer">
-                <input type="radio" name="role" value="player" required defaultChecked className="peer sr-only" />
+                <input
+                  type="radio"
+                  name="role"
+                  value="player"
+                  required
+                  checked={role === "player"}
+                  onChange={() => setRole("player")}
+                  className="peer sr-only"
+                />
                 <div className="rounded-md border border-zinc-300 p-3 text-sm peer-checked:border-brand peer-checked:bg-brand-tint">
                   <p className="font-medium text-zinc-900">Como jugador</p>
                   <p className="text-zinc-500">
@@ -182,7 +196,14 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
                 </div>
               </label>
               <label className="block cursor-pointer">
-                <input type="radio" name="role" value="delegate" className="peer sr-only" />
+                <input
+                  type="radio"
+                  name="role"
+                  value="delegate"
+                  checked={role === "delegate"}
+                  onChange={() => setRole("delegate")}
+                  className="peer sr-only"
+                />
                 <div className="rounded-md border border-zinc-300 p-3 text-sm peer-checked:border-brand peer-checked:bg-brand-tint">
                   <p className="font-medium text-zinc-900">Como delegado</p>
                   <p className="text-zinc-500">
@@ -199,8 +220,19 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               label="Nombre completo"
               autoComplete="name"
               required
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
             />
-            <TextField id="signup-email" name="email" type="email" label="Email" autoComplete="email" required />
+            <TextField
+              id="signup-email"
+              name="email"
+              type="email"
+              label="Email"
+              autoComplete="email"
+              required
+              value={signUpEmail}
+              onChange={(event) => setSignUpEmail(event.target.value)}
+            />
             <TextField
               id="signup-password"
               name="password"
@@ -209,6 +241,8 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               autoComplete="new-password"
               required
               hint="Al menos 8 caracteres, con una mayúscula y un número."
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
             />
             <TextField
               id="signup-confirm"
@@ -217,10 +251,18 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
               label="Confirmar contraseña"
               autoComplete="new-password"
               required
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
             />
 
             <label className="flex items-start gap-2 text-sm text-zinc-900">
-              <input type="checkbox" name="terms" className="mt-1" />
+              <input
+                type="checkbox"
+                name="terms"
+                className="mt-1"
+                checked={acceptedTerms}
+                onChange={(event) => setAcceptedTerms(event.target.checked)}
+              />
               Acepto los términos y la política de privacidad.
             </label>
 
