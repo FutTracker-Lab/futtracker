@@ -26,6 +26,9 @@ permissions:
 jobs:
   push-migrations:
     runs-on: ubuntu-latest
+    # Una corrida normal no pasa de un par de minutos. Sin esto, un `db push`
+    # colgado se come el default de Actions, que son 6 horas.
+    timeout-minutes: 15
     env:
       TARGET_ENV: ${{ inputs.environment || 'dev' }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -38,8 +41,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validar credenciales del ambiente
+      - name: Validar ambiente y credenciales
         run: |
+          # `workflow_call` recibe el ambiente como string libre, y las dos
+          # expresiones del `env` caen en dev ante cualquier valor que no sea
+          # exactamente 'prod'. Un typo apuntaria a dev creyendo apuntar a prod.
+          case "$TARGET_ENV" in
+            dev|prod) ;;
+            *)
+              echo "::error::Ambiente invalido: '$TARGET_ENV' (esperado: dev o prod)"
+              exit 1
+              ;;
+          esac
+
           SUFFIX=$(echo "$TARGET_ENV" | tr '[:lower:]' '[:upper:]')
           missing=""
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
