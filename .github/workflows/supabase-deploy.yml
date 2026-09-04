@@ -26,6 +26,11 @@ permissions:
 jobs:
   push-migrations:
     runs-on: ubuntu-latest
+    # El ambiente `prod` lleva required reviewers en la config del repo: el job
+    # queda en pausa esperando aprobacion, y `deploy` espera con el por el
+    # `needs`. Se normaliza a dev/prod para no crear ambientes sueltos con un
+    # valor mal escrito; de la validacion del valor se encarga el primer step.
+    environment: ${{ inputs.environment == 'prod' && 'prod' || 'dev' }}
     # Una corrida normal no pasa de un par de minutos. Sin esto, un `db push`
     # colgado se come el default de Actions, que son 6 horas.
     timeout-minutes: 15
