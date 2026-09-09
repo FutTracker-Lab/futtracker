@@ -126,12 +126,81 @@ export type Database = {
         }
         Relationships: []
       }
+      teams: {
+        Row: {
+          bio: string | null
+          category: string | null
+          city: string | null
+          club_name: string | null
+          contact_email: string | null
+          country: string | null
+          created_at: string
+          crest_path: string | null
+          founded_year: number | null
+          id: string
+          latitude: number | null
+          league: string | null
+          longitude: number | null
+          name: string
+          owner_id: string
+          province: string | null
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          category?: string | null
+          city?: string | null
+          club_name?: string | null
+          contact_email?: string | null
+          country?: string | null
+          created_at?: string
+          crest_path?: string | null
+          founded_year?: number | null
+          id?: string
+          latitude?: number | null
+          league?: string | null
+          longitude?: number | null
+          name: string
+          owner_id: string
+          province?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          category?: string | null
+          city?: string | null
+          club_name?: string | null
+          contact_email?: string | null
+          country?: string | null
+          created_at?: string
+          crest_path?: string | null
+          founded_year?: number | null
+          id?: string
+          latitude?: number | null
+          league?: string | null
+          longitude?: number | null
+          name?: string
+          owner_id?: string
+          province?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_team_owner: { Args: { team: string }; Returns: boolean }
+      safe_uuid: { Args: { value: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
