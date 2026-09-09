@@ -57,3 +57,30 @@ values
   ('33333333-3333-4333-8333-333333333333', '2001-06-27', 'mediocampista', 'izquierda', 172, 65, 'Córdoba', 'Córdoba', 'AR', -31.420100, -64.188800, 'Volante central, buen pie para la pelota parada.', '+54 9 351 400-0003', false),
   ('44444444-4444-4444-8444-444444444444', '1994-01-19', 'defensor', 'derecha', 181, 78, 'La Plata', 'Buenos Aires', 'AR', -34.921500, -57.954500, 'Marcador central. Juego al fútbol 11 hace quince años.', '+54 9 221 400-0004', true),
   ('55555555-5555-4555-8555-555555555555', '2003-09-08', 'mediocampista', 'ambidiestro', 165, 58, 'Mendoza', 'Mendoza', 'AR', -32.889500, -68.845800, 'Enganche. Busco equipo para el torneo de verano.', '+54 9 261 400-0005', true);
+
+-- Trayectoria. Cada jugador tiene una sola entrada abierta (`is_current` con
+-- `end_date` nula, que es lo que exige el check de la tabla) y el resto
+-- cerradas, encadenadas desde las inferiores hasta la actual.
+--
+-- `team_id` va en null en todas: `public.teams` todavía no existe en esta rama.
+insert into public.career_entries (
+  player_id, team_id, club_name, category, position, start_date, end_date, is_current
+)
+values
+  ('11111111-1111-4111-8111-111111111111', null, 'Club Atlético Platense', 'Sexta división', 'delantero', '2015-03-01', '2017-12-15', false),
+  ('11111111-1111-4111-8111-111111111111', null, 'Deportivo Morón', 'Reserva', 'delantero', '2018-02-10', '2021-06-30', false),
+  ('11111111-1111-4111-8111-111111111111', null, 'Club Atlético Fénix', 'Primera', 'delantero', '2021-08-01', null, true),
+
+  ('22222222-2222-4222-8222-222222222222', null, 'Club Atlético Central Córdoba de Rosario', 'Reserva', 'arquero', '2014-02-15', '2018-11-30', false),
+  ('22222222-2222-4222-8222-222222222222', null, 'Club Atlético Tiro Federal Argentino', 'Primera', 'arquero', '2019-01-20', null, true),
+
+  ('33333333-3333-4333-8333-333333333333', null, 'Club Atlético Belgrano', 'Sexta división', 'mediocampista', '2016-03-05', '2018-12-10', false),
+  ('33333333-3333-4333-8333-333333333333', null, 'Instituto Atlético Central Córdoba', 'Reserva', 'mediocampista', '2019-02-01', '2022-07-15', false),
+  ('33333333-3333-4333-8333-333333333333', null, 'Club Atlético Talleres', 'Primera', 'mediocampista', '2022-08-01', null, true),
+
+  ('44444444-4444-4444-8444-444444444444', null, 'Club de Gimnasia y Esgrima La Plata', 'Quinta división', 'defensor', '2010-02-20', '2013-11-25', false),
+  ('44444444-4444-4444-8444-444444444444', null, 'Club Atlético Villa San Carlos', 'Reserva', 'defensor', '2014-01-15', '2019-12-20', false),
+  ('44444444-4444-4444-8444-444444444444', null, 'Club Everton de La Plata', 'Primera', 'defensor', '2020-02-10', null, true),
+
+  ('55555555-5555-4555-8555-555555555555', null, 'Club Atlético Gimnasia y Esgrima de Mendoza', 'Sexta división', 'mediocampista', '2018-04-02', '2021-11-20', false),
+  ('55555555-5555-4555-8555-555555555555', null, 'Club Deportivo Godoy Cruz Antonio Tomba', 'Reserva', 'mediocampista', '2022-02-14', null, true);

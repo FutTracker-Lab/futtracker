@@ -34,6 +34,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      career_entries: {
+        Row: {
+          category: string | null
+          club_name: string
+          created_at: string
+          end_date: string | null
+          id: string
+          is_current: boolean
+          player_id: string
+          position: string | null
+          start_date: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          club_name: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          player_id: string
+          position?: string | null
+          start_date: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          club_name?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          player_id?: string
+          position?: string | null
+          start_date?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           bio: string | null
