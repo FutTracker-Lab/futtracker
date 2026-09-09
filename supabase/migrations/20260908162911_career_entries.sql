@@ -14,7 +14,10 @@ create table public.career_entries (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (end_date is null or end_date >= start_date),
-  check (not is_current or end_date is null)
+  check (not is_current or end_date is null),
+  -- La única etapa sin fecha de fin es la actual: una cerrada sin `end_date`
+  -- queda abierta para siempre y se pisa con todas las que vengan después.
+  check (is_current or end_date is not null)
 );
 
 create trigger career_entries_set_updated_at
@@ -24,6 +27,12 @@ execute function public.set_updated_at();
 
 create index career_entries_player_id_start_date_idx
 on public.career_entries (player_id, start_date desc);
+
+-- El check de la tabla impide que una entrada actual tenga `end_date`, pero no
+-- que un jugador tenga dos actuales a la vez.
+create unique index career_entries_one_current_idx
+on public.career_entries (player_id)
+where is_current;
 
 alter table public.career_entries enable row level security;
 

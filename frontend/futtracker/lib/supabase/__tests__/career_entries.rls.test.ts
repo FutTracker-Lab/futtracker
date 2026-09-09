@@ -95,6 +95,18 @@ describe.skipIf(!IS_LOCAL)("RLS de public.career_entries", () => {
       });
     });
 
+    // Depende de la entrada actual que creó el caso de arriba.
+    it("NO puede tener dos entradas actuales a la vez", async () => {
+      const { error } = await playerA.client.from("career_entries").insert({
+        player_id: playerA.id,
+        club_name: "Segundo club actual",
+        start_date: "2023-01-01",
+        is_current: true,
+      });
+
+      expect(error?.code).toBe("23505");
+    });
+
     it("puede editarla", async () => {
       const { data } = await playerA.client
         .from("career_entries")
@@ -112,6 +124,7 @@ describe.skipIf(!IS_LOCAL)("RLS de public.career_entries", () => {
           player_id: playerA.id,
           club_name: "Club cargado por error",
           start_date: "2019-01-01",
+          end_date: "2019-06-01",
         })
         .select("id")
         .single();
@@ -204,6 +217,7 @@ describe.skipIf(!IS_LOCAL)("RLS de public.career_entries", () => {
         player_id: delegate.id,
         club_name: "Club del delegado",
         start_date: "2024-01-01",
+        end_date: "2024-06-01",
       });
 
       expect(error?.code).toBe("23503");
@@ -223,20 +237,25 @@ describe.skipIf(!IS_LOCAL)("RLS de public.career_entries", () => {
   describe("checks de la tabla", () => {
     it.each([
       {
-        caso: "end_date anterior a start_date",
+        name: "end_date anterior a start_date",
         fields: { end_date: "2023-01-01" },
       },
       {
-        caso: "is_current con end_date cargada",
+        name: "is_current con end_date cargada",
         fields: { end_date: "2025-01-01", is_current: true },
       },
-      { caso: "un club de un solo caracter", fields: { club_name: "A" } },
-      { caso: "una posición que no existe", fields: { position: "arbitro" } },
-    ])("rechaza $caso", async ({ fields }) => {
+      {
+        name: "una etapa cerrada sin end_date",
+        fields: { end_date: null },
+      },
+      { name: "un club de un solo caracter", fields: { club_name: "A" } },
+      { name: "una posición que no existe", fields: { position: "arbitro" } },
+    ])("rechaza $name", async ({ fields }) => {
       const { error } = await playerA.client.from("career_entries").insert({
         player_id: playerA.id,
         club_name: "Club de prueba",
         start_date: "2024-03-01",
+        end_date: "2025-01-01",
         ...fields,
       });
 
@@ -274,6 +293,7 @@ describe.skipIf(!IS_LOCAL)("RLS de public.career_entries", () => {
           player_id: playerA.id,
           club_name: "Club con timestamps",
           start_date: "2018-01-01",
+          end_date: "2018-12-01",
         })
         .select("id, updated_at")
         .single();

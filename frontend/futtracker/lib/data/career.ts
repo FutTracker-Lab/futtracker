@@ -1,14 +1,16 @@
-import type { Tables } from "@/lib/supabase/database.types";
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database, Tables } from "@/lib/supabase/database.types";
+
+type Client = SupabaseClient<Database>;
 
 export type CareerEntry = Tables<"career_entries">;
 
 export async function getCareerEntries(
+  client: Client,
   playerId: string,
 ): Promise<CareerEntry[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("career_entries")
     .select("*")
     .eq("player_id", playerId)
