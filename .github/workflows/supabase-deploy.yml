@@ -1,0 +1,90 @@
+name: Supabase Deploy
+
+# Sin trigger de `push`: quien dispara el push automatico es vercel.yml, que lo
+# encadena antes del deploy. Con los dos triggers corria dos veces por merge.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente destino'
+        required: true
+        type: choice
+        options: [dev, prod]
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+concurrency:
+  group: supabase-deploy-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  push-migrations:
+    runs-on: ubuntu-latest
+    # El ambiente `prod` lleva required reviewers en la config del repo: el job
+    # queda en pausa esperando aprobacion, y `deploy` espera con el por el
+    # `needs`. Se normaliza a dev/prod para no crear ambientes sueltos con un
+    # valor mal escrito; de la validacion del valor se encarga el primer step.
+    environment: ${{ inputs.environment == 'prod' && 'prod' || 'dev' }}
+    # Una corrida normal no pasa de un par de minutos. Sin esto, un `db push`
+    # colgado se come el default de Actions, que son 6 horas.
+    timeout-minutes: 15
+    env:
+      TARGET_ENV: ${{ inputs.environment || 'dev' }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ inputs.environment == 'prod' && secrets.SUPABASE_DB_PASSWORD_PROD || secrets.SUPABASE_DB_PASSWORD_DEV }}
+      PROJECT_REF: ${{ inputs.environment == 'prod' && vars.SUPABASE_PROJECT_REF_PROD || vars.SUPABASE_PROJECT_REF_DEV }}
+    # `supabase/` cuelga de la raiz del repo, no de frontend/futtracker.
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar ambiente y credenciales
+        run: |
+          # `workflow_call` recibe el ambiente como string libre, y las dos
+          # expresiones del `env` caen en dev ante cualquier valor que no sea
+          # exactamente 'prod'. Un typo apuntaria a dev creyendo apuntar a prod.
+          case "$TARGET_ENV" in
+            dev|prod) ;;
+            *)
+              echo "::error::Ambiente invalido: '$TARGET_ENV' (esperado: dev o prod)"
+              exit 1
+              ;;
+          esac
+
+          SUFFIX=$(echo "$TARGET_ENV" | tr '[:lower:]' '[:upper:]')
+          missing=""
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -n "$SUPABASE_DB_PASSWORD" ] || missing="$missing SUPABASE_DB_PASSWORD_$SUFFIX"
+          [ -n "$PROJECT_REF" ] || missing="$missing SUPABASE_PROJECT_REF_$SUFFIX"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltan credenciales para el ambiente '$TARGET_ENV':$missing"
+            exit 1
+          fi
+          echo "Ambiente: $TARGET_ENV / project ref: $PROJECT_REF"
+
+      - uses: supabase/setup-cli@v2
+        with:
+          version: latest
+
+      - name: Link al proyecto
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Estado de migraciones (antes)
+        run: supabase migration list --linked
+
+      - name: Dry run
+        run: supabase db push --linked --dry-run
+
+      - name: Aplicar migraciones
+        run: supabase db push --linked --yes
+
+      - name: Estado de migraciones (después)
+        run: supabase migration list --linked
