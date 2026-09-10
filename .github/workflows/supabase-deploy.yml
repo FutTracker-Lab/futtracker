@@ -3,6 +3,9 @@ name: Supabase Deploy
 # Sin trigger de `push`: quien dispara el push automatico es vercel.yml, que lo
 # encadena antes del deploy. Con los dos triggers corria dos veces por merge.
 on:
+  # TEMPORAL: para probar el fix del pooler sin mergear a dev. Sacar antes del PR.
+  push:
+    branches: [fix/supabase-ci-actions]
   workflow_dispatch:
     inputs:
       environment:
@@ -70,7 +73,7 @@ jobs:
           fi
           echo "Ambiente: $TARGET_ENV / project ref: $PROJECT_REF"
 
-      - uses: supabase/setup-cli@v2
+      - uses: supabase/setup-cli@v1
         with:
           version: latest
 
