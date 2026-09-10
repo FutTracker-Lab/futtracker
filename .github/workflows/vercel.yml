@@ -24,8 +24,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Gate. `deploy` declara `needs: verify`, y eso lo enforcea Actions: no
-  # depende de branch protection ni de permisos de admin sobre el repo.
+  # Gate. La cadena `verify` -> `migrations` -> `deploy` la enforcea Actions via
+  # `needs`: no depende de branch protection ni de permisos de admin sobre el repo.
   #
   # Es lo unico que corre en un PR: ningun secret de Vercel entra a este job,
   # asi que el check pasa igual aunque quien abre el PR no tenga acceso a los
@@ -82,9 +82,21 @@ jobs:
       - name: Tests
         run: npm run test
 
+  # Las migraciones van antes del deploy, nunca despues: Vercel y Supabase son
+  # caminos separados y sin este `needs` corren en paralelo, con la chance de
+  # publicar codigo nuevo contra el schema viejo.
+  migrations:
+    name: Supabase migrations
+    needs: verify
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/supabase-deploy.yml
+    with:
+      environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    secrets: inherit
+
   deploy:
     name: Build & Deploy (Vercel CLI)
-    needs: verify
+    needs: migrations
     # En un PR no se deploya: solo corre el chequeo. El build y el deploy pasan
     # una vez que el merge aterriza en dev o en main, que son las unicas ramas
     # que disparan `push` aca arriba.
