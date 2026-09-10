@@ -1,10 +1,11 @@
 create table public.career_entries (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references public.players (id) on delete cascade,
-  -- Sin FK todavía: `public.teams` existe en T05a, que no mergeó a dev. Poner
-  -- la referencia acá rompería esta migración al aplicarla. Va en una
-  -- migración de seguimiento cuando T05a esté en dev, no editando esta.
-  team_id uuid,
+  -- `set null` y no cascade: la trayectoria es historia del jugador y
+  -- sobrevive al equipo. `teams` se borra por cascade cuando se da de baja la
+  -- cuenta del delegado, y con el default (`no action`) esa baja falla si algún
+  -- jugador tiene una etapa en ese equipo. Queda el `club_name`, que es texto.
+  team_id uuid references public.teams (id) on delete set null,
   club_name text not null check (char_length(club_name) between 2 and 80),
   category text,
   position text check (position in ('arquero', 'defensor', 'mediocampista', 'delantero')),
