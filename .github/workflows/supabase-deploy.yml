@@ -1,8 +1,12 @@
 name: Supabase Deploy
 
-# Sin trigger de `push`: quien dispara el push automatico es vercel.yml, que lo
-# encadena antes del deploy. Con los dos triggers corria dos veces por merge.
+
 on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-deploy.yml"
   workflow_dispatch:
     inputs:
       environment:
@@ -10,14 +14,10 @@ on:
         required: true
         type: choice
         options: [dev, prod]
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
+
 
 concurrency:
-  group: supabase-deploy-${{ inputs.environment || 'dev' }}
+  group: supabase-deploy-${{ inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
   cancel-in-progress: false
 
 permissions:
@@ -26,19 +26,15 @@ permissions:
 jobs:
   push-migrations:
     runs-on: ubuntu-latest
-    # El ambiente `prod` lleva required reviewers en la config del repo: el job
-    # queda en pausa esperando aprobacion, y `deploy` espera con el por el
-    # `needs`. Se normaliza a dev/prod para no crear ambientes sueltos con un
-    # valor mal escrito; de la validacion del valor se encarga el primer step.
-    environment: ${{ inputs.environment == 'prod' && 'prod' || 'dev' }}
+    environment: ${{ inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
     # Una corrida normal no pasa de un par de minutos. Sin esto, un `db push`
     # colgado se come el default de Actions, que son 6 horas.
     timeout-minutes: 15
     env:
-      TARGET_ENV: ${{ inputs.environment || 'dev' }}
+      TARGET_ENV: ${{ inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ inputs.environment == 'prod' && secrets.SUPABASE_DB_PASSWORD_PROD || secrets.SUPABASE_DB_PASSWORD_DEV }}
-      PROJECT_REF: ${{ inputs.environment == 'prod' && vars.SUPABASE_PROJECT_REF_PROD || vars.SUPABASE_PROJECT_REF_DEV }}
+      SUPABASE_DB_PASSWORD: ${{ (inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev')) == 'prod' && secrets.SUPABASE_DB_PASSWORD_PROD || secrets.SUPABASE_DB_PASSWORD_DEV }}
+      PROJECT_REF: ${{ (inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev')) == 'prod' && vars.SUPABASE_PROJECT_REF_PROD || vars.SUPABASE_PROJECT_REF_DEV }}
     # `supabase/` cuelga de la raiz del repo, no de frontend/futtracker.
     defaults:
       run:
@@ -46,19 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validar ambiente y credenciales
+      - name: Validar credenciales
         run: |
-          # `workflow_call` recibe el ambiente como string libre, y las dos
-          # expresiones del `env` caen en dev ante cualquier valor que no sea
-          # exactamente 'prod'. Un typo apuntaria a dev creyendo apuntar a prod.
-          case "$TARGET_ENV" in
-            dev|prod) ;;
-            *)
-              echo "::error::Ambiente invalido: '$TARGET_ENV' (esperado: dev o prod)"
-              exit 1
-              ;;
-          esac
-
           SUFFIX=$(echo "$TARGET_ENV" | tr '[:lower:]' '[:upper:]')
           missing=""
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
