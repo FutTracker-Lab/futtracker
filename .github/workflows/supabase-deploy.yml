@@ -3,9 +3,6 @@ name: Supabase Deploy
 # Sin trigger de `push`: quien dispara el push automatico es vercel.yml, que lo
 # encadena antes del deploy. Con los dos triggers corria dos veces por merge.
 on:
-  # TEMPORAL: solo para probar el fix sin mergear. Sacar antes de pedir review.
-  pull_request:
-    branches: [dev]
   workflow_dispatch:
     inputs:
       environment:
