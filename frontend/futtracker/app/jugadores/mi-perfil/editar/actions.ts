@@ -10,6 +10,47 @@ export type UpdatePlayerResult =
   | { ok: true }
   | { ok: false; error: string };
 
+/**
+ * Guarda el path del avatar recién subido. La subida del archivo la hace el
+ * cliente (AvatarUploader) contra Storage; acá solo se persiste la
+ * referencia.
+ *
+ * El path se valida contra la sesión y no se confía en el que manda el
+ * cliente: una Server Action es un endpoint POST público, así que sin este
+ * chequeo alguien podría apuntar su perfil al avatar de otro. La política de
+ * `profiles_update` en la base exige lo mismo (`^<id>/[^/]+$`) — esto es la
+ * primera barrera, no la única.
+ */
+export async function updateAvatarPath(path: string): Promise<UpdatePlayerResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
+  }
+
+  if (!new RegExp(`^${user.id}/[^/]+$`).test(path)) {
+    return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_path: path })
+    .eq("id", user.id);
+
+  if (error) {
+    return { ok: false, error: "No pudimos guardar la foto. Probá de nuevo." };
+  }
+
+  revalidatePath(RouteConstants.profile.mine);
+  revalidatePath(RouteConstants.profile.edit);
+  revalidatePath(RouteConstants.profile.view(user.id));
+
+  return { ok: true };
+}
+
 export async function updatePlayerProfile(
   input: unknown,
   fullName: string,

@@ -115,3 +115,54 @@ describe("updatePlayerProfile", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/jugadores/user-1");
   });
 });
+
+describe("updateAvatarPath", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getUserMock.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    profilesEqMock.mockResolvedValue({ error: null });
+  });
+
+  it("guarda el path y revalida las rutas del perfil", async () => {
+    const { updateAvatarPath } = await import("@/app/jugadores/mi-perfil/editar/actions");
+
+    const result = await updateAvatarPath("user-1/avatar-123.png");
+
+    expect(result).toEqual({ ok: true });
+    expect(profilesUpdateMock).toHaveBeenCalledWith({
+      avatar_path: "user-1/avatar-123.png",
+    });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/jugadores/user-1");
+  });
+
+  // Una Server Action es un endpoint POST publico: se puede invocar con un
+  // path arbitrario sin pasar por el uploader. Sin este chequeo, un perfil
+  // podria quedar apuntando al avatar de otro usuario.
+  it("rechaza un path que apunta a la carpeta de otro usuario", async () => {
+    const { updateAvatarPath } = await import("@/app/jugadores/mi-perfil/editar/actions");
+
+    const result = await updateAvatarPath("otro-usuario/avatar.png");
+
+    expect(result.ok).toBe(false);
+    expect(profilesUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("rechaza un path con subcarpetas", async () => {
+    const { updateAvatarPath } = await import("@/app/jugadores/mi-perfil/editar/actions");
+
+    const result = await updateAvatarPath("user-1/../otro/avatar.png");
+
+    expect(result.ok).toBe(false);
+    expect(profilesUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("rechaza si no hay usuario en sesion", async () => {
+    getUserMock.mockResolvedValue({ data: { user: null } });
+    const { updateAvatarPath } = await import("@/app/jugadores/mi-perfil/editar/actions");
+
+    const result = await updateAvatarPath("user-1/avatar.png");
+
+    expect(result.ok).toBe(false);
+    expect(profilesUpdateMock).not.toHaveBeenCalled();
+  });
+});
