@@ -3,15 +3,13 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+  runImageUpload,
+  type UploadResult,
+} from "@/components/ui/imageUpload";
 import { createClient } from "@/lib/supabase/client";
 
-export type UploadResult = { ok: true } | { ok: false; error: string };
-
-const EXTENSION_BY_TYPE: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
+export type { UploadResult };
 
 type Props = {
   label: string;
@@ -45,6 +43,9 @@ type Props = {
  * Genérico porque el avatar del jugador y el escudo del equipo son el mismo
  * flujo con otro bucket y otras etiquetas — antes de extraerlo, la segunda
  * pantalla habría copiado esta lógica entera.
+ *
+ * La secuencia en sí vive en `imageUpload.ts`, sin React ni Supabase encima,
+ * para poder testear la validación y la limpieza de huérfanos.
  */
 export default function ImageUploader({
   label,
@@ -69,7 +70,6 @@ export default function ImageUploader({
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const maxMb = Math.round(maxBytes / 1024 / 1024);
   const shapeClass = rounded === "full" ? "rounded-full" : "rounded-md";
 
   async function handleFile(file: File) {
@@ -82,65 +82,32 @@ export default function ImageUploader({
     }
 
     setError(null);
-
-    // El bucket ya rechaza tipo y tamaño del lado del servidor; validarlo acá
-    // es lo que permite mostrar el error sin gastar una subida.
-    if (!acceptedTypes.includes(file.type)) {
-      setError("El archivo tiene que ser JPG, PNG o WebP.");
-      return;
-    }
-
-    if (file.size > maxBytes) {
-      setError(`La imagen no puede pesar más de ${maxMb} MB.`);
-      return;
-    }
-
     setIsUploading(true);
 
-    try {
-      const supabase = createClient();
-      // El timestamp evita que la URL firmada anterior (24 h de TTL) siga
-      // mostrando la imagen vieja después de reemplazarla.
-      const extension = EXTENSION_BY_TYPE[file.type];
-      const path = `${folder}/${Date.now()}.${extension}`;
+    const storage = createClient().storage.from(bucket);
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(path, file, { contentType: file.type });
+    const result = await runImageUpload(file, {
+      folder,
+      previousPath: currentPath,
+      rules: { maxBytes, acceptedTypes },
+      port: {
+        upload: (path, blob) =>
+          storage.upload(path, blob, { contentType: blob.type }),
+        remove: (path) => storage.remove([path]),
+        persist: onUploaded,
+      },
+    });
 
-      if (uploadError) {
-        setError("No pudimos subir la imagen. Probá de nuevo.");
-        return;
-      }
+    setIsUploading(false);
 
-      const result = await onUploaded(path);
-
-      if (!result.ok) {
-        // El archivo ya está en el bucket pero nadie lo referencia: sin esto,
-        // cada reintento fallido deja otra copia inalcanzable.
-        await supabase.storage.from(bucket).remove([path]);
-        setError(result.error);
-        return;
-      }
-
-      // La anterior queda huérfana si no se borra. Es best-effort: si falla,
-      // la fila ya apunta bien a la nueva y no hay nada que mostrarle al
-      // usuario.
-      if (currentPath && currentPath !== path) {
-        await supabase.storage.from(bucket).remove([currentPath]);
-      }
-
-      setCurrentPath(path);
-      setPreviewUrl(URL.createObjectURL(file));
-      router.refresh();
-    } catch {
-      // `onChange` descarta la promesa de handleFile, así que una excepción
-      // acá (red caída, Server Action rechazada) dejaría el botón volviendo a
-      // su estado normal sin decirle nada al usuario.
-      setError("No pudimos subir la imagen. Probá de nuevo.");
-    } finally {
-      setIsUploading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
     }
+
+    setCurrentPath(result.path);
+    setPreviewUrl(URL.createObjectURL(file));
+    router.refresh();
   }
 
   return (
