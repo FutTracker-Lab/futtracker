@@ -144,6 +144,21 @@ describe("updateTeamAction", () => {
     expect(updateTeamMock).not.toHaveBeenCalled();
   });
 
+  // Hallazgo de review: `getMyTeam` tira si la consulta falla. Con el chequeo
+  // fuera del try, la Server Action se rechazaba y el formulario se quedaba
+  // sin error inline en vez de mostrar el mensaje.
+  it("devuelve un error si falla la consulta de autorización", async () => {
+    getMyTeamMock.mockRejectedValue(new Error("db caida"));
+    const { updateTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await updateTeamAction(TEAM_ID, VALID_INPUT);
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Ocurrió un error inesperado. Probá de nuevo.",
+    });
+  });
+
   it("no escribe si el delegado todavía no tiene equipo", async () => {
     getMyTeamMock.mockResolvedValue(null);
     const { updateTeamAction } = await import("@/app/equipos/actions");
@@ -169,6 +184,16 @@ describe("updateTeamCrestPath", () => {
 
     expect(result).toEqual({ ok: true });
     expect(revalidatePathMock).toHaveBeenCalledWith(`/equipos/${TEAM_ID}`);
+  });
+
+  it("devuelve un error si falla la consulta de autorización", async () => {
+    getMyTeamMock.mockRejectedValue(new Error("db caida"));
+    const { updateTeamCrestPath } = await import("@/app/equipos/actions");
+
+    const result = await updateTeamCrestPath(TEAM_ID, `${TEAM_ID}/escudo.png`);
+
+    expect(result.ok).toBe(false);
+    expect(updateCrestPathMock).not.toHaveBeenCalled();
   });
 
   // El teamId llega del cliente y una Server Action es un endpoint público.

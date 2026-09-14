@@ -94,13 +94,16 @@ export async function updateTeamAction(
   // escribir su fila), pero se chequea acá también: sin esto, un update de
   // otro equipo no fallaría, simplemente afectaría cero filas y `.single()`
   // tiraría un error genérico que el usuario leería como "error inesperado".
-  const myTeam = await getMyTeam(supabase);
-
-  if (!myTeam || myTeam.id !== teamId) {
-    return { ok: false, error: UNEXPECTED };
-  }
-
   try {
+    // Dentro del try: `getMyTeam` tira si la consulta falla, y con el chequeo
+    // afuera un fallo transitorio rechazaba la Server Action en vez de
+    // devolver un resultado — el formulario se quedaba sin error inline.
+    const myTeam = await getMyTeam(supabase);
+
+    if (!myTeam || myTeam.id !== teamId) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
     await updateTeam(supabase, teamId, parsed.data);
 
     revalidatePath(RouteConstants.team.mine);
@@ -127,13 +130,16 @@ export async function updateTeamCrestPath(
   path: string,
 ): Promise<CrestActionResult> {
   const supabase = await createClient();
-  const myTeam = await getMyTeam(supabase);
-
-  if (!myTeam || myTeam.id !== teamId) {
-    return { ok: false, error: UNEXPECTED };
-  }
 
   try {
+    // Mismo motivo que en updateTeamAction: `getMyTeam` tira si la consulta
+    // falla y el uploader necesita un resultado para mostrar su error.
+    const myTeam = await getMyTeam(supabase);
+
+    if (!myTeam || myTeam.id !== teamId) {
+      return { ok: false, error: UNEXPECTED };
+    }
+
     await updateCrestPath(supabase, teamId, path);
   } catch {
     return { ok: false, error: "No pudimos guardar el escudo. Probá de nuevo." };

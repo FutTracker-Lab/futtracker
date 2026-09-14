@@ -73,6 +73,14 @@ export default function ImageUploader({
   const shapeClass = rounded === "full" ? "rounded-full" : "rounded-md";
 
   async function handleFile(file: File) {
+    // Guarda contra subidas concurrentes: dos handleFile en paralelo parten
+    // del mismo `currentPath` y la que termina segunda deja huérfana a la
+    // otra. El input también se deshabilita, pero esto cubre el caso de que
+    // llegue por otro camino.
+    if (isUploading) {
+      return;
+    }
+
     setError(null);
 
     // El bucket ya rechaza tipo y tamaño del lado del servidor; validarlo acá
@@ -108,6 +116,9 @@ export default function ImageUploader({
       const result = await onUploaded(path);
 
       if (!result.ok) {
+        // El archivo ya está en el bucket pero nadie lo referencia: sin esto,
+        // cada reintento fallido deja otra copia inalcanzable.
+        await supabase.storage.from(bucket).remove([path]);
         setError(result.error);
         return;
       }
@@ -122,6 +133,11 @@ export default function ImageUploader({
       setCurrentPath(path);
       setPreviewUrl(URL.createObjectURL(file));
       router.refresh();
+    } catch {
+      // `onChange` descarta la promesa de handleFile, así que una excepción
+      // acá (red caída, Server Action rechazada) dejaría el botón volviendo a
+      // su estado normal sin decirle nada al usuario.
+      setError("No pudimos subir la imagen. Probá de nuevo.");
     } finally {
       setIsUploading(false);
     }
@@ -165,6 +181,7 @@ export default function ImageUploader({
         ref={inputRef}
         type="file"
         accept={acceptedTypes.join(",")}
+        disabled={isUploading}
         className="sr-only"
         aria-label={label}
         onChange={(event) => {

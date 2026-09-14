@@ -34,7 +34,10 @@ const FIELD_ERROR_MESSAGES: Record<string, string> = {
   city: "Ingresá una ciudad válida.",
   province: "Ingresá una provincia válida.",
   country: "Elegí un país.",
-  founded_year: "Ingresá un año entre 1850 y el actual.",
+  // El schema de T05a acepta hasta 2100 a propósito ("el filtro real es el
+  // formulario", dice la migración), así que el mensaje no promete el año
+  // actual: ese tope lo aplica el `max` del input, no la validación.
+  founded_year: "Ingresá un año de fundación válido.",
   bio: "La descripción no puede superar los 1000 caracteres.",
   contact_email: "Ingresá un email válido.",
 };
