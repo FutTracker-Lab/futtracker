@@ -1,4 +1,4 @@
-export default function PlayerProfileLoading() {
+export default function MyPlayerProfileLoading() {
   return (
     <div className="mx-auto flex w-full max-w-2xl animate-pulse flex-col gap-6 p-6">
       <div className="flex items-center gap-4">

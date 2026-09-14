@@ -24,7 +24,7 @@ export default function PlayerProfileDetails({
 
   return (
     <div className="flex flex-col gap-6">
-      <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3 md:grid-cols-3">
         <div>
           <dt className="text-zinc-500">Posición</dt>
           <dd className="font-medium text-zinc-900">{positionLabel ?? "—"}</dd>

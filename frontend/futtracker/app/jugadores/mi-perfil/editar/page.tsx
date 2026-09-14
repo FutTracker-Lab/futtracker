@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import PlayerProfileForm from "./PlayerProfileForm";
-import { getPlayerById } from "@/lib/data/players";
+import { getPlayerProfileById } from "@/lib/data/profiles";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,22 +15,34 @@ export default async function EditPlayerProfilePage() {
     redirect(`/login?redirectTo=${RouteConstants.profile.edit}`);
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
+  const data = await getPlayerProfileById(user.id);
 
-  if (!profile || profile.role !== "player") {
+  if (!data) {
     redirect("/");
   }
 
-  const player = await getPlayerById(supabase, user.id);
+  const { profile, player, avatarUrl } = data;
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-lg flex-col gap-6 bg-white p-6">
-      <h1 className="text-xl font-semibold text-zinc-900">Editar perfil</h1>
-      <PlayerProfileForm initialFullName={profile.full_name} initialPlayer={player} />
+    <div className="flex flex-1 flex-col bg-surface">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
+            {player ? "Editar perfil" : "Completá tu perfil"}
+          </h1>
+          <p className="text-sm text-zinc-600">
+            Los clubes filtran por posición, zona y horarios. Sin esos campos
+            no aparecés en las búsquedas.
+          </p>
+        </div>
+
+        <PlayerProfileForm
+          initialFullName={profile.full_name}
+          initialPlayer={player}
+          initialAvatarUrl={avatarUrl}
+          initialAvatarPath={profile.avatar_path}
+        />
+      </div>
     </div>
   );
 }
