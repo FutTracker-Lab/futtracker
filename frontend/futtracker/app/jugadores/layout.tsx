@@ -1,3 +1,4 @@
+import AppMobileNav from "@/components/nav/AppMobileNav";
 import AppSidebar from "@/components/nav/AppSidebar";
 import { roleSchema } from "@/lib/auth/schemas";
 import { getProfileById } from "@/lib/data/profiles";
@@ -25,9 +26,12 @@ export default async function JugadoresLayout({
   const role = roleSchema.safeParse(profile?.role);
 
   return (
-    <div className="flex min-h-full flex-1">
+    <div className="flex min-h-full flex-1 flex-col md:flex-row">
       {profile && role.success ? (
-        <AppSidebar fullName={profile.full_name} role={role.data} />
+        <>
+          <AppMobileNav role={role.data} />
+          <AppSidebar fullName={profile.full_name} role={role.data} />
+        </>
       ) : null}
       <div className="flex flex-1 flex-col">{children}</div>
     </div>
