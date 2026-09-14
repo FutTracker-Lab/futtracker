@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  getAvatarSignedUrl,
   getMyPlayer,
   getPlayerById,
   playerInputSchema,
@@ -164,6 +165,61 @@ describe("upsertPlayer", () => {
       upsertPlayer(client, { ...INPUT, position: "arbitro" }),
     ).rejects.toThrow();
     expect(spies.upsert).not.toHaveBeenCalled();
+  });
+});
+
+function fakeStorageClient({
+  error = null,
+}: { error?: { message: string } | null } = {}) {
+  const spy = vi.fn();
+
+  const client = {
+    storage: {
+      from: (bucket: string) => ({
+        createSignedUrl: async (path: string, expiresIn: number) => {
+          spy(bucket, path, expiresIn);
+
+          return {
+            data: error ? null : { signedUrl: "https://local/firmada" },
+            error,
+          };
+        },
+      }),
+    },
+  };
+
+  return { client: client as unknown as SupabaseClient<Database>, spy };
+}
+
+describe("getAvatarSignedUrl", () => {
+  it("firma el path del bucket privado con TTL de 24 horas", async () => {
+    const { client, spy } = fakeStorageClient();
+
+    await expect(
+      getAvatarSignedUrl(client, `${PLAYER_A}/avatar.png`),
+    ).resolves.toBe("https://local/firmada");
+    expect(spy).toHaveBeenCalledWith(
+      "avatars",
+      `${PLAYER_A}/avatar.png`,
+      86400,
+    );
+  });
+
+  it("devuelve null sin avatar, sin ir a storage", async () => {
+    const { client, spy } = fakeStorageClient();
+
+    await expect(getAvatarSignedUrl(client, null)).resolves.toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("propaga el error de storage", async () => {
+    const { client } = fakeStorageClient({
+      error: { message: "Object not found" },
+    });
+
+    await expect(
+      getAvatarSignedUrl(client, `${PLAYER_A}/avatar.png`),
+    ).rejects.toEqual({ message: "Object not found" });
   });
 });
 

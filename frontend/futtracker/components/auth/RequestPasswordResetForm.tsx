@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { requestPasswordReset } from "@/app/(auth)/actions";
 import type { ActionResult } from "@/lib/auth/constants";
@@ -16,13 +16,16 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export default function RequestPasswordResetForm() {
+  // Controlado por el mismo motivo que AuthForm.tsx (ver ese comentario):
+  // un <form action={...}> no controlado se resetea apenas la action
+  // termina, incluso con error de input inválido.
+  const [email, setEmail] = useState("");
+
   async function handleSubmit(
     _prev: ActionResult,
-    formData: FormData,
+    _formData: FormData,
   ): Promise<ActionResult> {
-    const input: RequestPasswordResetInput = {
-      email: String(formData.get("email") ?? ""),
-    };
+    const input: RequestPasswordResetInput = { email };
 
     return requestPasswordReset(input);
   }
@@ -43,7 +46,16 @@ export default function RequestPasswordResetForm() {
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <TextField id="recover-email" name="email" type="email" label="Email" autoComplete="email" required />
+      <TextField
+        id="recover-email"
+        name="email"
+        type="email"
+        label="Email"
+        autoComplete="email"
+        required
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+      />
       {!state.ok ? (
         <p role="alert" className="text-sm text-red-700">
           {ERROR_MESSAGES[state.error]}
