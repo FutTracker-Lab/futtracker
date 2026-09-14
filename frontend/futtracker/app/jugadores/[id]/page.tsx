@@ -5,18 +5,15 @@ import type { Metadata } from "next";
 import PlayerProfileDetails from "@/components/player/PlayerProfileDetails";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
 import { getPlayerById } from "@/lib/data/players";
+import { getProfileById } from "@/lib/data/profiles";
+import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/jugadores/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", id)
-    .maybeSingle();
+  const profile = await getProfileById(id);
 
   return { title: profile?.full_name ?? "FutTracker" };
 }
@@ -30,14 +27,9 @@ export default async function PlayerProfilePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", id)
-    .eq("role", "player")
-    .maybeSingle();
+  const profile = await getProfileById(id);
 
-  if (!profile) {
+  if (!profile || profile.role !== "player") {
     notFound();
   }
 
@@ -54,7 +46,7 @@ export default async function PlayerProfilePage({
         <PlayerProfileHeader profile={profile} isOwner={isOwner} hasPlayerRow={player !== null} />
         {isOwner ? (
           <Link
-            href="/jugadores/mi-perfil/editar"
+            href={RouteConstants.profile.edit}
             className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
           >
             {player ? "Editar perfil" : "Completá tu perfil"}

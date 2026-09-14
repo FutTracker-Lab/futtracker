@@ -27,21 +27,35 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
   const router = useRouter();
   const [success, setSuccess] = useState(false);
 
+  // Inputs controlados a propósito, mismo motivo que fix/login (PR #8):
+  // React resetea un <form action={...}> no controlado apenas la action
+  // termina, incluso en error — sin esto, un error de validación (altura
+  // fuera de rango, etc.) borraba todo lo tipeado en vez de dejarlo para
+  // corregir. Deuda señalada en review de PR #9, resuelta acá.
+  const [fullName, setFullName] = useState(initialFullName);
+  const [position, setPosition] = useState(initialPlayer?.position ?? "");
+  const [preferredFoot, setPreferredFoot] = useState(initialPlayer?.preferred_foot ?? "");
+  const [heightCm, setHeightCm] = useState(initialPlayer?.height_cm?.toString() ?? "");
+  const [weightKg, setWeightKg] = useState(initialPlayer?.weight_kg?.toString() ?? "");
+  const [birthDate, setBirthDate] = useState(initialPlayer?.birth_date ?? "");
+  const [city, setCity] = useState(initialPlayer?.city ?? "");
+  const [province, setProvince] = useState(initialPlayer?.province ?? "");
+  const [phone, setPhone] = useState(initialPlayer?.phone ?? "");
+  const [bio, setBio] = useState(initialPlayer?.bio ?? "");
+  const [isSeekingTeam, setIsSeekingTeam] = useState(initialPlayer?.is_seeking_team ?? true);
+
   async function handleSubmit(
     _prev: UpdatePlayerResult,
-    formData: FormData,
+    _formData: FormData,
   ): Promise<UpdatePlayerResult> {
-    const heightRaw = formData.get("height_cm");
-    const weightRaw = formData.get("weight_kg");
-
     const input = {
-      birth_date: (formData.get("birth_date") as string) || null,
-      position: (formData.get("position") as string) || null,
-      preferred_foot: (formData.get("preferred_foot") as string) || null,
-      height_cm: heightRaw ? Number(heightRaw) : null,
-      weight_kg: weightRaw ? Number(weightRaw) : null,
-      city: (formData.get("city") as string) || null,
-      province: (formData.get("province") as string) || null,
+      birth_date: birthDate || null,
+      position: position || null,
+      preferred_foot: preferredFoot || null,
+      height_cm: heightCm ? Number(heightCm) : null,
+      weight_kg: weightKg ? Number(weightKg) : null,
+      city: city || null,
+      province: province || null,
       // Sin selector de país en este ticket (decisión 1.6/supuesto 5 del
       // doc de decisiones: no hay UI para esto todavía). "AR" fijo evita
       // pisar el default de la migración con null en cada guardado.
@@ -50,9 +64,9 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
       // país.
       latitude: null,
       longitude: null,
-      bio: (formData.get("bio") as string) || null,
-      phone: (formData.get("phone") as string) || null,
-      is_seeking_team: formData.get("is_seeking_team") === "on",
+      bio: bio || null,
+      phone: phone || null,
+      is_seeking_team: isSeekingTeam,
     };
 
     // Mismo schema que usa la Server Action (playerInputSchema, de
@@ -67,7 +81,6 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
       };
     }
 
-    const fullName = String(formData.get("full_name") ?? "");
     const result = await updatePlayerProfile(parsed.data, fullName);
 
     if (result.ok) {
@@ -93,18 +106,32 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
         </p>
       ) : null}
 
-      <TextField id="full_name" name="full_name" type="text" label="Nombre completo" defaultValue={initialFullName} required />
+      <TextField
+        id="full_name"
+        name="full_name"
+        type="text"
+        label="Nombre completo"
+        value={fullName}
+        onChange={(event) => setFullName(event.target.value)}
+        required
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="position" className="text-sm font-medium text-zinc-900">
             Posición
           </label>
-          <select id="position" name="position" defaultValue={initialPlayer?.position ?? ""} className={SELECT_CLASS}>
+          <select
+            id="position"
+            name="position"
+            value={position}
+            onChange={(event) => setPosition(event.target.value)}
+            className={SELECT_CLASS}
+          >
             <option value="">—</option>
-            {POSITIONS.map((position) => (
-              <option key={position} value={position}>
-                {POSITION_LABELS[position]}
+            {POSITIONS.map((positionOption) => (
+              <option key={positionOption} value={positionOption}>
+                {POSITION_LABELS[positionOption]}
               </option>
             ))}
           </select>
@@ -116,7 +143,8 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
           <select
             id="preferred_foot"
             name="preferred_foot"
-            defaultValue={initialPlayer?.preferred_foot ?? ""}
+            value={preferredFoot}
+            onChange={(event) => setPreferredFoot(event.target.value)}
             className={SELECT_CLASS}
           >
             <option value="">—</option>
@@ -137,7 +165,8 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
           min={100}
           max={250}
           label="Altura (cm)"
-          defaultValue={initialPlayer?.height_cm ?? ""}
+          value={heightCm}
+          onChange={(event) => setHeightCm(event.target.value)}
         />
         <TextField
           id="weight_kg"
@@ -146,7 +175,8 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
           min={30}
           max={200}
           label="Peso (kg)"
-          defaultValue={initialPlayer?.weight_kg ?? ""}
+          value={weightKg}
+          onChange={(event) => setWeightKg(event.target.value)}
         />
       </div>
 
@@ -155,15 +185,37 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
         name="birth_date"
         type="date"
         label="Fecha de nacimiento"
-        defaultValue={initialPlayer?.birth_date ?? ""}
+        value={birthDate}
+        onChange={(event) => setBirthDate(event.target.value)}
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <TextField id="city" name="city" type="text" label="Ciudad" defaultValue={initialPlayer?.city ?? ""} />
-        <TextField id="province" name="province" type="text" label="Provincia" defaultValue={initialPlayer?.province ?? ""} />
+        <TextField
+          id="city"
+          name="city"
+          type="text"
+          label="Ciudad"
+          value={city}
+          onChange={(event) => setCity(event.target.value)}
+        />
+        <TextField
+          id="province"
+          name="province"
+          type="text"
+          label="Provincia"
+          value={province}
+          onChange={(event) => setProvince(event.target.value)}
+        />
       </div>
 
-      <TextField id="phone" name="phone" type="tel" label="Teléfono" defaultValue={initialPlayer?.phone ?? ""} />
+      <TextField
+        id="phone"
+        name="phone"
+        type="tel"
+        label="Teléfono"
+        value={phone}
+        onChange={(event) => setPhone(event.target.value)}
+      />
 
       <div className="flex flex-col gap-1">
         <label htmlFor="bio" className="text-sm font-medium text-zinc-900">
@@ -174,13 +226,19 @@ export default function PlayerProfileForm({ initialFullName, initialPlayer }: Pr
           name="bio"
           maxLength={1000}
           rows={4}
-          defaultValue={initialPlayer?.bio ?? ""}
+          value={bio}
+          onChange={(event) => setBio(event.target.value)}
           className={SELECT_CLASS}
         />
       </div>
 
       <label className="flex items-center gap-2 text-sm text-zinc-900">
-        <input type="checkbox" name="is_seeking_team" defaultChecked={initialPlayer?.is_seeking_team ?? true} />
+        <input
+          type="checkbox"
+          name="is_seeking_team"
+          checked={isSeekingTeam}
+          onChange={(event) => setIsSeekingTeam(event.target.checked)}
+        />
         Busco equipo
       </label>
 
