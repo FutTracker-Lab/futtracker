@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import PlayerProfileForm from "./PlayerProfileForm";
 import { getPlayerById } from "@/lib/data/players";
+import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function EditPlayerProfilePage() {
@@ -11,7 +12,7 @@ export default async function EditPlayerProfilePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?redirectTo=/jugadores/mi-perfil/editar");
+    redirect(`/login?redirectTo=${RouteConstants.profile.edit}`);
   }
 
   const { data: profile } = await supabase

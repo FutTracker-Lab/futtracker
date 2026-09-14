@@ -4,6 +4,7 @@ import Link from "next/link";
 import PlayerProfileDetails from "@/components/player/PlayerProfileDetails";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
 import { getPlayerById } from "@/lib/data/players";
+import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
 // proxy.ts ya protege /jugadores/**, pero acá necesitamos el id del usuario
@@ -16,7 +17,7 @@ export default async function MyPlayerProfilePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?redirectTo=/jugadores/mi-perfil");
+    redirect(`/login?redirectTo=${RouteConstants.profile.mine}`);
   }
 
   const { data: profile } = await supabase
@@ -38,7 +39,7 @@ export default async function MyPlayerProfilePage() {
       <div className="flex items-start justify-between gap-4">
         <PlayerProfileHeader profile={profile} isOwner hasPlayerRow={player !== null} />
         <Link
-          href="/jugadores/mi-perfil/editar"
+          href={RouteConstants.profile.edit}
           className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
         >
           {player ? "Editar perfil" : "Completá tu perfil"}
