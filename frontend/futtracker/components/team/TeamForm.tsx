@@ -20,11 +20,14 @@ import Card from "@/components/ui/Card";
 import SelectField from "@/components/ui/SelectField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import TextField from "@/components/ui/TextField";
+import Toast from "@/components/ui/Toast";
 import { teamInputSchema, type Team } from "@/lib/data/teams";
 import { RouteConstants } from "@/lib/routes";
 
+// `savedAt` marca cada guardado exitoso: es lo que le cambia la `key` al
+// toast para que se muestre de nuevo si se guarda dos veces seguidas.
 type FormState =
-  | { ok: true }
+  | { ok: true; savedAt?: number }
   | { ok: false; error?: string; fieldErrors?: TeamFormErrors };
 
 const INITIAL_STATE: FormState = { ok: true };
@@ -83,9 +86,12 @@ export default function TeamForm({ team, initialCrestUrl }: Props) {
       // editar alcanza con refrescar los datos del servidor.
       if (team) {
         router.refresh();
-      } else {
-        router.push(RouteConstants.team.view(result.teamId));
+        // Al crear no hace falta: el redirect al perfil del equipo nuevo ya es
+        // la confirmación. Editando, sin esto, guardar no se ve (requisito 9).
+        return { ok: true, savedAt: Date.now() };
       }
+
+      router.push(RouteConstants.team.view(result.teamId));
       return { ok: true };
     }
 
@@ -108,6 +114,10 @@ export default function TeamForm({ team, initialCrestUrl }: Props) {
 
   return (
     <form action={action} className="flex flex-col gap-6">
+      {state.ok && state.savedAt ? (
+        <Toast key={state.savedAt} message="Guardamos los cambios." />
+      ) : null}
+
       {bannerErrors.length > 0 ? (
         <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
           {bannerErrors.map((message) => (

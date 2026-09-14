@@ -24,6 +24,16 @@ export default function TeamProfileDetails({
   return (
     <div className="flex flex-col gap-6">
       <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+        {/* El requisito 1 pide el club además del nombre. El formulario edita
+            un solo campo, que va a `name` (decisión 4 de las discrepancias),
+            así que `club_name` es un dato de lectura: se muestra si la fila lo
+            trae y se omite si está vacío, en vez de dejar una fila en "—". */}
+        {team.club_name ? (
+          <div>
+            <dt className="text-zinc-500">Club</dt>
+            <dd className="font-medium text-zinc-900">{team.club_name}</dd>
+          </div>
+        ) : null}
         <div>
           <dt className="text-zinc-500">Categoría</dt>
           <dd className="font-medium text-zinc-900">{team.category ?? "—"}</dd>
