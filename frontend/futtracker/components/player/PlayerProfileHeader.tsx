@@ -1,13 +1,7 @@
+import { initialsOf } from "@/lib/format/initials";
 import type { Tables } from "@/lib/supabase/database.types";
 
 type Profile = Tables<"profiles">;
-
-function initialsOf(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-  return (first + last).toUpperCase();
-}
 
 type Props = {
   profile: Profile;

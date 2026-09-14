@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { Player } from "@/lib/data/players";
 import { calculateAge } from "@/lib/format/age";
-import { POSITION_LABELS, PREFERRED_FOOT_LABELS } from "@/lib/format/playerLabels";
+import { getPositionLabel, getPreferredFootLabel } from "@/lib/format/playerLabels";
 
 type Props = {
   player: Player;
@@ -19,23 +19,19 @@ export default function PlayerProfileDetails({
   statsSlot,
 }: Props) {
   const age = calculateAge(player.birth_date);
+  const positionLabel = getPositionLabel(player.position);
+  const preferredFootLabel = getPreferredFootLabel(player.preferred_foot);
 
   return (
     <div className="flex flex-col gap-6">
       <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
         <div>
           <dt className="text-zinc-500">Posición</dt>
-          <dd className="font-medium text-zinc-900">
-            {player.position ? POSITION_LABELS[player.position as keyof typeof POSITION_LABELS] : "—"}
-          </dd>
+          <dd className="font-medium text-zinc-900">{positionLabel ?? "—"}</dd>
         </div>
         <div>
           <dt className="text-zinc-500">Pierna hábil</dt>
-          <dd className="font-medium text-zinc-900">
-            {player.preferred_foot
-              ? PREFERRED_FOOT_LABELS[player.preferred_foot as keyof typeof PREFERRED_FOOT_LABELS]
-              : "—"}
-          </dd>
+          <dd className="font-medium text-zinc-900">{preferredFootLabel ?? "—"}</dd>
         </div>
         <div>
           <dt className="text-zinc-500">Edad</dt>

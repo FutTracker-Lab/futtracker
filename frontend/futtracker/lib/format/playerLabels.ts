@@ -18,3 +18,20 @@ export const PREFERRED_FOOT_LABELS: Record<
   izquierda: "Izquierda",
   ambidiestro: "Ambidiestro",
 };
+
+// `player.position`/`player.preferred_foot` son `text` con `check` en la
+// base (no un enum), así que el tipo generado es `string | null` — más ancho
+// que las claves de estos mapas. Bug de review en PR #9: castear con `as
+// keyof typeof` sin chequear pertenencia hace que un valor no contemplado
+// (dato viejo, check constraint relajada a mano) renderice `undefined` en
+// vez de caer al fallback "—". Estas funciones son el único punto donde se
+// lee cualquiera de los dos mapas, así que el chequeo vive acá una sola vez.
+export function getPositionLabel(position: string | null): string | null {
+  if (!position || !(position in POSITION_LABELS)) return null;
+  return POSITION_LABELS[position as keyof typeof POSITION_LABELS];
+}
+
+export function getPreferredFootLabel(foot: string | null): string | null {
+  if (!foot || !(foot in PREFERRED_FOOT_LABELS)) return null;
+  return PREFERRED_FOOT_LABELS[foot as keyof typeof PREFERRED_FOOT_LABELS];
+}
