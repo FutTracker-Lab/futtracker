@@ -41,6 +41,7 @@ export default async function EditPlayerProfilePage() {
           initialPlayer={player}
           initialAvatarUrl={avatarUrl}
           initialAvatarPath={profile.avatar_path}
+          userId={user.id}
         />
       </div>
     </div>

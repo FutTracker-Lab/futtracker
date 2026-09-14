@@ -20,7 +20,7 @@ export default function AppMobileNav({ role }: Props) {
   const items = NAV_ITEMS_BY_ROLE[role];
 
   return (
-    <header className="flex flex-col gap-3 bg-panel p-4 text-panel-foreground md:hidden">
+    <header className="flex shrink-0 flex-col gap-3 bg-panel p-4 text-panel-foreground md:hidden">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-sm font-bold text-brand-foreground">
