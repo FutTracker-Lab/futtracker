@@ -74,3 +74,32 @@ values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '66666666-6666-4666-8666-666666666666', 'Club Atlético Pilar', 'Club Atlético Pilar', 'Primera', 'Liga de Pilar', 'Pilar', 'Buenos Aires', 'AR', -34.458300, -58.914200, 1954, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/escudo.png', 'Club de barrio con cancha propia. Entrenamos martes y jueves.', 'delegado@example.com'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '77777777-7777-4777-8777-777777777777', 'Racing de Rosario', 'Racing de Rosario', 'Reserva', 'Liga Rosarina', 'Rosario', 'Santa Fe', 'AR', -32.944200, -60.650500, 1978, null, 'Plantel joven de reserva. Buscamos arquero para el torneo.', null),
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', '88888888-8888-4888-8888-888888888888', 'Deportivo Córdoba', 'Deportivo Córdoba', 'Primera', 'Liga Cordobesa', 'Córdoba', 'Córdoba', 'AR', -31.420100, -64.188800, 1991, null, 'Fútbol 11 los domingos. Tres ascensos en la última década.', null);
+
+-- Trayectoria. Cada jugador tiene una sola entrada abierta (`is_current` con
+-- `end_date` nula, que es lo que exige el check de la tabla) y el resto
+-- cerradas, encadenadas desde las inferiores hasta la actual.
+--
+-- `team_id` va en null en todas: son clubes de la carrera del jugador, no
+-- equipos dados de alta en la app. Los tres equipos de arriba son de delegados
+-- y ninguno coincide con estos.
+insert into public.career_entries (
+  player_id, team_id, club_name, category, position, start_date, end_date, is_current
+)
+values
+  ('11111111-1111-4111-8111-111111111111', null, 'Club Atlético Platense', 'Sexta división', 'delantero', '2015-03-01', '2017-12-15', false),
+  ('11111111-1111-4111-8111-111111111111', null, 'Deportivo Morón', 'Reserva', 'delantero', '2018-02-10', '2021-06-30', false),
+  ('11111111-1111-4111-8111-111111111111', null, 'Club Atlético Fénix', 'Primera', 'delantero', '2021-08-01', null, true),
+
+  ('22222222-2222-4222-8222-222222222222', null, 'Club Atlético Central Córdoba de Rosario', 'Reserva', 'arquero', '2014-02-15', '2018-11-30', false),
+  ('22222222-2222-4222-8222-222222222222', null, 'Club Atlético Tiro Federal Argentino', 'Primera', 'arquero', '2019-01-20', null, true),
+
+  ('33333333-3333-4333-8333-333333333333', null, 'Club Atlético Belgrano', 'Sexta división', 'mediocampista', '2016-03-05', '2018-12-10', false),
+  ('33333333-3333-4333-8333-333333333333', null, 'Instituto Atlético Central Córdoba', 'Reserva', 'mediocampista', '2019-02-01', '2022-07-15', false),
+  ('33333333-3333-4333-8333-333333333333', null, 'Club Atlético Talleres', 'Primera', 'mediocampista', '2022-08-01', null, true),
+
+  ('44444444-4444-4444-8444-444444444444', null, 'Club de Gimnasia y Esgrima La Plata', 'Quinta división', 'defensor', '2010-02-20', '2013-11-25', false),
+  ('44444444-4444-4444-8444-444444444444', null, 'Club Atlético Villa San Carlos', 'Reserva', 'defensor', '2014-01-15', '2019-12-20', false),
+  ('44444444-4444-4444-8444-444444444444', null, 'Club Everton de La Plata', 'Primera', 'defensor', '2020-02-10', null, true),
+
+  ('55555555-5555-4555-8555-555555555555', null, 'Club Atlético Gimnasia y Esgrima de Mendoza', 'Sexta división', 'mediocampista', '2018-04-02', '2021-11-20', false),
+  ('55555555-5555-4555-8555-555555555555', null, 'Club Deportivo Godoy Cruz Antonio Tomba', 'Reserva', 'mediocampista', '2022-02-14', null, true);
