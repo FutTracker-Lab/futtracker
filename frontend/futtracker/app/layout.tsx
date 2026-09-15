@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import SignOutButton from "@/components/auth/SignOutButton";
-import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,28 +18,17 @@ export const metadata: Metadata = {
   description: "Seguimiento de jugadores y equipos de fútbol amateur.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // Chequeo optimista de UX, igual que el de proxy.ts: solo decide si se
-  // muestra el botón de cerrar sesión. La autorización real la hacen RLS y
-  // los chequeos dentro de cada Server Action.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+// El sidebar de navegación no vive acá: por ahora solo existe para las
+// pantallas de /jugadores (ver app/jugadores/layout.tsx). No hay nada que
+// mostrar todavía en "/" ni en /login, así que el layout raíz se mantiene
+// sin chrome propio — cada sección de la app decide el suyo.
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es-AR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        {user ? (
-          <header className="flex justify-end border-b border-zinc-200 p-4">
-            <SignOutButton />
-          </header>
-        ) : null}
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col bg-white">{children}</body>
     </html>
   );
 }
