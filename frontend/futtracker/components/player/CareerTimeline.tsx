@@ -57,17 +57,32 @@ export default async function CareerTimeline({
     <section className="flex flex-col gap-4" aria-labelledby={HEADING_ID}>
       {totalsSlot}
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id={HEADING_ID} className="text-base font-semibold text-zinc-900">
-            Trayectoria
-          </h2>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-0.5">
+            {/* "Etapas" y no "Trayectoria": así lo titula la tarjeta en el
+                diseño, y el <h1> de la pantalla ya dice "Tu trayectoria". */}
+            <h2
+              id={HEADING_ID}
+              className="text-lg font-semibold text-zinc-900"
+            >
+              Etapas
+            </h2>
+            {entries.length > 0 ? (
+              <p className="text-sm text-zinc-500">
+                {entries.length === 1 ? "1 club" : `${entries.length} clubes`}
+              </p>
+            ) : null}
+          </div>
           {isOwner && entries.length > 0 ? (
             // Alta y edición de etapas son de T06b (fuera de alcance acá,
-            // ver "Alcance" del ticket): botón inerte para respetar el
-            // diseño sin cablear una ruta que todavía no existe.
+            // ver "Alcance" del ticket). Va `disabled` y no como <Link>:
+            // la ruta no existe y un botón vivo que no hace nada se lee
+            // como un bug.
             <button
               type="button"
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+              disabled
+              title="La carga de etapas llega en la próxima entrega."
+              className="shrink-0 cursor-not-allowed rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 opacity-50"
             >
               + Agregar club
             </button>

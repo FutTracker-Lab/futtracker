@@ -25,3 +25,19 @@ export function splitVisibleEntries(
 export function getClubHref(entry: CareerTimelineEntry): string | null {
   return entry.team_id ? RouteConstants.team.view(entry.team_id) : null;
 }
+
+// El diseño (ScreenTrayectoria.jsx) muestra la posición como un badge verde
+// corto al lado de la categoría, no como palabra completa. Vive acá y no en
+// `lib/format/playerLabels.ts` porque esa abreviatura es de esta pantalla:
+// el resto del perfil sigue mostrando "Mediocampista" entero.
+const POSITION_ABBREVIATIONS: Record<string, string> = {
+  arquero: "ARQ",
+  defensor: "DEF",
+  mediocampista: "MC",
+  delantero: "DEL",
+};
+
+export function getPositionAbbreviation(position: string | null): string | null {
+  if (!position) return null;
+  return POSITION_ABBREVIATIONS[position] ?? null;
+}

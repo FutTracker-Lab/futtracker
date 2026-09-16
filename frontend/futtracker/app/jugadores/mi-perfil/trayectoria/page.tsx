@@ -44,18 +44,25 @@ export default async function MyCareerPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-zinc-900">Tu trayectoria</h1>
-        <p className="text-sm text-zinc-500">
-          Los clubes la miran antes que cualquier otra cosa. Podés cargar
-          etapas que se solapen.
-        </p>
-      </div>
+    // `bg-zinc-50` acá y no en el <main> de AppShell: el diseño pide fondo
+    // gris con tarjetas blancas, pero cambiarlo en el shell se lo aplica a
+    // todas las pantallas de la app y eso excede este ticket.
+    <div className="min-h-full bg-zinc-50">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-900">
+            Tu trayectoria
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Los clubes la miran antes que cualquier otra cosa. Podés cargar
+            etapas que se solapen.
+          </p>
+        </div>
 
-      <Suspense fallback={<CareerTimelineSkeleton />}>
-        <CareerTimeline playerId={player.id} isOwner />
-      </Suspense>
+        <Suspense fallback={<CareerTimelineSkeleton />}>
+          <CareerTimeline playerId={player.id} isOwner />
+        </Suspense>
+      </div>
     </div>
   );
 }
