@@ -11,6 +11,10 @@ import {
 } from "@/lib/data/careerTimeline";
 import { createClient } from "@/lib/supabase/server";
 
+// Id fijo: la sección aparece una sola vez por perfil, así que no hace falta
+// `useId()` (que además no puede usarse en un Server Component async).
+const HEADING_ID = "career-timeline-heading";
+
 type Props = {
   playerId: string;
   isOwner: boolean;
@@ -47,11 +51,14 @@ export default async function CareerTimeline({
   const { visible, collapsed } = splitVisibleEntries(entries);
 
   return (
-    <section className="flex flex-col gap-4" aria-label="Trayectoria">
+    // `aria-labelledby` y no `aria-label`: con las dos cosas el lector de
+    // pantalla anuncia "Trayectoria" dos veces, una por la región y otra por
+    // el encabezado. Apuntando al <h2> hay un solo nombre accesible.
+    <section className="flex flex-col gap-4" aria-labelledby={HEADING_ID}>
       {totalsSlot}
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-900">
+          <h2 id={HEADING_ID} className="text-base font-semibold text-zinc-900">
             Trayectoria
           </h2>
           {isOwner && entries.length > 0 ? (
