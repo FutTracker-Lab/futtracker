@@ -37,5 +37,7 @@ select
 from public.match_stats ms
 group by ms.player_id;
 
-grant select on table public.season_stats to authenticated;
-grant select on table public.player_career_totals to authenticated;
+-- El select a `anon` es a propósito: sin policy para ese rol en `match_stats`,
+-- una consulta anónima devuelve 0 filas en vez de un 42501.
+grant select on table public.season_stats to anon, authenticated;
+grant select on table public.player_career_totals to anon, authenticated;
