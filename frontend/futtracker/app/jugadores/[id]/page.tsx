@@ -17,6 +17,13 @@ export async function generateMetadata({
   return { title: data?.profile.full_name ?? "FutTracker" };
 }
 
+// Sin `loading.tsx` en este segmento a propósito: un `loading.tsx` abre un
+// boundary de Suspense, la respuesta empieza a streamear como 200 y el
+// `notFound()` posterior ya no puede cambiar el status. El criterio de
+// aceptación de FUT-87 pide 404 real para un id inexistente, y eso solo se
+// consigue resolviendo antes de que arranque el stream. Las rutas que no
+// llaman a `notFound()` (/jugadores/mi-perfil) sí conservan su skeleton.
+//
 // La ruta ya está protegida por proxy.ts (redirige a /login sin sesión), así
 // que acá solo falta resolver si el visitante es el dueño del perfil, para
 // mostrar el botón de editar.
