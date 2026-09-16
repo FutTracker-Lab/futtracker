@@ -50,6 +50,7 @@ type Props = {
   initialPlayer: Player | null;
   initialAvatarUrl: string | null;
   initialAvatarPath: string | null;
+  userId: string;
 };
 
 export default function PlayerProfileForm({
@@ -57,6 +58,7 @@ export default function PlayerProfileForm({
   initialPlayer,
   initialAvatarUrl,
   initialAvatarPath,
+  userId,
 }: Props) {
   const router = useRouter();
   const [success, setSuccess] = useState(false);
@@ -150,6 +152,7 @@ export default function PlayerProfileForm({
         onChange={setField}
         initialAvatarUrl={initialAvatarUrl}
         initialAvatarPath={initialAvatarPath}
+        userId={userId}
       />
 
       <PlayStyleSection

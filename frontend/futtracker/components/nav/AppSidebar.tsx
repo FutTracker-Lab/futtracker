@@ -25,7 +25,7 @@ export default function AppSidebar({ fullName, role }: Props) {
   const items = NAV_ITEMS_BY_ROLE[role];
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col justify-between bg-panel p-4 text-panel-foreground md:flex">
+    <aside className="hidden h-full w-64 shrink-0 flex-col justify-between overflow-y-auto bg-panel p-4 text-panel-foreground md:flex">
       <div>
         <div className="mb-8 flex items-center gap-2 px-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-sm font-bold text-brand-foreground">

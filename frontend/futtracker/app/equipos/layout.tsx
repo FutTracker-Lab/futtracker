@@ -1,5 +1,5 @@
 import AppShell from "@/components/nav/AppShell";
 
-export default function JugadoresLayout({ children }: LayoutProps<"/jugadores">) {
+export default function EquiposLayout({ children }: LayoutProps<"/equipos">) {
   return <AppShell>{children}</AppShell>;
 }
