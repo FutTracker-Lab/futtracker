@@ -12,6 +12,10 @@ export const RouteConstants = {
     view: (id: string) => `/jugadores/${id}`,
     mine: "/jugadores/mi-perfil",
     edit: "/jugadores/mi-perfil/editar",
+    // FUT-91. La CTA del estado vacío apunta a `${career}/nueva`, que crea
+    // T06b: por eso la trayectoria propia cuelga de acá y no es una ruta
+    // suelta.
+    career: "/jugadores/mi-perfil/trayectoria",
   },
   team: {
     view: (id: string) => `/equipos/${id}`,

@@ -16,6 +16,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
   player: [
     { href: RouteConstants.profile.mine, label: "Mi perfil" },
     { href: RouteConstants.profile.edit, label: "Editar perfil" },
+    { href: RouteConstants.profile.career, label: "Trayectoria" },
   ],
   // El delegado no tiene "editar" fijo porque la ruta depende del id de su
   // equipo, y puede no tener ninguno todavía: "Mi equipo" resuelve los dos
