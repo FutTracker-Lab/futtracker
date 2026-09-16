@@ -104,10 +104,12 @@ values
   ('55555555-5555-4555-8555-555555555555', null, 'Club Atlético Gimnasia y Esgrima de Mendoza', 'Sexta división', 'mediocampista', '2018-04-02', '2021-11-20', false),
   ('55555555-5555-4555-8555-555555555555', null, 'Club Deportivo Godoy Cruz Antonio Tomba', 'Reserva', 'mediocampista', '2022-02-14', null, true);
 
--- Partidos. El `career_entry_id` sale del join por jugador y club porque los ids
--- de la trayectoria son aleatorios. Casos a propósito, no los "arregles":
--- Diego no juega en 2025 (hueco), Sofía juega en dos clubes en 2022 y Martín
--- mezcla vallas invictas con partidos donde le hicieron goles.
+-- Partidos. El `career_entry_id` sale del join por jugador, club y período
+-- porque los ids de la trayectoria son aleatorios; sin el período, un jugador
+-- que vuelve al mismo club duplicaría los partidos. Casos a propósito, no los
+-- "arregles": Diego no juega en 2025 (hueco), Lucía (2021) y Sofía (2022)
+-- juegan en dos clubes el mismo año y Martín mezcla vallas invictas con
+-- partidos donde le hicieron goles.
 insert into public.match_stats (
   career_entry_id, player_id, match_date, opponent, competition, started,
   minutes_played, goals, assists, yellow_cards, red_cards, clean_sheet
@@ -160,4 +162,5 @@ from (
 )
 join public.career_entries ce
   on ce.player_id = v.player_id::uuid
-  and ce.club_name = v.club_name;
+  and ce.club_name = v.club_name
+  and v.match_date::date between ce.start_date and coalesce(ce.end_date, v.match_date::date);
