@@ -103,3 +103,64 @@ values
 
   ('55555555-5555-4555-8555-555555555555', null, 'Club Atlético Gimnasia y Esgrima de Mendoza', 'Sexta división', 'mediocampista', '2018-04-02', '2021-11-20', false),
   ('55555555-5555-4555-8555-555555555555', null, 'Club Deportivo Godoy Cruz Antonio Tomba', 'Reserva', 'mediocampista', '2022-02-14', null, true);
+
+-- Partidos. El `career_entry_id` sale del join por jugador, club y período
+-- porque los ids de la trayectoria son aleatorios; sin el período, un jugador
+-- que vuelve al mismo club duplicaría los partidos. Casos a propósito, no los
+-- "arregles": Diego no juega en 2025 (hueco), Lucía (2021) y Sofía (2022)
+-- juegan en dos clubes el mismo año y Martín mezcla vallas invictas con
+-- partidos donde le hicieron goles.
+insert into public.match_stats (
+  career_entry_id, player_id, match_date, opponent, competition, started,
+  minutes_played, goals, assists, yellow_cards, red_cards, clean_sheet
+)
+select
+  ce.id, ce.player_id, v.match_date::date, v.opponent, v.competition, v.started,
+  v.minutes_played, v.goals, v.assists, v.yellow_cards, v.red_cards, v.clean_sheet
+from (
+  values
+    ('11111111-1111-4111-8111-111111111111', 'Deportivo Morón', '2021-03-14', 'Club Atlético Acassuso', 'Primera B', true, 90, 1, 0, 0, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Deportivo Morón', '2021-04-18', 'Club Atlético Colegiales', 'Primera B', true, 78, 0, 1, 1, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Deportivo Morón', '2021-05-23', 'Club Social y Deportivo Flandria', 'Primera B', false, 25, 1, 0, 0, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Club Atlético Fénix', '2021-09-12', 'Club Atlético San Miguel', 'Primera B', true, 90, 2, 0, 0, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Club Atlético Fénix', '2021-10-17', 'Club Atlético Excursionistas', 'Primera B', true, 84, 0, 0, 1, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Club Atlético Fénix', '2023-04-02', 'Club Atlético Talleres de Remedios de Escalada', 'Primera B', true, 90, 1, 1, 0, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Club Atlético Fénix', '2023-05-07', 'Club Atlético Los Andes', 'Primera B', false, 30, 0, 0, 0, 0, false),
+    ('11111111-1111-4111-8111-111111111111', 'Club Atlético Fénix', '2023-06-11', 'Club Comunicaciones', 'Primera B', true, 67, 1, 0, 0, 1, false),
+
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Central Córdoba de Rosario', '2017-09-03', 'Club Atlético Argentino de Rosario', 'Primera C', true, 90, 0, 0, 0, 0, true),
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Tiro Federal Argentino', '2023-03-05', 'Club Atlético Argentino de Rosario', 'Liga Rosarina', true, 90, 0, 0, 0, 0, true),
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Tiro Federal Argentino', '2023-03-19', 'Club Atlético Newell''s Old Boys', 'Liga Rosarina', true, 90, 0, 0, 1, 0, false),
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Tiro Federal Argentino', '2023-04-09', 'Club Atlético Rosario Central', 'Liga Rosarina', true, 90, 0, 0, 0, 0, true),
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Tiro Federal Argentino', '2024-03-10', 'Club Atlético Provincial', 'Liga Rosarina', true, 90, 0, 0, 0, 0, true),
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Tiro Federal Argentino', '2024-04-14', 'Club Atlético Calzada', 'Liga Rosarina', true, 90, 0, 0, 0, 0, false),
+    ('22222222-2222-4222-8222-222222222222', 'Club Atlético Tiro Federal Argentino', '2024-05-19', 'Club Atlético Argentino de Rosario', 'Liga Rosarina', false, 45, 0, 0, 0, 0, false),
+
+    ('33333333-3333-4333-8333-333333333333', 'Instituto Atlético Central Córdoba', '2021-10-03', 'Club Atlético Racing de Córdoba', 'Liga Cordobesa', true, 90, 0, 1, 0, 0, false),
+    ('33333333-3333-4333-8333-333333333333', 'Instituto Atlético Central Córdoba', '2021-11-07', 'Club Atlético General Paz Juniors', 'Liga Cordobesa', true, 72, 1, 0, 1, 0, false),
+    ('33333333-3333-4333-8333-333333333333', 'Instituto Atlético Central Córdoba', '2022-03-13', 'Asociación Atlética Estudiantes de Río Cuarto', 'Liga Cordobesa', true, 90, 0, 2, 0, 0, false),
+    ('33333333-3333-4333-8333-333333333333', 'Instituto Atlético Central Córdoba', '2022-05-22', 'Club Sportivo Belgrano de San Francisco', 'Liga Cordobesa', false, 20, 0, 0, 0, 0, false),
+    ('33333333-3333-4333-8333-333333333333', 'Club Atlético Talleres', '2022-09-04', 'Club Atlético Racing de Córdoba', 'Liga Cordobesa', true, 90, 1, 1, 0, 0, false),
+    ('33333333-3333-4333-8333-333333333333', 'Club Atlético Talleres', '2022-10-16', 'Club Atlético Universitario de Córdoba', 'Liga Cordobesa', true, 85, 0, 1, 1, 0, false),
+    ('33333333-3333-4333-8333-333333333333', 'Club Atlético Talleres', '2023-04-23', 'Club Atlético General Paz Juniors', 'Liga Cordobesa', true, 90, 0, 0, 0, 0, false),
+
+    ('44444444-4444-4444-8444-444444444444', 'Club Everton de La Plata', '2024-03-17', 'Club Atlético Cambaceres', 'Liga Amateur Platense', true, 90, 0, 0, 1, 0, false),
+    ('44444444-4444-4444-8444-444444444444', 'Club Everton de La Plata', '2024-04-21', 'Club Atlético Estrella de Berisso', 'Liga Amateur Platense', true, 90, 1, 0, 0, 0, false),
+    ('44444444-4444-4444-8444-444444444444', 'Club Everton de La Plata', '2024-06-02', 'Club Atlético Villa San Carlos', 'Liga Amateur Platense', true, 90, 0, 0, 1, 0, false),
+    ('44444444-4444-4444-8444-444444444444', 'Club Everton de La Plata', '2026-03-15', 'Club Atlético Brandsen', 'Liga Amateur Platense', true, 90, 0, 1, 0, 0, false),
+    ('44444444-4444-4444-8444-444444444444', 'Club Everton de La Plata', '2026-04-19', 'Club Atlético Cambaceres', 'Liga Amateur Platense', false, 15, 0, 0, 0, 0, false),
+    ('44444444-4444-4444-8444-444444444444', 'Club Everton de La Plata', '2026-05-24', 'Club Atlético Estrella de Berisso', 'Liga Amateur Platense', true, 64, 0, 0, 1, 1, false),
+
+    ('55555555-5555-4555-8555-555555555555', 'Club Atlético Gimnasia y Esgrima de Mendoza', '2021-05-09', 'Club Sportivo Independiente Rivadavia', 'Liga Mendocina', false, 30, 0, 1, 0, 0, false),
+    ('55555555-5555-4555-8555-555555555555', 'Club Atlético Gimnasia y Esgrima de Mendoza', '2021-08-15', 'Club Deportivo Maipú', 'Liga Mendocina', true, 90, 1, 0, 0, 0, false),
+    ('55555555-5555-4555-8555-555555555555', 'Club Deportivo Godoy Cruz Antonio Tomba', '2023-04-16', 'Club Atlético San Martín de Mendoza', 'Liga Mendocina', true, 90, 0, 1, 0, 0, false),
+    ('55555555-5555-4555-8555-555555555555', 'Club Deportivo Godoy Cruz Antonio Tomba', '2023-06-25', 'Club Deportivo Maipú', 'Liga Mendocina', true, 80, 2, 0, 1, 0, false),
+    ('55555555-5555-4555-8555-555555555555', 'Club Deportivo Godoy Cruz Antonio Tomba', '2024-09-08', 'Club Sportivo Independiente Rivadavia', 'Liga Mendocina', true, 90, 1, 2, 0, 0, false)
+) as v (
+  player_id, club_name, match_date, opponent, competition, started,
+  minutes_played, goals, assists, yellow_cards, red_cards, clean_sheet
+)
+join public.career_entries ce
+  on ce.player_id = v.player_id::uuid
+  and ce.club_name = v.club_name
+  and v.match_date::date between ce.start_date and coalesce(ce.end_date, v.match_date::date);

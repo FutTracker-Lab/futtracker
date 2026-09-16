@@ -91,6 +91,75 @@ export type Database = {
           },
         ]
       }
+      match_stats: {
+        Row: {
+          assists: number
+          career_entry_id: string
+          clean_sheet: boolean
+          competition: string | null
+          created_at: string
+          goals: number
+          id: string
+          match_date: string
+          minutes_played: number
+          opponent: string
+          player_id: string
+          red_cards: number
+          started: boolean
+          updated_at: string
+          yellow_cards: number
+        }
+        Insert: {
+          assists?: number
+          career_entry_id: string
+          clean_sheet?: boolean
+          competition?: string | null
+          created_at?: string
+          goals?: number
+          id?: string
+          match_date: string
+          minutes_played?: number
+          opponent: string
+          player_id: string
+          red_cards?: number
+          started?: boolean
+          updated_at?: string
+          yellow_cards?: number
+        }
+        Update: {
+          assists?: number
+          career_entry_id?: string
+          clean_sheet?: boolean
+          competition?: string | null
+          created_at?: string
+          goals?: number
+          id?: string
+          match_date?: string
+          minutes_played?: number
+          opponent?: string
+          player_id?: string
+          red_cards?: number
+          started?: boolean
+          updated_at?: string
+          yellow_cards?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_stats_career_entry_id_fkey"
+            columns: ["career_entry_id"]
+            isOneToOne: false
+            referencedRelation: "career_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           bio: string | null
@@ -253,7 +322,61 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      player_career_totals: {
+        Row: {
+          clubs_count: number | null
+          goals_per_match: number | null
+          player_id: string | null
+          seasons_count: number | null
+          total_assists: number | null
+          total_clean_sheets: number | null
+          total_goals: number | null
+          total_matches: number | null
+          total_minutes: number | null
+          total_red: number | null
+          total_yellow: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_stats: {
+        Row: {
+          assists: number | null
+          career_entry_id: string | null
+          clean_sheets: number | null
+          goals: number | null
+          matches_played: number | null
+          matches_started: number | null
+          minutes_played: number | null
+          player_id: string | null
+          red_cards: number | null
+          season_year: number | null
+          yellow_cards: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_stats_career_entry_id_fkey"
+            columns: ["career_entry_id"]
+            isOneToOne: false
+            referencedRelation: "career_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       is_team_owner: { Args: { team: string }; Returns: boolean }
