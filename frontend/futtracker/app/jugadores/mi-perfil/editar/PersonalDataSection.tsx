@@ -17,6 +17,7 @@ type Props = {
   ) => void;
   initialAvatarUrl: string | null;
   initialAvatarPath: string | null;
+  userId: string;
 };
 
 // Sin "use client": no usa hooks, y al importarlo un Client Component ya
@@ -27,11 +28,13 @@ export default function PersonalDataSection({
   onChange,
   initialAvatarUrl,
   initialAvatarPath,
+  userId,
 }: Props) {
   return (
     <Card title="Datos personales">
       <div className="flex flex-col gap-4">
         <AvatarUploader
+          userId={userId}
           fullName={values.fullName}
           initialAvatarUrl={initialAvatarUrl}
           initialAvatarPath={initialAvatarPath}
