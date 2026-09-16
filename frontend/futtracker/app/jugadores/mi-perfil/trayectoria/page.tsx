@@ -48,7 +48,11 @@ export default async function MyCareerPage() {
     // gris con tarjetas blancas, pero cambiarlo en el shell se lo aplica a
     // todas las pantallas de la app y eso excede este ticket.
     <div className="min-h-full bg-zinc-50">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+      {/* `max-w-5xl` y no el `max-w-2xl` del resto del perfil: en el diseño
+          la tarjeta ocupa cerca de tres cuartos del ancho disponible, no una
+          columna angosta centrada. El contenedor más ancho además acerca el
+          título al nav, que es como se ve en la referencia. */}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900">
             Tu trayectoria
