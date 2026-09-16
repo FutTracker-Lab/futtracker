@@ -4,7 +4,7 @@ create table public.match_stats (
   player_id uuid not null references public.players (id) on delete cascade,
   match_date date not null,
   opponent text not null check (char_length(opponent) between 2 and 80),
-  competition text,
+  competition text check (char_length(competition) between 2 and 80),
   started boolean not null default true,
   minutes_played int not null default 0 check (minutes_played between 0 and 130),
   goals int not null default 0 check (goals between 0 and 20),
@@ -32,6 +32,10 @@ alter table public.match_stats enable row level security;
 
 -- `if not found` deja pasar un `career_entry_id` inexistente: lo rechaza la FK
 -- con su propio mensaje, en vez de uno de estos que no corresponde.
+--
+-- Definer para que la búsqueda de la etapa no pase por la RLS de
+-- `career_entries`: si esa policy se restringe, una etapa ajena caería en el
+-- `if not found` y el partido entraría sin validar.
 create function public.enforce_match_ownership()
 returns trigger
 language plpgsql
@@ -58,6 +62,7 @@ begin
 end;
 $$;
 
+-- Definer por lo mismo que `enforce_match_ownership`.
 create function public.enforce_goalkeeper_clean_sheet()
 returns trigger
 language plpgsql
@@ -88,6 +93,7 @@ begin
 end;
 $$;
 
+-- Definer por lo mismo que `enforce_match_ownership`.
 create function public.enforce_match_date_in_range()
 returns trigger
 language plpgsql

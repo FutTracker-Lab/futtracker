@@ -14,7 +14,7 @@ export const matchStatInputSchema = z.object({
   career_entry_id: z.uuid(),
   match_date: z.iso.date(),
   opponent: z.string().trim().min(2).max(80),
-  competition: z.string().trim().min(1).max(120).nullable(),
+  competition: z.string().trim().min(2).max(80).nullish(),
   started: z.boolean(),
   minutes_played: z.number().int().min(0).max(130),
   goals: z.number().int().min(0).max(20),

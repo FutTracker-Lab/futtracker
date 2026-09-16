@@ -34,8 +34,6 @@ const MATCH_ROW = { id: "1", opponent: "Club Atlético Provincial" } as MatchSta
 const SEASON_ROW = { player_id: PLAYER_A, season_year: 2024 } as SeasonStats;
 const TOTALS_ROW = { player_id: PLAYER_A, total_matches: 7 } as PlayerCareerTotals;
 
-// Doble con las dos cadenas que usa el módulo. Que RLS y los triggers dejen o
-// no pasar la escritura lo prueba `match_stats.rls.test.ts` contra la base.
 function fakeClient<T>({
   data = null,
   error = null,
@@ -82,9 +80,20 @@ describe("matchStatInputSchema", () => {
 
   // Los rangos duplican los `check` de la migración. Si alguien afloja uno de
   // los dos lados, estos casos lo marcan.
+  it("acepta competition ausente, igual que la base", () => {
+    const withoutCompetition: Partial<MatchStatInput> = { ...INPUT };
+    delete withoutCompetition.competition;
+
+    expect(matchStatInputSchema.safeParse(withoutCompetition).success).toBe(
+      true,
+    );
+  });
+
   it.each([
     ["opponent", "a"],
     ["opponent", "a".repeat(81)],
+    ["competition", "a"],
+    ["competition", "a".repeat(81)],
     ["minutes_played", -1],
     ["minutes_played", 200],
     ["minutes_played", 90.5],
