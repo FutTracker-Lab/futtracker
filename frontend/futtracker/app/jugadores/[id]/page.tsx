@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
+import CareerTimeline from "@/components/player/CareerTimeline";
+import CareerTimelineSkeleton from "@/components/player/CareerTimelineSkeleton";
 import PlayerProfileDetails from "@/components/player/PlayerProfileDetails";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
 import { getPlayerProfileById } from "@/lib/data/profiles";
@@ -63,7 +66,20 @@ export default async function PlayerProfilePage({
           </Link>
         ) : null}
       </div>
-      {player ? <PlayerProfileDetails player={player} /> : null}
+      {player ? (
+        <PlayerProfileDetails
+          player={player}
+          // FUT-91: ocupa el slot que ya dejaba PlayerProfileDetails para la
+          // trayectoria. Envuelto en su propio <Suspense> (nota técnica del
+          // ticket) para que el encabezado de arriba no espere a que
+          // resuelva esta consulta aparte.
+          careerSlot={
+            <Suspense fallback={<CareerTimelineSkeleton />}>
+              <CareerTimeline playerId={player.id} isOwner={isOwner} />
+            </Suspense>
+          }
+        />
+      ) : null}
     </div>
   );
 }
