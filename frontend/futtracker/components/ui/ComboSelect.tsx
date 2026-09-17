@@ -8,7 +8,10 @@ type Option = {
 };
 
 type OptionGroup = {
-  label: string;
+  // Sin label el grupo no dibuja encabezado: sirve para una lista corta que
+  // no necesita agruparse (ej. las posiciones) y que igual tiene que verse
+  // idéntica a una agrupada.
+  label?: string;
   options: Option[];
 };
 
@@ -174,7 +177,7 @@ export default function ComboSelect({
     }
 
     for (const group of groups) {
-      out.push({ kind: "group", label: group.label });
+      if (group.label) out.push({ kind: "group", label: group.label });
       for (const option of group.options) {
         i += 1;
         out.push({ kind: "option", option, index: i });

@@ -18,7 +18,6 @@ import {
 import TeamSelector from "@/app/jugadores/mi-perfil/trayectoria/TeamSelector";
 import Card from "@/components/ui/Card";
 import ComboSelect from "@/components/ui/ComboSelect";
-import SelectField from "@/components/ui/SelectField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import TextField from "@/components/ui/TextField";
 import { POSITIONS } from "@/lib/data/players";
@@ -144,14 +143,17 @@ export default function CareerEntryForm({ entry }: Props) {
               onValueChange={(next) => setField("category", next)}
               error={fieldErrors.category}
             />
-            <SelectField
+            <ComboSelect
               id="position"
               name="position"
               label="Posición en esta etapa"
-              options={POSITION_OPTIONS}
+              // Un solo grupo sin título: la lista es corta y no necesita
+              // encabezados, pero usa el mismo componente que Categoría para
+              // que los dos campos se vean iguales.
+              groups={[{ options: POSITION_OPTIONS }]}
               placeholder="Sin especificar"
               value={values.position}
-              onChange={(event) => setField("position", event.target.value)}
+              onValueChange={(next) => setField("position", next)}
               error={fieldErrors.position}
             />
           </div>
