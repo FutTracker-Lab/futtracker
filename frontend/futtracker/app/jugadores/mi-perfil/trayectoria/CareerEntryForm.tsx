@@ -139,6 +139,12 @@ export default function CareerEntryForm({ entry }: Props) {
               label="Categoría"
               options={categoryOptionsFor(values.category)}
               placeholder="Sin especificar"
+              // Lista de 5 filas con scroll y no un desplegable: con
+              // dieciocho categorías el popup nativo tapaba media pantalla,
+              // y su alto lo decide el navegador — no se puede acotar por
+              // CSS. Con `size` el alto es nuestro y se navega igual con
+              // teclado.
+              size={5}
               value={values.category}
               onChange={(event) => setField("category", event.target.value)}
               error={fieldErrors.category}
