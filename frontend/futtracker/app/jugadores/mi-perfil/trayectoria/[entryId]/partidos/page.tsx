@@ -4,8 +4,10 @@ import type { Metadata } from "next";
 
 import { groupMatchesByYear } from "@/app/jugadores/mi-perfil/trayectoria/matchStatsView";
 import YearTabs from "@/app/jugadores/mi-perfil/trayectoria/YearTabs";
+import CareerEntryPicker from "@/components/player/CareerEntryPicker";
 import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
 import Toast from "@/components/ui/Toast";
+import { getCareerEntries } from "@/lib/data/career";
 import { getCareerEntryById } from "@/lib/data/careerEntries";
 import { getCareerTotals, getMatchStats } from "@/lib/data/stats";
 import { RouteConstants } from "@/lib/routes";
@@ -46,9 +48,12 @@ export default async function CareerEntryMatchesPage({
     notFound();
   }
 
-  const [matches, totals] = await Promise.all([
+  const [matches, totals, entries] = await Promise.all([
     getMatchStats(supabase, entryId),
     getCareerTotals(supabase, user.id),
+    // Las otras etapas, para poder cambiar de club sin volver a la
+    // trayectoria. Se reusa el lector de T04c tal cual, solo de lectura.
+    getCareerEntries(supabase, user.id),
   ]);
   const groups = groupMatchesByYear(matches);
 
@@ -66,6 +71,8 @@ export default async function CareerEntryMatchesPage({
             por año de tu trayectoria en {entry.club_name}.
           </p>
         </div>
+
+        <CareerEntryPicker entries={entries} activeEntryId={entryId} />
 
         <CareerTotalsStrip
           totals={totals}
