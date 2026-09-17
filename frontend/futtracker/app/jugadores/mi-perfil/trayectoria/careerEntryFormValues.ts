@@ -79,11 +79,16 @@ export function fieldErrorsFrom(error: z.ZodError): CareerEntryFormErrors {
   return errors;
 }
 
-// Divisiones del fútbol argentino, de mayor a menor. `career_entries.category`
-// es `text` libre en la base (no hay check), así que esto es una restricción
-// de la UI y no del schema: se elige de una lista en vez de escribir a mano
-// para que "Primera", "primera" y "1ra" no convivan como categorías distintas.
-export const CATEGORY_OPTIONS = [
+// Categorías de una etapa. `career_entries.category` es `text` libre en la
+// base (no hay check), así que esto es una restricción de la UI y no del
+// schema: se elige de una lista en vez de escribir a mano para que
+// "Primera", "primera" y "1ra" no convivan como categorías distintas.
+//
+// No todo el mundo jugó en un club profesional: las divisiones formativas
+// cubren al que salió de inferiores, pero el amateur, el de liga de barrio o
+// el de fútbol 5 no tenían dónde encajar y terminaban dejando el campo
+// vacío. Por eso el segundo grupo.
+const DIVISIONES = [
   "Primera",
   "Reserva",
   "Cuarta división",
@@ -96,21 +101,45 @@ export const CATEGORY_OPTIONS = [
   "Infantiles",
 ] as const;
 
+const NO_PROFESIONALES = [
+  "Torneo amateur",
+  "Liga regional",
+  "Fútbol 5",
+  "Fútbol 7",
+  "Senior / Veteranos",
+  "Universitario",
+  "Escuelita",
+  "Otra",
+] as const;
+
+export const CATEGORY_OPTIONS = [...DIVISIONES, ...NO_PROFESIONALES] as const;
+
 /**
- * Las opciones del desplegable para un valor ya guardado. Si la etapa trae
- * una categoría que no está en la lista (dato viejo, cargado cuando el campo
- * era libre), se agrega al final en vez de descartarse: si no, abrir el
- * formulario para cambiar otra cosa le borraría la categoría al guardar.
+ * Las opciones del desplegable para un valor ya guardado, agrupadas para que
+ * la lista no sea un chorizo de dieciocho entradas sueltas.
+ *
+ * Si la etapa trae una categoría que no está en la lista (dato viejo,
+ * cargado cuando el campo era libre), se agrega en su propio grupo en vez de
+ * descartarse: si no, abrir el formulario para cambiar otra cosa le borraría
+ * la categoría al guardar.
  */
-export function categoryOptionsFor(current: string): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = CATEGORY_OPTIONS.map(
-    (value) => ({ value, label: value }),
-  );
+export function categoryOptionsFor(current: string) {
+  const asOptions = (values: readonly string[]) =>
+    values.map((value) => ({ value, label: value }));
+
+  const groups = [
+    { label: "Divisiones del club", options: asOptions(DIVISIONES) },
+    { label: "Otras categorías", options: asOptions(NO_PROFESIONALES) },
+  ];
+
   const trimmed = current.trim();
 
   if (trimmed && !CATEGORY_OPTIONS.some((value) => value === trimmed)) {
-    options.push({ value: trimmed, label: `${trimmed} (cargada antes)` });
+    groups.push({
+      label: "Cargada antes",
+      options: [{ value: trimmed, label: trimmed }],
+    });
   }
 
-  return options;
+  return groups;
 }

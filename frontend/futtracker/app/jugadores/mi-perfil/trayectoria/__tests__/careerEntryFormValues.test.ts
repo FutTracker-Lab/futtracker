@@ -99,31 +99,47 @@ describe("fieldErrorsFrom", () => {
 });
 
 describe("categoryOptionsFor", () => {
-  it("ofrece las divisiones de Primera a Infantiles", () => {
-    const options = categoryOptionsFor("");
+  const valores = (current: string) =>
+    categoryOptionsFor(current).flatMap((group) =>
+      group.options.map((option) => option.value),
+    );
 
-    expect(options).toHaveLength(CATEGORY_OPTIONS.length);
-    expect(options[0].value).toBe("Primera");
-    expect(options.at(-1)?.value).toBe("Infantiles");
+  it("ofrece las divisiones del club y también categorías no profesionales", () => {
+    const grupos = categoryOptionsFor("");
+
+    expect(grupos.map((g) => g.label)).toEqual([
+      "Divisiones del club",
+      "Otras categorías",
+    ]);
+    expect(valores("")).toEqual([...CATEGORY_OPTIONS]);
+  });
+
+  // El que nunca jugó en inferiores de un club igual tiene que poder cargar
+  // su etapa sin dejar el campo vacío.
+  it("incluye opciones para quien no jugó profesional", () => {
+    const opciones = valores("");
+
+    expect(opciones).toContain("Torneo amateur");
+    expect(opciones).toContain("Fútbol 5");
+    expect(opciones).toContain("Senior / Veteranos");
+    expect(opciones).toContain("Otra");
   });
 
   it("no duplica la opción cuando la categoría guardada ya está en la lista", () => {
-    const options = categoryOptionsFor("Reserva");
-
-    expect(options.filter((o) => o.value === "Reserva")).toHaveLength(1);
-    expect(options).toHaveLength(CATEGORY_OPTIONS.length);
+    expect(valores("Reserva").filter((v) => v === "Reserva")).toHaveLength(1);
+    expect(categoryOptionsFor("Reserva")).toHaveLength(2);
   });
 
   // El campo era texto libre antes de este ticket: hay filas con categorías
   // que no están en la lista. Sin esto, abrir el formulario para cambiar otra
   // cosa se las borraría al guardar.
-  it("conserva una categoría vieja que no está en la lista", () => {
-    const options = categoryOptionsFor("primera");
+  it("conserva una categoría vieja que no está en la lista, en su propio grupo", () => {
+    const grupos = categoryOptionsFor("primera");
 
-    expect(options).toHaveLength(CATEGORY_OPTIONS.length + 1);
-    expect(options.at(-1)).toEqual({
-      value: "primera",
-      label: "primera (cargada antes)",
+    expect(grupos).toHaveLength(3);
+    expect(grupos.at(-1)).toEqual({
+      label: "Cargada antes",
+      options: [{ value: "primera", label: "primera" }],
     });
   });
 });
