@@ -17,6 +17,7 @@ import {
 } from "@/app/jugadores/mi-perfil/trayectoria/careerEntryFormValues";
 import TeamSelector from "@/app/jugadores/mi-perfil/trayectoria/TeamSelector";
 import Card from "@/components/ui/Card";
+import ComboSelect from "@/components/ui/ComboSelect";
 import SelectField from "@/components/ui/SelectField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import TextField from "@/components/ui/TextField";
@@ -133,20 +134,14 @@ export default function CareerEntryForm({ entry }: Props) {
           />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <SelectField
+            <ComboSelect
               id="category"
               name="category"
               label="Categoría"
-              options={categoryOptionsFor(values.category)}
+              groups={categoryOptionsFor(values.category)}
               placeholder="Sin especificar"
-              // Lista de 5 filas con scroll y no un desplegable: con
-              // dieciocho categorías el popup nativo tapaba media pantalla,
-              // y su alto lo decide el navegador — no se puede acotar por
-              // CSS. Con `size` el alto es nuestro y se navega igual con
-              // teclado.
-              size={5}
               value={values.category}
-              onChange={(event) => setField("category", event.target.value)}
+              onValueChange={(next) => setField("category", next)}
               error={fieldErrors.category}
             />
             <SelectField
