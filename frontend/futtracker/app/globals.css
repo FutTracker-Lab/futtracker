@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/*
+ * Tokens portados a mano del design system (Claude Design, referenciado en
+ * FUT-84 → ui_kits/web-app/ → ScreenAuth.jsx). No hay acceso al canvas
+ * fuente (kit.css) desde esta cuenta — estos valores salen de leer las
+ * capturas exportadas del diseño, no de un archivo de tokens real.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Verde bosque, botón primario y acentos (tabs activos, checks, links). */
+  --color-brand: #15803d;
+  --color-brand-foreground: #ffffff;
+  --color-brand-tint: #f0fdf4;
+  --color-brand-tint-border: #bbf7d0;
+
+  /* Superficie oscura de marca: la usan el sidebar de navegación y el panel
+   * de las pantallas de auth. No es "dark mode" del sitio, es un elemento
+   * fijo de diseño — el contenido de la app siempre va sobre blanco.
+   *
+   * Es verde muy oscuro, no negro: los valores salen de muestrear la imagen
+   * de referencia del ticket (T04b · Perfil de jugador). Antes estaban en
+   * zinc-950/zinc-400, que son negro y gris AZULADOS (B > G) y desentonaban
+   * contra el verde de la marca. */
+  --color-panel: #0a0f0b;
+  --color-panel-active: #133527;
+  --color-panel-foreground: #ffffff;
+  --color-panel-muted: #949995;
+
+  /* Fondo de las pantallas con formulario, para que las tarjetas blancas
+   * contrasten contra algo. Muestreado de la imagen de referencia del
+   * ticket (T04b · Editar perfil). */
+  --color-surface: #f6f7f9;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--color-brand);
+  --color-brand-foreground: var(--color-brand-foreground);
+  --color-brand-tint: var(--color-brand-tint);
+  --color-brand-tint-border: var(--color-brand-tint-border);
+  --color-panel: var(--color-panel);
+  --color-panel-active: var(--color-panel-active);
+  --color-panel-foreground: var(--color-panel-foreground);
+  --color-panel-muted: var(--color-panel-muted);
+  --color-surface: var(--color-surface);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/*
+ * Sin `@media (prefers-color-scheme: dark)`: el sitio no tiene modo oscuro.
+ * El bloque venía del scaffold de create-next-app y volvía negro el fondo de
+ * toda la app en sistemas con dark mode activado — de ahí salían los `bg-white`
+ * defensivos repartidos página por página. Los paneles oscuros que sí existen
+ * (AuthBrandPanel) son elementos fijos de diseño, no un tema alternativo.
+ *
+ * Ojo con estas reglas de `body`: van sin capa, y en la cascada el CSS sin
+ * capa le gana a `@layer utilities` (donde viven las utilidades de Tailwind)
+ * sin importar la especificidad. O sea que lo que se ponga acá no se puede
+ * sobreescribir después con una clase `bg-*` o `font-*` sobre el body.
+ */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
