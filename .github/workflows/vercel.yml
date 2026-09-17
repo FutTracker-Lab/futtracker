@@ -61,6 +61,7 @@ jobs:
 
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     permissions:
       contents: read
 
