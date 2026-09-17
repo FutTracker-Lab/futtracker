@@ -79,22 +79,25 @@ export default async function PlayerProfilePage({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <PlayerProfileHeader
-          profile={profile}
-          isOwner={isOwner}
-          hasPlayerRow={player !== null}
-          avatarUrl={avatarUrl}
-        />
-        {isOwner ? (
-          <Link
-            href={RouteConstants.profile.edit}
-            className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-          >
-            {player ? "Editar perfil" : "Completá tu perfil"}
-          </Link>
-        ) : null}
-      </div>
+      {/* Encabezado con la firma nueva (recibe `player` y su botonera por
+          prop). Esta pantalla conserva su layout: el rediseño del fix es el
+          del perfil propio. */}
+      <PlayerProfileHeader
+        profile={profile}
+        player={player}
+        isOwner={isOwner}
+        avatarUrl={avatarUrl}
+        actions={
+          isOwner ? (
+            <Link
+              href={RouteConstants.profile.edit}
+              className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+            >
+              {player ? "Editar perfil" : "Completá tu perfil"}
+            </Link>
+          ) : null
+        }
+      />
       {player ? (
         <PlayerProfileDetails
           player={player}

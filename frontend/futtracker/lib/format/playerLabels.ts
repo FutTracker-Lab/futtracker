@@ -35,3 +35,18 @@ export function getPreferredFootLabel(foot: string | null): string | null {
   if (!foot || !(foot in PREFERRED_FOOT_LABELS)) return null;
   return PREFERRED_FOOT_LABELS[foot as keyof typeof PREFERRED_FOOT_LABELS];
 }
+
+// Abreviaturas para el badge de posición del encabezado del perfil: el
+// diseño la muestra como una pastilla corta al lado del nombre, no como
+// palabra completa. El resto de la app sigue usando `getPositionLabel`.
+const POSITION_ABBREVIATIONS: Record<string, string> = {
+  arquero: "ARQ",
+  defensor: "DEF",
+  mediocampista: "MC",
+  delantero: "DEL",
+};
+
+export function getPositionAbbreviation(position: string | null): string | null {
+  if (!position) return null;
+  return POSITION_ABBREVIATIONS[position] ?? null;
+}
