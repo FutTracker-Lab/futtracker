@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-import PlayerProfileDetails from "@/components/player/PlayerProfileDetails";
+import PlayerAttributesCard from "@/components/player/PlayerAttributesCard";
+import PlayerPresentationCard from "@/components/player/PlayerPresentationCard";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
 import { getPlayerProfileById } from "@/lib/data/profiles";
 import { RouteConstants } from "@/lib/routes";
@@ -39,22 +40,37 @@ export default async function MyPlayerProfilePage() {
   const { profile, player, avatarUrl } = data;
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <PlayerProfileHeader
-          profile={profile}
-          isOwner
-          hasPlayerRow={player !== null}
-          avatarUrl={avatarUrl}
-        />
-        <Link
-          href={RouteConstants.profile.edit}
-          className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-        >
-          {player ? "Editar perfil" : "Completá tu perfil"}
-        </Link>
+    // Fondo gris con tarjetas blancas y ancho amplio, como el diseño. Antes
+    // era una columna angosta centrada (`max-w-2xl`) con los datos sueltos
+    // sobre el fondo, sin tarjetas.
+    <div className="min-h-full bg-zinc-50">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-6">
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <PlayerProfileHeader
+            profile={profile}
+            player={player}
+            isOwner
+            avatarUrl={avatarUrl}
+            actions={
+              <Link
+                href={RouteConstants.profile.edit}
+                className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:opacity-90"
+              >
+                {player ? "Editar perfil" : "Completá tu perfil"}
+              </Link>
+            }
+          />
+        </div>
+
+        {player ? (
+          // Dos columnas como el diseño: la presentación ocupa el ancho y la
+          // ficha queda al costado. En mobile se apilan.
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <PlayerPresentationCard player={player} isOwner />
+            <PlayerAttributesCard player={player} />
+          </div>
+        ) : null}
       </div>
-      {player ? <PlayerProfileDetails player={player} /> : null}
     </div>
   );
 }
