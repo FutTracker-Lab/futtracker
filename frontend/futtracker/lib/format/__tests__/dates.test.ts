@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCareerPeriod, formatMonthYear } from "@/lib/format/dates";
+import {
+  formatCareerPeriod,
+  formatDayMonthYear,
+  formatMonthYear,
+} from "@/lib/format/dates";
 
 describe("formatMonthYear", () => {
   it("formatea el mes y año sin corrimiento de timezone", () => {
@@ -13,6 +17,16 @@ describe("formatMonthYear", () => {
   it("cubre los 12 meses", () => {
     expect(formatMonthYear("2024-01-15")).toBe("ene 2024");
     expect(formatMonthYear("2024-12-15")).toBe("dic 2024");
+  });
+});
+
+describe("formatDayMonthYear", () => {
+  it("formatea día, mes abreviado y año, sin corrimiento de timezone", () => {
+    expect(formatDayMonthYear("2025-04-12")).toBe("12 abr 2025");
+  });
+
+  it("no agrega ceros a la izquierda del día", () => {
+    expect(formatDayMonthYear("2025-04-05")).toBe("5 abr 2025");
   });
 });
 

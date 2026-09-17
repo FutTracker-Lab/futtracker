@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import SignOutButton from "@/components/auth/SignOutButton";
-import { NAV_ITEMS_BY_ROLE } from "@/components/nav/navItems";
+import { NAV_ITEMS_BY_ROLE, isNavItemActive } from "@/components/nav/navItems";
 import type { Role } from "@/lib/auth/schemas";
 
 type Props = {
@@ -34,7 +34,7 @@ export default function AppMobileNav({ role }: Props) {
       {items.length > 0 ? (
         <nav className="flex gap-2 overflow-x-auto">
           {items.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = isNavItemActive(item, pathname);
             return (
               <Link
                 key={item.href}

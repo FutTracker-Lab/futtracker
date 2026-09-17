@@ -14,9 +14,11 @@ type Props = {
   // Slot por fila para el requisito 4 de FUT-91: T06b monta acá el resumen
   // de partidos/goles/asistencias por año, sin reescribir este componente.
   statsSlot?: ReactNode;
+  // Slot por fila para Editar/Partidos/Eliminar (requisito 1 de FUT-92).
+  actionsSlot?: ReactNode;
 };
 
-export default function CareerTimelineItem({ entry, statsSlot }: Props) {
+export default function CareerTimelineItem({ entry, statsSlot, actionsSlot }: Props) {
   const href = getClubHref(entry);
   const abbreviation = getPositionAbbreviation(entry.position);
   const period = formatCareerPeriod(
@@ -78,8 +80,13 @@ export default function CareerTimelineItem({ entry, statsSlot }: Props) {
           <p className="text-sm text-zinc-500">{meta}</p>
         </div>
 
-        {statsSlot ? (
-          <div className="flex flex-wrap gap-2 pt-0.5">{statsSlot}</div>
+        {/* Las estadísticas por año y el menú "..." comparten la fila, con el
+            menú pegado a la derecha: así lo ubica el diseño. */}
+        {statsSlot || actionsSlot ? (
+          <div className="flex items-start justify-between gap-3 pt-0.5">
+            <div className="flex flex-wrap gap-2">{statsSlot}</div>
+            {actionsSlot}
+          </div>
         ) : null}
       </div>
     </div>

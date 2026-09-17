@@ -29,6 +29,17 @@ export function formatMonthYear(dateOnly: string): string {
   return `${MONTH_ABBREVIATIONS[monthIndex]} ${yearStr}`;
 }
 
+// Fecha completa de un partido para la tabla de "Partidos cargados"
+// (FUT-92): "12 abr 2025", igual criterio de abreviaturas fijas que
+// `formatMonthYear` y por el mismo motivo (Intl a veces intercala "de").
+export function formatDayMonthYear(dateOnly: string): string {
+  const [yearStr, monthStr, dayStr] = dateOnly.split("-");
+  const monthIndex = Number(monthStr) - 1;
+  const day = Number(dayStr);
+
+  return `${day} ${MONTH_ABBREVIATIONS[monthIndex]} ${yearStr}`;
+}
+
 // Requisito 3 de FUT-91: "feb 2025 – dic 2025", o "feb 2025 – Actualidad"
 // cuando `is_current`. Si una entrada pasada quedara sin `end_date` (dato
 // inconsistente, no debería pasar por la UI de carga de T06b), se muestra
