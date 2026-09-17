@@ -16,6 +16,21 @@ export const RouteConstants = {
     // T06b: por eso la trayectoria propia cuelga de acá y no es una ruta
     // suelta.
     career: "/jugadores/mi-perfil/trayectoria",
+    // FUT-92: alta/edición de etapas y CRUD de partidos, todo colgado de la
+    // misma trayectoria propia.
+    careerNew: "/jugadores/mi-perfil/trayectoria/nueva",
+    careerEdit: (entryId: string) =>
+      `/jugadores/mi-perfil/trayectoria/${entryId}/editar`,
+    careerMatches: (entryId: string) =>
+      `/jugadores/mi-perfil/trayectoria/${entryId}/partidos`,
+    // Entrada del sidebar ("Partidos cargados", diseño ScreenPartidos.jsx):
+    // no tiene entryId propio, así que resuelve a la etapa actual (o a la más
+    // reciente) y redirige. Ver comentario en el `page.tsx` de esta ruta.
+    careerMatchesIndex: "/jugadores/mi-perfil/trayectoria/partidos",
+    careerMatchNew: (entryId: string) =>
+      `/jugadores/mi-perfil/trayectoria/${entryId}/partidos/nuevo`,
+    careerMatchEdit: (entryId: string, matchId: string) =>
+      `/jugadores/mi-perfil/trayectoria/${entryId}/partidos/${matchId}/editar`,
   },
   team: {
     view: (id: string) => `/equipos/${id}`,

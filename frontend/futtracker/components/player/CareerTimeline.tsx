@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import CareerTimelineEmptyState from "@/components/player/CareerTimelineEmptyState";
@@ -27,6 +28,15 @@ type Props = {
   // resumen de partidos/goles/asistencias por año para cada entrada, sin
   // tener que reescribir `CareerTimeline` ni `CareerTimelineItem`.
   renderStatsSlot?: (entry: CareerTimelineEntry) => ReactNode;
+  // FUT-92: cablea el botón "+ Agregar club", antes deshabilitado con el
+  // aviso "La carga de etapas llega en la próxima entrega." Sin esto (en la
+  // lectura de un visitante que no es dueño) el botón directamente no se
+  // renderiza — misma condición que antes.
+  addHref?: string;
+  // Slot por fila para Editar/Partidos/Eliminar (requisito 1). Solo lo pasa
+  // la pantalla de gestión (`trayectoria/page.tsx`); el timeline de
+  // solo-lectura del perfil público no lo usa.
+  renderActionsSlot?: (entry: CareerTimelineEntry) => ReactNode;
 };
 
 // Server Component: la consulta corre en el mismo render que el resto del
@@ -38,6 +48,8 @@ export default async function CareerTimeline({
   isOwner,
   totalsSlot,
   renderStatsSlot,
+  addHref,
+  renderActionsSlot,
 }: Props) {
   let entries: CareerTimelineEntry[];
 
@@ -73,24 +85,18 @@ export default async function CareerTimeline({
               </p>
             ) : null}
           </div>
-          {isOwner && entries.length > 0 ? (
-            // Alta y edición de etapas son de T06b (fuera de alcance acá,
-            // ver "Alcance" del ticket). Va `disabled` y no como <Link>:
-            // la ruta no existe y un botón vivo que no hace nada se lee
-            // como un bug.
-            <button
-              type="button"
-              disabled
-              title="La carga de etapas llega en la próxima entrega."
-              className="shrink-0 cursor-not-allowed rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 opacity-50"
+          {isOwner && entries.length > 0 && addHref ? (
+            <Link
+              href={addHref}
+              className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
             >
               + Agregar club
-            </button>
+            </Link>
           ) : null}
         </div>
 
         {entries.length === 0 ? (
-          <CareerTimelineEmptyState isOwner={isOwner} />
+          <CareerTimelineEmptyState isOwner={isOwner} addHref={addHref} />
         ) : (
           <div className="flex flex-col gap-4">
             {visible.map((entry) => (
@@ -98,6 +104,7 @@ export default async function CareerTimeline({
                 key={entry.id}
                 entry={entry}
                 statsSlot={renderStatsSlot?.(entry)}
+                actionsSlot={renderActionsSlot?.(entry)}
               />
             ))}
             {collapsed.length > 0 ? (
@@ -107,6 +114,7 @@ export default async function CareerTimeline({
                     key={entry.id}
                     entry={entry}
                     statsSlot={renderStatsSlot?.(entry)}
+                    actionsSlot={renderActionsSlot?.(entry)}
                   />
                 ))}
               </CareerTimelineExpand>

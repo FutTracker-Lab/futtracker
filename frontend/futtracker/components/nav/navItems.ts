@@ -17,6 +17,11 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     { href: RouteConstants.profile.mine, label: "Mi perfil" },
     { href: RouteConstants.profile.edit, label: "Editar perfil" },
     { href: RouteConstants.profile.career, label: "Trayectoria" },
+    // FUT-92 (ScreenPartidos.jsx): "Partidos cargados" es su propia entrada
+    // en el diseño. Como el CRUD de partidos cuelga de una etapa puntual, la
+    // ruta es un índice que redirige a la etapa vigente (o a la más
+    // reciente) — ver careerMatchesIndex en lib/routes.ts.
+    { href: RouteConstants.profile.careerMatchesIndex, label: "Partidos cargados" },
   ],
   // El delegado no tiene "editar" fijo porque la ruta depende del id de su
   // equipo, y puede no tener ninguno todavía: "Mi equipo" resuelve los dos

@@ -7,6 +7,14 @@ import { getPlayerProfileById } from "@/lib/data/profiles";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
+// Sin `loading.tsx` en este segmento a propósito, y eso vale para todo lo que
+// cuelga de /jugadores/mi-perfil: un `loading.tsx` abre un boundary de
+// Suspense para sí mismo Y para sus rutas hijas, así que la respuesta empieza
+// a streamear como 200 y el `notFound()` de las rutas de trayectoria ya no
+// puede cambiar el status. El requisito 10 de FUT-92 pide que un `entryId`
+// ajeno no se encuentre, y con el skeleton acá devolvía 200. Mismo criterio
+// que /equipos/[id] y /jugadores/[id]: se prioriza el status real.
+//
 // proxy.ts ya protege /jugadores/**, pero acá necesitamos el id del usuario
 // para resolver "mi-perfil" a una fila concreta, no alcanza con saber que
 // hay sesión.
