@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { careerEntryInputSchema, type CareerEntry } from "@/lib/data/careerEntries";
 import {
+  CATEGORY_OPTIONS,
+  categoryOptionsFor,
   fieldErrorsFrom,
   initialValuesFrom,
   toCareerEntryInput,
@@ -93,5 +95,35 @@ describe("fieldErrorsFrom", () => {
 
     expect(errors.club_name).toBe("El club tiene que tener entre 2 y 120 caracteres.");
     expect(errors.start_date).toBe("Ingresá una fecha de inicio válida.");
+  });
+});
+
+describe("categoryOptionsFor", () => {
+  it("ofrece las divisiones de Primera a Infantiles", () => {
+    const options = categoryOptionsFor("");
+
+    expect(options).toHaveLength(CATEGORY_OPTIONS.length);
+    expect(options[0].value).toBe("Primera");
+    expect(options.at(-1)?.value).toBe("Infantiles");
+  });
+
+  it("no duplica la opción cuando la categoría guardada ya está en la lista", () => {
+    const options = categoryOptionsFor("Reserva");
+
+    expect(options.filter((o) => o.value === "Reserva")).toHaveLength(1);
+    expect(options).toHaveLength(CATEGORY_OPTIONS.length);
+  });
+
+  // El campo era texto libre antes de este ticket: hay filas con categorías
+  // que no están en la lista. Sin esto, abrir el formulario para cambiar otra
+  // cosa se las borraría al guardar.
+  it("conserva una categoría vieja que no está en la lista", () => {
+    const options = categoryOptionsFor("primera");
+
+    expect(options).toHaveLength(CATEGORY_OPTIONS.length + 1);
+    expect(options.at(-1)).toEqual({
+      value: "primera",
+      label: "primera (cargada antes)",
+    });
   });
 });

@@ -8,6 +8,7 @@ import {
   updateCareerEntryAction,
 } from "@/app/jugadores/mi-perfil/trayectoria/actions";
 import {
+  categoryOptionsFor,
   fieldErrorsFrom,
   initialValuesFrom,
   toCareerEntryInput,
@@ -132,16 +133,15 @@ export default function CareerEntryForm({ entry }: Props) {
           />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <TextField
+            <SelectField
               id="category"
               name="category"
-              type="text"
               label="Categoría"
-              hint="Primera, Reserva, Sub-20…"
+              options={categoryOptionsFor(values.category)}
+              placeholder="Sin especificar"
               value={values.category}
               onChange={(event) => setField("category", event.target.value)}
               error={fieldErrors.category}
-              optionalHint
             />
             <SelectField
               id="position"

@@ -78,3 +78,39 @@ export function fieldErrorsFrom(error: z.ZodError): CareerEntryFormErrors {
 
   return errors;
 }
+
+// Divisiones del fútbol argentino, de mayor a menor. `career_entries.category`
+// es `text` libre en la base (no hay check), así que esto es una restricción
+// de la UI y no del schema: se elige de una lista en vez de escribir a mano
+// para que "Primera", "primera" y "1ra" no convivan como categorías distintas.
+export const CATEGORY_OPTIONS = [
+  "Primera",
+  "Reserva",
+  "Cuarta división",
+  "Quinta división",
+  "Sexta división",
+  "Séptima división",
+  "Octava división",
+  "Novena división",
+  "Décima división",
+  "Infantiles",
+] as const;
+
+/**
+ * Las opciones del desplegable para un valor ya guardado. Si la etapa trae
+ * una categoría que no está en la lista (dato viejo, cargado cuando el campo
+ * era libre), se agrega al final en vez de descartarse: si no, abrir el
+ * formulario para cambiar otra cosa le borraría la categoría al guardar.
+ */
+export function categoryOptionsFor(current: string): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = CATEGORY_OPTIONS.map(
+    (value) => ({ value, label: value }),
+  );
+  const trimmed = current.trim();
+
+  if (trimmed && !CATEGORY_OPTIONS.some((value) => value === trimmed)) {
+    options.push({ value: trimmed, label: `${trimmed} (cargada antes)` });
+  }
+
+  return options;
+}
