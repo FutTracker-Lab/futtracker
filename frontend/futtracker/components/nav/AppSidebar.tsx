@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import SignOutButton from "@/components/auth/SignOutButton";
-import { NAV_ITEMS_BY_ROLE } from "@/components/nav/navItems";
+import { NAV_ITEMS_BY_ROLE, isNavItemActive } from "@/components/nav/navItems";
 import { initialsOf } from "@/lib/format/initials";
 import type { Role } from "@/lib/auth/schemas";
 
@@ -40,7 +40,7 @@ export default function AppSidebar({ fullName, role }: Props) {
               Navegación
             </p>
             {items.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = isNavItemActive(item, pathname);
               return (
                 <Link
                   key={item.href}
