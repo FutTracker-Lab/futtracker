@@ -1,10 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
 import PlayerAttributesCard from "@/components/player/PlayerAttributesCard";
 import PlayerPresentationCard from "@/components/player/PlayerPresentationCard";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
+import RecentMatchesCard from "@/components/player/RecentMatchesCard";
+import { getRecentMatches } from "@/lib/data/recentMatches";
 import { getPlayerProfileById } from "@/lib/data/profiles";
+import { getCareerTotals } from "@/lib/data/stats";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +43,15 @@ export default async function MyPlayerProfilePage() {
 
   const { profile, player, avatarUrl } = data;
 
+  // Los dos agregados del perfil, en el mismo render del Server Component:
+  // sin cascada de requests del lado del cliente.
+  const [totals, recentMatches] = player
+    ? await Promise.all([
+        getCareerTotals(supabase, player.id),
+        getRecentMatches(supabase, player.id),
+      ])
+    : [null, []];
+
   return (
     // Fondo gris con tarjetas blancas y ancho amplio, como el diseño. Antes
     // era una columna angosta centrada (`max-w-2xl`) con los datos sueltos
@@ -65,10 +78,24 @@ export default async function MyPlayerProfilePage() {
         {player ? (
           // Dos columnas como el diseño: la presentación ocupa el ancho y la
           // ficha queda al costado. En mobile se apilan.
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <PlayerPresentationCard player={player} isOwner />
-            <PlayerAttributesCard player={player} />
-          </div>
+          <>
+            <CareerTotalsStrip
+              totals={totals}
+              description="Se calculan de los partidos cargados, no se editan a mano."
+            />
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <div className="flex flex-col gap-6">
+                <PlayerPresentationCard player={player} isOwner />
+                <RecentMatchesCard
+                  matches={recentMatches}
+                  isOwner
+                  allHref={RouteConstants.profile.careerMatchesIndex}
+                />
+              </div>
+              <PlayerAttributesCard player={player} />
+            </div>
+          </>
         ) : null}
       </div>
     </div>
