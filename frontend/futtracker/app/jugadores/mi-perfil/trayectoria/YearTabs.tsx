@@ -10,8 +10,12 @@ import { formatDayMonthYear } from "@/lib/format/dates";
 import { formatInteger } from "@/lib/format/numbers";
 import { RouteConstants } from "@/lib/routes";
 
-const MENU_ITEM =
-  "block w-full px-3 py-1.5 text-left text-sm text-zinc-900 hover:bg-zinc-50";
+// Sin color acá: cada item suma el suyo. Si la base trajera `text-zinc-900`,
+// el `text-red-700` del item de borrar no ganaría — las dos clases quedan en
+// el atributo y el que manda es el orden del CSS generado, no el del string.
+const MENU_ITEM_BASE = "block w-full px-3 py-1.5 text-left text-sm";
+const MENU_ITEM = `${MENU_ITEM_BASE} text-zinc-900 hover:bg-zinc-50`;
+const MENU_ITEM_DANGER = `${MENU_ITEM_BASE} text-red-700 hover:bg-red-50`;
 
 type Props = {
   entryId: string;
@@ -98,7 +102,7 @@ export default function YearTabs({ entryId, groups }: Props) {
                         matchId={match.id}
                         opponent={match.opponent}
                         matchDate={match.match_date}
-                        triggerClassName={`${MENU_ITEM} text-red-700 hover:bg-red-50`}
+                        triggerClassName={MENU_ITEM_DANGER}
                       />
                     </ActionsMenu>
                   </div>

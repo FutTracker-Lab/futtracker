@@ -18,8 +18,12 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Tu trayectoria · FutTracker" };
 
-const MENU_ITEM =
-  "block w-full px-3 py-1.5 text-left text-sm text-zinc-900 hover:bg-zinc-50";
+// Sin color acá: cada item suma el suyo. Si la base trajera `text-zinc-900`,
+// el `text-red-700` del item de borrar no ganaría — las dos clases quedan en
+// el atributo y el que manda es el orden del CSS generado, no el del string.
+const MENU_ITEM_BASE = "block w-full px-3 py-1.5 text-left text-sm";
+const MENU_ITEM = `${MENU_ITEM_BASE} text-zinc-900 hover:bg-zinc-50`;
+const MENU_ITEM_DANGER = `${MENU_ITEM_BASE} text-red-700 hover:bg-red-50`;
 
 function groupSeasonsByEntry(seasons: SeasonStats[]): Map<string, SeasonStats[]> {
   const byEntry = new Map<string, SeasonStats[]>();
@@ -107,7 +111,7 @@ export default async function MyCareerPage({
         <DeleteCareerEntryButton
           entryId={entry.id}
           clubName={entry.club_name}
-          triggerClassName={`${MENU_ITEM} text-red-700 hover:bg-red-50`}
+          triggerClassName={MENU_ITEM_DANGER}
         />
       </ActionsMenu>
     );
