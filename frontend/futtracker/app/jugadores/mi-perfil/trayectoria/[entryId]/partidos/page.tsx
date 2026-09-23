@@ -9,7 +9,11 @@ import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
 import Toast from "@/components/ui/Toast";
 import { getCareerEntries } from "@/lib/data/career";
 import { getCareerEntryById } from "@/lib/data/careerEntries";
-import { getCareerTotals, getMatchStats } from "@/lib/data/stats";
+import {
+  getCareerTotals,
+  getMatchStats,
+  getSeasonStatsByEntry,
+} from "@/lib/data/stats";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,14 +52,15 @@ export default async function CareerEntryMatchesPage({
     notFound();
   }
 
-  const [matches, totals, entries] = await Promise.all([
+  const [matches, totals, entries, seasons] = await Promise.all([
     getMatchStats(supabase, entryId),
     getCareerTotals(supabase, user.id),
     // Las otras etapas, para poder cambiar de club sin volver a la
     // trayectoria. Se reusa el lector de T04c tal cual, solo de lectura.
     getCareerEntries(supabase, user.id),
+    getSeasonStatsByEntry(supabase, entryId),
   ]);
-  const groups = groupMatchesByYear(matches);
+  const groups = groupMatchesByYear(matches, seasons);
 
   return (
     <div className="min-h-full bg-zinc-50">

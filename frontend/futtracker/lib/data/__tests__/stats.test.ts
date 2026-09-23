@@ -5,6 +5,7 @@ import {
   getCareerTotals,
   getMatchStats,
   getSeasonStats,
+  getSeasonStatsByEntry,
   matchStatInputSchema,
   type MatchStat,
   type MatchStatInput,
@@ -151,6 +152,29 @@ describe("getSeasonStats", () => {
     const { client } = fakeClient<SeasonStats>({ error: { code: "42501" } });
 
     await expect(getSeasonStats(client, PLAYER_A)).rejects.toEqual({
+      code: "42501",
+    });
+  });
+});
+
+describe("getSeasonStatsByEntry", () => {
+  it("consulta la vista por career_entry_id y ordena por año descendente", async () => {
+    const { client, spies } = fakeClient<SeasonStats>({ data: [SEASON_ROW] });
+
+    await expect(getSeasonStatsByEntry(client, CAREER_ENTRY_A)).resolves.toEqual([
+      SEASON_ROW,
+    ]);
+    expect(spies.from).toHaveBeenCalledWith("season_stats");
+    expect(spies.eq).toHaveBeenCalledWith("career_entry_id", CAREER_ENTRY_A);
+    expect(spies.order).toHaveBeenCalledWith("season_year", {
+      ascending: false,
+    });
+  });
+
+  it("propaga el error de PostgREST", async () => {
+    const { client } = fakeClient<SeasonStats>({ error: { code: "42501" } });
+
+    await expect(getSeasonStatsByEntry(client, CAREER_ENTRY_A)).rejects.toEqual({
       code: "42501",
     });
   });
