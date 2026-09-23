@@ -60,6 +60,23 @@ export async function getSeasonStats(
   return data;
 }
 
+export async function getSeasonStatsByEntry(
+  client: Client,
+  careerEntryId: string,
+): Promise<SeasonStats[]> {
+  const { data, error } = await client
+    .from("season_stats")
+    .select("*")
+    .eq("career_entry_id", careerEntryId)
+    .order("season_year", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 export async function getCareerTotals(
   client: Client,
   playerId: string,
