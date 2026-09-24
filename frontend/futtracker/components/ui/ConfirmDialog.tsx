@@ -6,6 +6,8 @@ type Props = {
   // Texto del botón que abre el diálogo (ej. "Eliminar").
   triggerLabel: string;
   triggerClassName?: string;
+  // El rol lo pone quien renderiza la opción, no el menú (FUT-113).
+  triggerRole?: "menuitem";
   title: string;
   description: ReactNode;
   confirmLabel?: string;
@@ -25,6 +27,7 @@ const DEFAULT_TRIGGER_CLASS =
 export default function ConfirmDialog({
   triggerLabel,
   triggerClassName,
+  triggerRole,
   title,
   description,
   confirmLabel = "Eliminar",
@@ -86,6 +89,7 @@ export default function ConfirmDialog({
       <button
         ref={triggerRef}
         type="button"
+        role={triggerRole}
         onClick={() => setOpen(true)}
         className={triggerClassName ?? DEFAULT_TRIGGER_CLASS}
       >

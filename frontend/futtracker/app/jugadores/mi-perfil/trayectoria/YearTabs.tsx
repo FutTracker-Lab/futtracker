@@ -93,6 +93,7 @@ export default function YearTabs({ entryId, groups }: Props) {
                     <ActionsMenu label={`Acciones del partido vs. ${match.opponent}`}>
                       <Link
                         href={RouteConstants.profile.careerMatchEdit(entryId, match.id)}
+                        role="menuitem"
                         className={MENU_ITEM}
                       >
                         Editar
@@ -103,6 +104,7 @@ export default function YearTabs({ entryId, groups }: Props) {
                         opponent={match.opponent}
                         matchDate={match.match_date}
                         triggerClassName={MENU_ITEM_DANGER}
+                        triggerRole="menuitem"
                       />
                     </ActionsMenu>
                   </div>
