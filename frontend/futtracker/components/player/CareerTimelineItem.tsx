@@ -83,7 +83,10 @@ export default function CareerTimelineItem({ entry, statsSlot, actionsSlot }: Pr
         {/* Las estadísticas por año y el menú "..." comparten la fila, con el
             menú pegado a la derecha: así lo ubica el diseño. */}
         {statsSlot || actionsSlot ? (
-          <div className="flex items-start justify-between gap-3 pt-0.5">
+          <div
+            data-testid="career-timeline-item-slots"
+            className="flex items-start justify-between gap-3 pt-0.5"
+          >
             <div className="flex flex-wrap gap-2">{statsSlot}</div>
             {actionsSlot}
           </div>
