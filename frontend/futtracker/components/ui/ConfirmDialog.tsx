@@ -6,7 +6,8 @@ type Props = {
   // Texto del botón que abre el diálogo (ej. "Eliminar").
   triggerLabel: string;
   triggerClassName?: string;
-  // El rol lo pone quien renderiza la opción, no el menú (FUT-113).
+  // El rol lo pone quien renderiza la opción, no el menú: ver
+  // `docs/accesibilidad.md`.
   triggerRole?: "menuitem";
   title: string;
   description: ReactNode;

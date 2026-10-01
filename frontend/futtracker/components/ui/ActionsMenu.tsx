@@ -35,7 +35,7 @@ function focusOption(options: HTMLElement[], index: number) {
  * único desplegable de la app y no justifica sumar una dependencia.
  *
  * Cierra con Escape y con un click afuera, y el teclado sigue la convención
- * de menús del proyecto (FUT-113). No atrapa el foco: es un menú, no un
+ * de menús de `docs/accesibilidad.md`. No atrapa el foco: es un menú, no un
  * diálogo modal.
  *
  * Cada opción tiene que llegar con `role="menuitem"`; sin eso queda fuera de
