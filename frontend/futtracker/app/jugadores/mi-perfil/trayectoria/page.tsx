@@ -102,16 +102,25 @@ export default async function MyCareerPage({
   function renderActionsSlot(entry: CareerTimelineEntry) {
     return (
       <ActionsMenu label={`Acciones de tu etapa en ${entry.club_name}`}>
-        <Link href={RouteConstants.profile.careerEdit(entry.id)} className={MENU_ITEM}>
+        <Link
+          href={RouteConstants.profile.careerEdit(entry.id)}
+          role="menuitem"
+          className={MENU_ITEM}
+        >
           Editar
         </Link>
-        <Link href={RouteConstants.profile.careerMatches(entry.id)} className={MENU_ITEM}>
+        <Link
+          href={RouteConstants.profile.careerMatches(entry.id)}
+          role="menuitem"
+          className={MENU_ITEM}
+        >
           Partidos
         </Link>
         <DeleteCareerEntryButton
           entryId={entry.id}
           clubName={entry.club_name}
           triggerClassName={MENU_ITEM_DANGER}
+          triggerRole="menuitem"
         />
       </ActionsMenu>
     );

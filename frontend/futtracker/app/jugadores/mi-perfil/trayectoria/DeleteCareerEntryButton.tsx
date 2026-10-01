@@ -12,12 +12,14 @@ type Props = {
   // El disparador cambia de forma según dónde viva: botón suelto o item del
   // menú "..." de la fila.
   triggerClassName?: string;
+  triggerRole?: "menuitem";
 };
 
 export default function DeleteCareerEntryButton({
   entryId,
   clubName,
   triggerClassName,
+  triggerRole,
 }: Props) {
   const router = useRouter();
 
@@ -25,6 +27,7 @@ export default function DeleteCareerEntryButton({
     <ConfirmDialog
       triggerLabel="Eliminar"
       triggerClassName={triggerClassName}
+      triggerRole={triggerRole}
       title={`¿Eliminar tu etapa en ${clubName}?`}
       description={
         <>
