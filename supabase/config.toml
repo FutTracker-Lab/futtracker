@@ -21,7 +21,7 @@ max_rows = 1000
 # without explicit GRANTs. When unset, new entities are NOT auto-exposed, matching the new cloud
 # default. Set to `true` to keep the legacy behaviour of auto-exposing new entities; this is
 # deprecated and the field is removed on 2026-10-30 once the always-revoked behaviour is permanent.
-# auto_expose_new_tables = true
+auto_expose_new_tables = false
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
@@ -141,6 +141,15 @@ public = false
 file_size_limit = "2MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 objects_path = "./team-crests"
+
+# Mismo motivo que team-crests: el limite y los tipos repiten los de la
+# migracion. Un solo clip de prueba de 3 s (19 KB), copiado en las 5 rutas del
+# seed. Git guarda una sola vez el contenido repetido.
+[storage.buckets.highlights]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = ["video/mp4", "video/webm", "video/quicktime"]
+objects_path = "./highlights"
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
