@@ -79,8 +79,8 @@ to authenticated
 with check (player_id = (select auth.uid()));
 
 -- Sin política de update a propósito: en esta versión el título no se edita,
--- se borra el clip y se vuelve a subir. Sin policy, un update afecta 0 filas
--- en vez de fallar con un error de permisos.
+-- se borra el clip y se vuelve a subir. Tampoco hay `grant update` (ver abajo),
+-- así que un intento rebota con 42501 antes de llegar a la RLS.
 
 create policy player_highlights_delete on public.player_highlights
 for delete

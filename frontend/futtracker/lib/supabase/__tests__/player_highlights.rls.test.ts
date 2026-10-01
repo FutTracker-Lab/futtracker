@@ -28,11 +28,10 @@ async function ensurePlayerRow(player: TestUser) {
   }
 }
 
-// Sin `upsert`: storage-api v1.69.0 elimino el indice unico sobre
-// (bucket_id, name) y el `on conflict` del upsert ahora falla con 42P10. Cada
-// test usa un path propio, asi que no hace falta.
 function upload(client: Client, path: string, contentType = "video/mp4") {
-  return client.storage.from(BUCKET).upload(path, CLIP, { contentType });
+  return client.storage
+    .from(BUCKET)
+    .upload(path, CLIP, { contentType, upsert: true });
 }
 
 describe.skipIf(!IS_LOCAL)("RLS de player_highlights", () => {
@@ -156,16 +155,18 @@ describe.skipIf(!IS_LOCAL)("RLS de player_highlights", () => {
       expect(error?.message).toContain("highlight_limit_reached");
     });
 
-    // Sin policy de update, el título no se edita: se borra el clip y se sube
-    // de nuevo. El update no falla, simplemente no toca ninguna fila.
+    // Sin policy NI grant de update, el título no se edita: se borra el clip y
+    // se sube de nuevo. Rebota el grant antes que la RLS, así que es 42501 y
+    // no un update de 0 filas. El criterio del ticket dice 0 filas: está
+    // escrito contra un stack que expone las tablas de más (ver la PR).
     it("NO puede editar el título de un highlight propio", async () => {
-      const { data } = await playerA.client
+      const { error } = await playerA.client
         .from("player_highlights")
         .update({ title: "Otro" })
         .eq("player_id", playerA.id)
         .select("id");
 
-      expect(data).toEqual([]);
+      expect(error?.code).toBe("42501");
     });
 
     it("sin sesión no puede insertar", async () => {
