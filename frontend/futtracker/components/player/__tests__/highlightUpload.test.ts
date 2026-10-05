@@ -26,12 +26,13 @@ function fakePort(overrides: Partial<HighlightUploadPort> = {}) {
 }
 
 describe("validateHighlightFile", () => {
-  it("acepta un MP4 de 30 MB", () => {
-    expect(validateHighlightFile(fakeFile("video/mp4", 30 * MB))).toBeNull();
-  });
-
-  it.each(["video/webm", "video/quicktime"])("acepta %s", (type) => {
-    expect(validateHighlightFile(fakeFile(type, MB))).toBeNull();
+  it.each([
+    ["video/mp4", 30],
+    ["video/webm", 1],
+    ["video/quicktime", 1],
+    ["video/mp4", 50],
+  ])("acepta %s de %i MB", (type, sizeMb) => {
+    expect(validateHighlightFile(fakeFile(type, sizeMb * MB))).toBeNull();
   });
 
   it("rechaza un PDF", () => {
@@ -45,28 +46,16 @@ describe("validateHighlightFile", () => {
       "El video pesa más de 50 MB. Comprimilo e intentá de nuevo.",
     );
   });
-
-  it("acepta justo 50 MB", () => {
-    expect(validateHighlightFile(fakeFile("video/mp4", 50 * MB))).toBeNull();
-  });
 });
 
 describe("validateHighlightDuration", () => {
-  it("acepta 90 segundos", () => {
-    expect(validateHighlightDuration(90)).toBeNull();
-  });
-
-  it("acepta justo 120 segundos", () => {
-    expect(validateHighlightDuration(120)).toBeNull();
+  // `null`: el navegador no pudo leerla (MOV en HEVC en Chrome).
+  it.each([90, 120, null])("acepta %s segundos", (seconds) => {
+    expect(validateHighlightDuration(seconds)).toBeNull();
   });
 
   it("rechaza 130 segundos", () => {
     expect(validateHighlightDuration(130)).toBe("El video dura más de 2 minutos.");
-  });
-
-  // El navegador no siempre puede leer la duración (MOV en HEVC en Chrome).
-  it("deja pasar una duración que no se pudo leer", () => {
-    expect(validateHighlightDuration(null)).toBeNull();
   });
 });
 

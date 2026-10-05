@@ -95,32 +95,21 @@ describe("HighlightUploadDialog", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("rechaza un MP4 de 60 MB sin pedir nada al storage", async () => {
-    await pickFile(videoFile("video/mp4", 60));
-    typeTitle("Gol");
+  it.each([
+    ["un MP4 de 60 MB", videoFile("video/mp4", 60), 90, "Gol", "El video pesa más de 50 MB. Comprimilo e intentá de nuevo."],
+    ["un video de 130 segundos", videoFile("video/mp4", 30), 130, "Gol", "El video dura más de 2 minutos."],
+    ["un PDF", videoFile("application/pdf", 1, "cv.pdf"), 90, "Gol", "Formato no permitido. Subí un video MP4, WebM o MOV."],
+    ["un título vacío", videoFile("video/mp4", 30), 90, "", "Ingresá un título."],
+    ["un título de 81 caracteres", videoFile("video/mp4", 30), 90, "x".repeat(81), "El título no puede superar los 80 caracteres."],
+    ["ningún video elegido", null, 90, "Gol", "Elegí un video."],
+  ])("rechaza %s sin pedir nada al storage", async (_, file, seconds, title, message) => {
+    readVideoDurationMock.mockResolvedValue(seconds);
+
+    if (file) await pickFile(file);
+    if (title) typeTitle(title);
     await submit();
 
-    expect(alerts()).toContain("El video pesa más de 50 MB. Comprimilo e intentá de nuevo.");
-    expect(uploadMock).not.toHaveBeenCalled();
-  });
-
-  it("rechaza un video de 130 segundos sin pedir nada al storage", async () => {
-    readVideoDurationMock.mockResolvedValue(130);
-
-    await pickFile(videoFile("video/mp4", 30));
-    typeTitle("Gol");
-    await submit();
-
-    expect(alerts()).toContain("El video dura más de 2 minutos.");
-    expect(uploadMock).not.toHaveBeenCalled();
-  });
-
-  it("rechaza un PDF sin pedir nada al storage", async () => {
-    await pickFile(videoFile("application/pdf", 1, "cv.pdf"));
-    typeTitle("Gol");
-    await submit();
-
-    expect(alerts()).toContain("Formato no permitido. Subí un video MP4, WebM o MOV.");
+    expect(alerts()).toContain(message);
     expect(uploadMock).not.toHaveBeenCalled();
   });
 
@@ -132,31 +121,6 @@ describe("HighlightUploadDialog", () => {
     await submit();
 
     expect(uploadMock).toHaveBeenCalled();
-  });
-
-  it("pide un título sin pedir nada al storage", async () => {
-    await pickFile(videoFile("video/mp4", 30));
-    await submit();
-
-    expect(alerts()).toContain("Ingresá un título.");
-    expect(uploadMock).not.toHaveBeenCalled();
-  });
-
-  it("rechaza un título de 81 caracteres sin pedir nada al storage", async () => {
-    await pickFile(videoFile("video/mp4", 30));
-    typeTitle("x".repeat(81));
-    await submit();
-
-    expect(alerts()).toContain("El título no puede superar los 80 caracteres.");
-    expect(uploadMock).not.toHaveBeenCalled();
-  });
-
-  it("pide un video si no se eligió ninguno", async () => {
-    typeTitle("Gol");
-    await submit();
-
-    expect(alerts()).toContain("Elegí un video.");
-    expect(uploadMock).not.toHaveBeenCalled();
   });
 
   it("cambiar de archivo mientras se lee la duración no deja Subir trabado", async () => {

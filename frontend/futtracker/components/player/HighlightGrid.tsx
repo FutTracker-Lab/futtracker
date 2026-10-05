@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import DeleteHighlightDialog from "@/components/player/DeleteHighlightDialog";
 import HighlightUploadButton from "@/components/player/HighlightUploadButton";
+import { HIGHLIGHT_TILE_CLASS, PlayIcon } from "@/components/player/HighlightTileFace";
 import HighlightViewer from "@/components/player/HighlightViewer";
 import type { HighlightTile } from "@/lib/data/highlightGallery";
 import { MAX_HIGHLIGHTS_PER_PLAYER } from "@/lib/data/highlights";
@@ -27,20 +28,9 @@ export default function HighlightGrid({ tiles, isOwner, playerId }: Props) {
               type="button"
               onClick={() => setOpenId(tile.id)}
               aria-label={`Reproducir ${tile.title}`}
-              className="flex w-full flex-col items-center justify-center gap-1 rounded-lg bg-zinc-950 px-12 py-3 text-xs text-zinc-300 hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className={`${HIGHLIGHT_TILE_CLASS} px-12`}
             >
-              <svg
-                aria-hidden="true"
-                className="size-5 text-white"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M10 8.5l5 3.5-5 3.5z" />
-              </svg>
+              <PlayIcon />
               {/* Se trunca el título, nunca la fecha. */}
               <span className="flex max-w-full">
                 <span className="truncate">{tile.title}</span>
