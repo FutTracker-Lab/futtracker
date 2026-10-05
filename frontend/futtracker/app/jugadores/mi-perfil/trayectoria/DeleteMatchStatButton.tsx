@@ -15,6 +15,7 @@ type Props = {
   // Igual que en la etapa: el disparador cambia de forma segun viva suelto o
   // dentro del menu "..." de la fila.
   triggerClassName?: string;
+  triggerRole?: "menuitem";
 };
 
 export default function DeleteMatchStatButton({
@@ -23,6 +24,7 @@ export default function DeleteMatchStatButton({
   opponent,
   matchDate,
   triggerClassName,
+  triggerRole,
 }: Props) {
   const router = useRouter();
 
@@ -30,6 +32,7 @@ export default function DeleteMatchStatButton({
     <ConfirmDialog
       triggerLabel="Eliminar"
       triggerClassName={triggerClassName}
+      triggerRole={triggerRole}
       title={`¿Eliminar el partido vs. ${opponent}?`}
       description={
         <>

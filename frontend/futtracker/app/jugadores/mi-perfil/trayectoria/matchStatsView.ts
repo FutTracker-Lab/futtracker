@@ -1,10 +1,9 @@
-import type { MatchStat } from "@/lib/data/stats";
+import type { MatchStat, SeasonStats } from "@/lib/data/stats";
 
 /**
  * Agrupación por año de los partidos de una entrada (requisito 3 de FUT-92).
- * Separado en una función pura, sin renderizar nada, por el mismo motivo que
- * `splitVisibleEntries` de `careerTimelineView.ts`: el repo no tiene
- * testing-library/jsdom, así que esta lógica se prueba acá.
+ * Función pura para poder probarla sin renderizar, igual que
+ * `splitVisibleEntries` de `careerTimelineView.ts`.
  */
 
 export type YearGroup = {
@@ -26,17 +25,19 @@ function yearOf(match: MatchStat): number {
   return Number(match.match_date.slice(0, 4));
 }
 
-function sumBy(matches: MatchStat[], pick: (match: MatchStat) => number): number {
-  return matches.reduce((total, match) => total + pick(match), 0);
-}
-
 /**
  * Solo aparecen los años con al menos un partido cargado (requisito 3,
  * decisión 1.5: los huecos son válidos y no se señalan). Se asume que
  * `matches` ya viene ordenado por `match_date desc` (así lo entrega
  * `getMatchStats`); dentro de cada grupo se conserva ese orden.
+ *
+ * `matches` y `seasons` son los de una sola etapa: los dos lectores filtran por
+ * `career_entry_id`, así que acá no puede haber dos filas del mismo año.
  */
-export function groupMatchesByYear(matches: MatchStat[]): YearGroup[] {
+export function groupMatchesByYear(
+  matches: MatchStat[],
+  seasons: SeasonStats[],
+): YearGroup[] {
   const byYear = new Map<number, MatchStat[]>();
 
   for (const match of matches) {
@@ -49,18 +50,30 @@ export function groupMatchesByYear(matches: MatchStat[]): YearGroup[] {
     }
   }
 
+  const seasonByYear = new Map(
+    seasons.map((season) => [season.season_year, season]),
+  );
+
   return Array.from(byYear.entries())
     .sort(([a], [b]) => b - a)
-    .map(([year, yearMatches]) => ({
-      year,
-      matches: yearMatches,
-      totals: {
-        matches: yearMatches.length,
-        minutes: sumBy(yearMatches, (m) => m.minutes_played),
-        goals: sumBy(yearMatches, (m) => m.goals),
-        assists: sumBy(yearMatches, (m) => m.assists),
-        yellowCards: sumBy(yearMatches, (m) => m.yellow_cards),
-        redCards: sumBy(yearMatches, (m) => m.red_cards),
-      },
-    }));
+    .map(([year, yearMatches]) => {
+      const season = seasonByYear.get(year);
+
+      return {
+        year,
+        matches: yearMatches,
+        totals: {
+          // Cuenta las filas que la tabla muestra, no `matches_played`: el
+          // badge tiene que describir lo que el jugador está viendo.
+          matches: yearMatches.length,
+          // El cero no reconstruye el total sumando: un subtotal que falta se
+          // ve en vez de quedar tapado.
+          minutes: season?.minutes_played ?? 0,
+          goals: season?.goals ?? 0,
+          assists: season?.assists ?? 0,
+          yellowCards: season?.yellow_cards ?? 0,
+          redCards: season?.red_cards ?? 0,
+        },
+      };
+    });
 }
