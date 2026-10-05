@@ -11,6 +11,10 @@ describe("resolveProfileTab", () => {
     expect(resolveProfileTab("estadisticas")).toBe("estadisticas");
   });
 
+  it("activa Highlights con ?tab=highlights", () => {
+    expect(resolveProfileTab("highlights")).toBe("highlights");
+  });
+
   it("con un valor inválido, activa Resumen", () => {
     expect(resolveProfileTab("xyz")).toBe("resumen");
   });
@@ -21,7 +25,11 @@ describe("resolveProfileTab", () => {
 });
 
 describe("PROFILE_TABS", () => {
-  it("tiene solo Resumen y Estadísticas", () => {
-    expect(PROFILE_TABS.map((tab) => tab.id)).toEqual(["resumen", "estadisticas"]);
+  it("tiene Resumen, Estadísticas y Highlights", () => {
+    expect(PROFILE_TABS.map((tab) => tab.id)).toEqual([
+      "resumen",
+      "estadisticas",
+      "highlights",
+    ]);
   });
 });

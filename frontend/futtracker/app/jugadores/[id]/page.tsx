@@ -6,6 +6,9 @@ import type { Metadata } from "next";
 import CareerTimeline from "@/components/player/CareerTimeline";
 import CareerTimelineSkeleton from "@/components/player/CareerTimelineSkeleton";
 import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
+import HeaderHighlightUpload from "@/components/player/HeaderHighlightUpload";
+import HighlightsSkeleton from "@/components/player/HighlightsSkeleton";
+import HighlightsTab from "@/components/player/HighlightsTab";
 import PlayerProfileDetails from "@/components/player/PlayerProfileDetails";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
 import ProfileTabs from "@/components/player/ProfileTabs";
@@ -100,12 +103,15 @@ export default async function PlayerProfilePage({
         avatarUrl={avatarUrl}
         actions={
           isOwner ? (
-            <Link
-              href={RouteConstants.profile.edit}
-              className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-            >
-              {player ? "Editar perfil" : "Completá tu perfil"}
-            </Link>
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              <Link
+                href={RouteConstants.profile.edit}
+                className="inline-flex rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+              >
+                {player ? "Editar perfil" : "Completá tu perfil"}
+              </Link>
+              {player ? <HeaderHighlightUpload playerId={player.id} /> : null}
+            </div>
           ) : null
         }
       />
@@ -145,9 +151,13 @@ export default async function PlayerProfilePage({
                 </Suspense>
               }
             />
-          ) : (
+          ) : activeTab === "estadisticas" ? (
             <Suspense fallback={<SeasonStatsSkeleton />}>
               <SeasonStatsPanel playerId={player.id} isOwner={isOwner} />
+            </Suspense>
+          ) : (
+            <Suspense fallback={<HighlightsSkeleton />}>
+              <HighlightsTab playerId={player.id} isOwner={isOwner} hasPlayerRow />
             </Suspense>
           )}
         </ProfileTabs>

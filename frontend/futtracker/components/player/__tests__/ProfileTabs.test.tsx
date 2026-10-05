@@ -30,33 +30,33 @@ function propsOf(node: ReactNode) {
 }
 
 describe("ProfileTabs", () => {
-  it("expone un tablist con las dos pestañas del perfil", () => {
+  it("expone un tablist con las pestañas del perfil", () => {
     const nodes = render("resumen");
 
     expect(byRole(nodes, "tablist")).toHaveLength(1);
     expect(byRole(nodes, "tab").map((tab) => propsOf(tab).children)).toEqual([
       "Resumen",
       "Estadísticas",
+      "Highlights",
     ]);
   });
 
-  it("no renderiza Recomendaciones ni Highlights", () => {
+  it("no renderiza Recomendaciones", () => {
     const labels = byRole(render("resumen"), "tab").map((tab) => propsOf(tab).children);
 
     expect(labels).not.toContain("Recomendaciones");
-    expect(labels).not.toContain("Highlights");
   });
 
   it("marca como seleccionada la pestaña activa", () => {
     const tabs = byRole(render("resumen"), "tab");
 
-    expect(tabs.map((tab) => propsOf(tab)["aria-selected"])).toEqual([true, false]);
+    expect(tabs.map((tab) => propsOf(tab)["aria-selected"])).toEqual([true, false, false]);
   });
 
   it("marca Estadísticas cuando es la activa", () => {
     const tabs = byRole(render("estadisticas"), "tab");
 
-    expect(tabs.map((tab) => propsOf(tab)["aria-selected"])).toEqual([false, true]);
+    expect(tabs.map((tab) => propsOf(tab)["aria-selected"])).toEqual([false, true, false]);
   });
 
   it("cada pestaña linkea a su propio valor de ?tab", () => {
@@ -65,13 +65,14 @@ describe("ProfileTabs", () => {
     expect(tabs.map((tab) => propsOf(tab).href)).toEqual([
       "?tab=resumen",
       "?tab=estadisticas",
+      "?tab=highlights",
     ]);
   });
 
   it("deja una sola pestaña en el orden de tabulación", () => {
     const tabs = byRole(render("estadisticas"), "tab");
 
-    expect(tabs.map((tab) => propsOf(tab).tabIndex)).toEqual([-1, 0]);
+    expect(tabs.map((tab) => propsOf(tab).tabIndex)).toEqual([-1, 0, -1]);
   });
 
   it("renderiza el contenido recibido dentro del panel", () => {
