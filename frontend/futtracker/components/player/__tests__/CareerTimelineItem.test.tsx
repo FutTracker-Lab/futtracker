@@ -22,11 +22,9 @@ function entry(overrides: Partial<CareerTimelineEntry> = {}): CareerTimelineEntr
   };
 }
 
-// El repo no tiene testing-library ni jsdom (vitest corre en `environment:
-// "node"`), pero un componente sincrónico es una función que devuelve un
-// árbol de elementos de React, que son objetos planos. Recorrerlo alcanza
-// para verificar qué se monta y dónde, sin sumar una dependencia nueva ni
-// un DOM.
+// Este test recorre el árbol de elementos en vez de renderizarlo: es
+// anterior a que el repo tuviera jsdom y testing-library (FUT-113), y no se
+// migró.
 function flatten(node: ReactNode): ReactNode[] {
   if (Array.isArray(node)) return node.flatMap(flatten);
   if (!isValidElement(node)) return node == null || node === false ? [] : [node];

@@ -2,9 +2,8 @@ import type { MatchStat, SeasonStats } from "@/lib/data/stats";
 
 /**
  * Agrupación por año de los partidos de una entrada (requisito 3 de FUT-92).
- * Separado en una función pura, sin renderizar nada, por el mismo motivo que
- * `splitVisibleEntries` de `careerTimelineView.ts`: el repo no tiene
- * testing-library/jsdom, así que esta lógica se prueba acá.
+ * Función pura para poder probarla sin renderizar, igual que
+ * `splitVisibleEntries` de `careerTimelineView.ts`.
  */
 
 export type YearGroup = {
