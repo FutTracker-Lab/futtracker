@@ -6,8 +6,7 @@ import type { CareerTimelineEntry } from "@/lib/data/careerTimeline";
 export const VISIBLE_ENTRIES_LIMIT = 5;
 
 // Separado en una función pura para poder probar el corte sin renderizar el
-// árbol completo (el repo no tiene testing-library/jsdom configurado, así
-// que la lógica de presentación se prueba acá y no contra el JSX).
+// árbol completo.
 export function splitVisibleEntries(
   entries: CareerTimelineEntry[],
   limit: number = VISIBLE_ENTRIES_LIMIT,

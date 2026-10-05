@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import CareerTimelineItem from "@/components/player/CareerTimelineItem";
 import type { CareerTimelineEntry } from "@/lib/data/careerTimeline";
 
+import { flatten } from "./reactTree";
+
 function entry(overrides: Partial<CareerTimelineEntry> = {}): CareerTimelineEntry {
   return {
     id: "entry-id",
@@ -22,18 +24,18 @@ function entry(overrides: Partial<CareerTimelineEntry> = {}): CareerTimelineEntr
   };
 }
 
-// El repo no tiene testing-library ni jsdom (vitest corre en `environment:
-// "node"`), pero un componente sincrónico es una función que devuelve un
-// árbol de elementos de React, que son objetos planos. Recorrerlo alcanza
-// para verificar qué se monta y dónde, sin sumar una dependencia nueva ni
-// un DOM.
-function flatten(node: ReactNode): ReactNode[] {
-  if (Array.isArray(node)) return node.flatMap(flatten);
-  if (!isValidElement(node)) return node == null || node === false ? [] : [node];
-
-  const { children } = node.props as { children?: ReactNode };
-
-  return [node, ...flatten(children)];
+// Por `data-testid` y no por clases: el filtro por clases pasaba siempre
+// (DT-05). Los dos tests del slot lo usan, así el atributo queda atado desde
+// el caso con contenido y desde el caso sin contenido.
+function slotContainers(nodes: ReactNode[]): ReactNode[] {
+  return nodes.filter(
+    (node) =>
+      isValidElement(node) &&
+      typeof node.props === "object" &&
+      node.props !== null &&
+      "data-testid" in node.props &&
+      node.props["data-testid"] === "career-timeline-item-slots",
+  );
 }
 
 describe("CareerTimelineItem", () => {
@@ -46,6 +48,7 @@ describe("CareerTimelineItem", () => {
     const nodes = flatten(CareerTimelineItem({ entry: entry(), statsSlot: slot }));
 
     expect(nodes).toContain(slot);
+    expect(slotContainers(nodes)).toHaveLength(1);
   });
 
   it("no deja el contenedor del slot cuando no se pasa nada", () => {
@@ -53,16 +56,7 @@ describe("CareerTimelineItem", () => {
 
     // Sin slot no queda un <div> vacío ocupando espacio en la fila: el
     // contenedor solo existe cuando hay algo que mostrar.
-    const containers = nodes.filter(
-      (node) =>
-        isValidElement(node) &&
-        typeof node.props === "object" &&
-        node.props !== null &&
-        "className" in node.props &&
-        node.props.className === "flex flex-wrap gap-2 pt-1",
-    );
-
-    expect(containers).toHaveLength(0);
+    expect(slotContainers(nodes)).toHaveLength(0);
   });
 
   it("linkea el club cuando la entrada tiene equipo vinculado", () => {

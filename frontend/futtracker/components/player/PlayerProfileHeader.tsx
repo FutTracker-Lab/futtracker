@@ -92,14 +92,18 @@ export default function PlayerProfileHeader({
             ) : null}
           </div>
 
-          {abbreviation ? (
+          {/* "Busca equipo" va fuera del condicional de la abreviatura: sin
+              posición cargada el dato se perdía de la página (FUT-111). */}
+          {abbreviation || player?.is_seeking_team ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span
-                title={getPositionLabel(player?.position ?? null) ?? undefined}
-                className="inline-flex items-center rounded-md bg-brand px-2 py-1 text-xs font-semibold tracking-wide text-brand-foreground"
-              >
-                {abbreviation}
-              </span>
+              {abbreviation ? (
+                <span
+                  title={getPositionLabel(player?.position ?? null) ?? undefined}
+                  className="inline-flex items-center rounded-md bg-brand px-2 py-1 text-xs font-semibold tracking-wide text-brand-foreground"
+                >
+                  {abbreviation}
+                </span>
+              ) : null}
               {player?.is_seeking_team ? (
                 <span className="inline-flex items-center rounded-full border border-brand-tint-border bg-brand-tint px-2.5 py-0.5 text-xs font-medium text-brand">
                   Busca equipo

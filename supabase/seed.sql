@@ -164,3 +164,17 @@ join public.career_entries ce
   on ce.player_id = v.player_id::uuid
   and ce.club_name = v.club_name
   and v.match_date::date between ce.start_date and coalesce(ce.end_date, v.match_date::date);
+
+-- Highlights (T08a). Solo las filas: los objetos del bucket no se siembran
+-- por SQL. Para probar la reproducción hay que subir un video chico a mano
+-- con la sesión del jugador; el mecanismo lo define el TL (requisito 9).
+--
+-- Lucía y Martín tienen clips; Sofía, Diego y Valentina quedan en cero, para
+-- que la galería vacía también tenga con qué probarse.
+insert into public.player_highlights (player_id, title, storage_path)
+values
+  ('11111111-1111-4111-8111-111111111111', 'Gol de tiro libre vs Acassuso', '11111111-1111-4111-8111-111111111111/a1b2c3d4-0001-4000-8000-000000000001.mp4'),
+  ('11111111-1111-4111-8111-111111111111', 'Doblete vs San Miguel', '11111111-1111-4111-8111-111111111111/a1b2c3d4-0001-4000-8000-000000000002.mp4'),
+  ('11111111-1111-4111-8111-111111111111', 'Asistencia de taco', '11111111-1111-4111-8111-111111111111/a1b2c3d4-0001-4000-8000-000000000003.mp4'),
+  ('22222222-2222-4222-8222-222222222222', 'Atajada abajo vs Newell''s', '22222222-2222-4222-8222-222222222222/a1b2c3d4-0002-4000-8000-000000000001.mp4'),
+  ('22222222-2222-4222-8222-222222222222', 'Penal atajado vs Central', '22222222-2222-4222-8222-222222222222/a1b2c3d4-0002-4000-8000-000000000002.mp4');
