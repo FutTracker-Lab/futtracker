@@ -59,3 +59,26 @@ export function formatCareerPeriod(
 
   return `${start} – ${end}`;
 }
+
+// Zona fija de Argentina: el render del servidor no conoce la del visitante.
+const AR_DATE_PARTS = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Argentina/Buenos_Aires",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+});
+
+function argentineDateParts(date: Date) {
+  const parts = Object.fromEntries(
+    AR_DATE_PARTS.formatToParts(date).map((part) => [part.type, part.value]),
+  );
+
+  return { year: parts.year, month: Number(parts.month), day: Number(parts.day) };
+}
+
+export function formatShortDate(timestamp: string, now: Date = new Date()): string {
+  const { year, month, day } = argentineDateParts(new Date(timestamp));
+  const label = `${day} ${MONTH_ABBREVIATIONS[month - 1]}`;
+
+  return year === argentineDateParts(now).year ? label : `${label} ${year}`;
+}
