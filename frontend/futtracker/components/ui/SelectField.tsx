@@ -1,4 +1,4 @@
-import type { SelectHTMLAttributes } from "react";
+import type { Ref, SelectHTMLAttributes } from "react";
 
 type Option = {
   value: string;
@@ -18,6 +18,7 @@ function isGroup(option: Option | OptionGroup): option is OptionGroup {
 }
 
 type Props = SelectHTMLAttributes<HTMLSelectElement> & {
+  ref?: Ref<HTMLSelectElement>;
   label: string;
   options: (Option | OptionGroup)[];
   // Texto de la opción vacía. Si no se pasa, el select no ofrece "sin valor".
