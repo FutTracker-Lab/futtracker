@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildHighlightPath,
+  createHighlight,
   deleteHighlight,
   getHighlightSignedUrls,
   highlightInputSchema,
@@ -177,7 +178,7 @@ describe("deleteHighlight", () => {
       { storage_path: `${PLAYER_A}/clip.mp4` },
     ]);
 
-    await deleteHighlight(client, "highlight-1");
+    await expect(deleteHighlight(client, "highlight-1")).resolves.toBe(true);
 
     expect(spies.eq).toHaveBeenCalledWith("id", "highlight-1");
     expect(spies.remove).toHaveBeenCalledWith("highlights", [
@@ -190,9 +191,41 @@ describe("deleteHighlight", () => {
   it("no toca el storage cuando la RLS no dejó borrar la fila", async () => {
     const { client, spies } = fakeDeleteClient([]);
 
-    await deleteHighlight(client, "de-otro");
+    await expect(deleteHighlight(client, "de-otro")).resolves.toBe(false);
 
     expect(spies.remove).not.toHaveBeenCalled();
+  });
+});
+
+function fakeInsertClient(error: unknown = null) {
+  const insert = vi.fn(async () => ({ error }));
+  const client = { from: () => ({ insert }) };
+
+  return { client: client as unknown as SupabaseClient<Database>, insert };
+}
+
+describe("createHighlight", () => {
+  it("inserta la fila con el jugador de la sesión", async () => {
+    const { client, insert } = fakeInsertClient();
+
+    await createHighlight(client, PLAYER_A, {
+      title: "Gol",
+      storage_path: `${PLAYER_A}/abc.mp4`,
+    });
+
+    expect(insert).toHaveBeenCalledWith({
+      player_id: PLAYER_A,
+      title: "Gol",
+      storage_path: `${PLAYER_A}/abc.mp4`,
+    });
+  });
+
+  it("propaga el error de Postgres con su código", async () => {
+    const { client } = fakeInsertClient({ code: "23514", message: "highlight_limit_reached" });
+
+    await expect(
+      createHighlight(client, PLAYER_A, { title: "Gol", storage_path: `${PLAYER_A}/abc.mp4` }),
+    ).rejects.toMatchObject({ code: "23514" });
   });
 });
 
