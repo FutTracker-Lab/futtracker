@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatCount,
+  formatDistanceKm,
   formatGoalsPerMatch,
   formatInteger,
 } from "@/lib/format/numbers";
@@ -39,5 +40,16 @@ describe("formatCount", () => {
   it("usa el plural con 0 y con más de 1", () => {
     expect(formatCount(0, "partido", "partidos")).toBe("0 partidos");
     expect(formatCount(3, "partido", "partidos")).toBe("3 partidos");
+  });
+});
+
+describe("formatDistanceKm", () => {
+  it("usa un decimal con coma (FUT-110)", () => {
+    expect(formatDistanceKm(35.4)).toBe("35,4 km");
+  });
+
+  it("muestra el decimal aunque sea cero", () => {
+    expect(formatDistanceKm(0)).toBe("0,0 km");
+    expect(formatDistanceKm(12)).toBe("12,0 km");
   });
 });
