@@ -8,7 +8,11 @@ import CareerTimelineSkeleton from "@/components/player/CareerTimelineSkeleton";
 import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
 import PlayerProfileDetails from "@/components/player/PlayerProfileDetails";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
+import ProfileTabs from "@/components/player/ProfileTabs";
+import SeasonStatsPanel from "@/components/player/SeasonStatsPanel";
+import SeasonStatsSkeleton from "@/components/player/SeasonStatsSkeleton";
 import SeasonSummaryBlock from "@/components/player/SeasonSummaryBlock";
+import { resolveProfileTab } from "@/components/player/profileTabsView";
 import type { CareerTimelineEntry } from "@/lib/data/careerTimeline";
 import { getPlayerProfileById } from "@/lib/data/profiles";
 import { getCareerTotals, getSeasonStats, type SeasonStats } from "@/lib/data/stats";
@@ -52,8 +56,11 @@ export async function generateMetadata({
 // mostrar el botón de editar.
 export default async function PlayerProfilePage({
   params,
+  searchParams,
 }: PageProps<"/jugadores/[id]">) {
   const { id } = await params;
+  const { tab } = await searchParams;
+  const activeTab = resolveProfileTab(tab);
   const data = await getPlayerProfileById(id);
 
   if (!data) {
@@ -71,11 +78,15 @@ export default async function PlayerProfilePage({
   // Requisito 8 de FUT-92: la franja de totales de carrera arriba del perfil,
   // siempre leída de `player_career_totals` (nunca recalculada acá). Solo
   // tiene sentido si hay ficha de jugador — sin `player` no hay `player.id`
-  // que consultar.
-  const totals = player ? await getCareerTotals(supabase, player.id) : null;
-  const seasonsByEntry = player
-    ? groupSeasonsByEntry(await getSeasonStats(supabase, player.id))
-    : new Map<string, SeasonStats[]>();
+  // que consultar, y solo lo consume la pestaña Resumen.
+  const [totals, seasons] =
+    player && activeTab === "resumen"
+      ? await Promise.all([
+          getCareerTotals(supabase, player.id),
+          getSeasonStats(supabase, player.id),
+        ])
+      : [null, []];
+  const seasonsByEntry = groupSeasonsByEntry(seasons);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
@@ -99,37 +110,47 @@ export default async function PlayerProfilePage({
         }
       />
       {player ? (
-        <PlayerProfileDetails
-          player={player}
-          // FUT-91: ocupa el slot que ya dejaba PlayerProfileDetails para la
-          // trayectoria. Envuelto en su propio <Suspense> (nota técnica del
-          // ticket) para que el encabezado de arriba no espere a que
-          // resuelva esta consulta aparte.
-          careerSlot={
-            <Suspense fallback={<CareerTimelineSkeleton />}>
-              <CareerTimeline
-                playerId={player.id}
-                isOwner={isOwner}
-                // Requisito 8 de FUT-92: la franja de "Totales de carrera" y
-                // el resumen por año de cada etapa, en los mismos slots que
-                // ya reservaba FUT-91 — no se reescribe `CareerTimeline`.
-                totalsSlot={<CareerTotalsStrip totals={totals} />}
-                renderStatsSlot={(entry: CareerTimelineEntry) => (
-                  <SeasonSummaryBlock
-                    seasons={seasonsByEntry.get(entry.id) ?? []}
+        // Solo se renderiza el panel activo: la otra pestaña no paga su consulta.
+        <ProfileTabs activeTab={activeTab}>
+          {activeTab === "resumen" ? (
+            <PlayerProfileDetails
+              player={player}
+              // FUT-91: ocupa el slot que ya dejaba PlayerProfileDetails para
+              // la trayectoria. Envuelto en su propio <Suspense> (nota técnica
+              // del ticket) para que el encabezado de arriba no espere a que
+              // resuelva esta consulta aparte.
+              careerSlot={
+                <Suspense fallback={<CareerTimelineSkeleton />}>
+                  <CareerTimeline
+                    playerId={player.id}
+                    isOwner={isOwner}
+                    // Requisito 8 de FUT-92: la franja de "Totales de carrera"
+                    // y el resumen por año de cada etapa, en los mismos slots
+                    // que ya reservaba FUT-91 — no se reescribe
+                    // `CareerTimeline`.
+                    totalsSlot={<CareerTotalsStrip totals={totals} />}
+                    renderStatsSlot={(entry: CareerTimelineEntry) => (
+                      <SeasonSummaryBlock
+                        seasons={seasonsByEntry.get(entry.id) ?? []}
+                      />
+                    )}
+                    // El dueño puede agregar una etapa desde su propio perfil
+                    // público, igual que desde /trayectoria. Sin acciones de
+                    // Editar/Eliminar por fila acá: esas son de la pantalla de
+                    // gestión (requisito 1), no del perfil público.
+                    addHref={
+                      isOwner ? RouteConstants.profile.careerNew : undefined
+                    }
                   />
-                )}
-                // El dueño puede agregar una etapa desde su propio perfil
-                // público, igual que desde /trayectoria. Sin acciones de
-                // Editar/Eliminar por fila acá: esas son de la pantalla de
-                // gestión (requisito 1), no del perfil público.
-                addHref={
-                  isOwner ? RouteConstants.profile.careerNew : undefined
-                }
-              />
+                </Suspense>
+              }
+            />
+          ) : (
+            <Suspense fallback={<SeasonStatsSkeleton />}>
+              <SeasonStatsPanel playerId={player.id} isOwner={isOwner} />
             </Suspense>
-          }
-        />
+          )}
+        </ProfileTabs>
       ) : null}
     </div>
   );
