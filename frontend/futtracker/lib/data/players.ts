@@ -98,6 +98,29 @@ export async function getAvatarSignedUrl(
   return data.signedUrl;
 }
 
+export async function getAvatarSignedUrls(
+  client: Client,
+  paths: (string | null)[],
+): Promise<Record<string, string>> {
+  const unique = [...new Set(paths.filter((path): path is string => Boolean(path)))];
+
+  if (unique.length === 0) {
+    return {};
+  }
+
+  const { data, error } = await client.storage
+    .from(AVATARS_BUCKET)
+    .createSignedUrls(unique, AVATAR_SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    throw error;
+  }
+
+  return Object.fromEntries(
+    data.flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl]] : [])),
+  );
+}
+
 /**
  * Crea la ficha o la actualiza. El `id` sale de la sesión y nunca del input:
  * un id que viene del cliente es un id que el cliente eligió.

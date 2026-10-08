@@ -48,3 +48,7 @@ export function openVacanciesLabel(count: number): string {
   if (count === 0) return "Sin vacantes abiertas";
   return count === 1 ? "1 vacante abierta" : `${count} vacantes abiertas`;
 }
+
+export function applicationsCountLabel(count: number): string {
+  return count === 1 ? "1 postulación" : `${count} postulaciones`;
+}

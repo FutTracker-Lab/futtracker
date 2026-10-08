@@ -36,6 +36,10 @@ export const RouteConstants = {
     view: (id: string) => `/equipos/${id}`,
     mine: "/equipos/mi-equipo",
     myVacancies: "/equipos/mi-equipo?tab=vacantes",
+    myApplications: (vacancyId?: string) =>
+      vacancyId
+        ? `/equipos/mi-equipo?tab=postulaciones&vacante=${vacancyId}`
+        : "/equipos/mi-equipo?tab=postulaciones",
     new: "/equipos/nuevo",
     edit: (id: string) => `/equipos/${id}/editar`,
   },
