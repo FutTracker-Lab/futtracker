@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-import type { SearchPlayersParams } from "@/lib/data/playerSearch";
-import { POSITIONS, positionSchema } from "@/lib/data/players";
+import {
+  POSITIONS,
+  positionSchema,
+  type SearchPlayersParams,
+} from "@/lib/data/players";
 import { RouteConstants } from "@/lib/routes";
 
 export const SEARCH_RADII = [10, 25, 50, 100, 200] as const;

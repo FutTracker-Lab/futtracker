@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import type { PlayerSearchRow } from "@/lib/data/playerSearch";
+import type { PlayerSearchRow } from "@/lib/data/players";
 import { initialsOf } from "@/lib/format/initials";
 import { formatCount, formatDistanceKm } from "@/lib/format/numbers";
 import { getPositionLabel } from "@/lib/format/playerLabels";

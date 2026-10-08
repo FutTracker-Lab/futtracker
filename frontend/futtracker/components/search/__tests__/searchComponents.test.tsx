@@ -5,7 +5,7 @@ import ActiveFilterChips from "@/components/search/ActiveFilterChips";
 import PlayerResultRow from "@/components/search/PlayerResultRow";
 import SearchPagination from "@/components/search/SearchPagination";
 import { flatten } from "@/components/player/__tests__/reactTree";
-import type { PlayerSearchRow } from "@/lib/data/playerSearch";
+import type { PlayerSearchRow } from "@/lib/data/players";
 import { DEFAULT_SEARCH_FILTERS } from "@/lib/search/params";
 
 type Props = Record<string, unknown> & { children?: ReactNode };
@@ -38,7 +38,6 @@ function player(overrides: Partial<PlayerSearchRow> = {}): PlayerSearchRow {
     matches_played: 0,
     is_seeking_team: true,
     distance_km: 35.4,
-    total_count: 3,
     ...overrides,
   };
 }

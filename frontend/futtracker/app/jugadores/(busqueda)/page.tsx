@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import ActiveFilterChips from "@/components/search/ActiveFilterChips";
 import PlayerResultRow from "@/components/search/PlayerResultRow";
@@ -12,8 +12,7 @@ import {
   pageCount,
   resultsSubtitle,
 } from "@/components/search/searchView";
-import { searchPlayers } from "@/lib/data/playerSearch";
-import { getAvatarSignedUrls } from "@/lib/data/players";
+import { getAvatarSignedUrls, searchPlayers } from "@/lib/data/players";
 import { getMyTeam } from "@/lib/data/teams";
 import { RouteConstants } from "@/lib/routes";
 import {
@@ -46,7 +45,11 @@ async function PlayerSearchResults({ filters }: { filters: SearchCriteria }) {
     getMyTeam(supabase),
   ]);
 
-  if (result.status === "origin_missing") {
+  if (!result.ok && result.reason === "delegates_only") {
+    notFound();
+  }
+
+  if (!result.ok) {
     return (
       <SearchLayout>
         <div className="flex flex-col items-start gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
