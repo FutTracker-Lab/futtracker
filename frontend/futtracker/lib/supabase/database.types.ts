@@ -411,8 +411,34 @@ export type Database = {
       }
     }
     Functions: {
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
       is_team_owner: { Args: { team: string }; Returns: boolean }
       safe_uuid: { Args: { value: string }; Returns: string }
+      search_players: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_position?: string
+          p_radius_km: number
+          p_seeking_only?: boolean
+        }
+        Returns: {
+          age: number
+          avatar_path: string
+          city: string
+          distance_km: number
+          full_name: string
+          is_seeking_team: boolean
+          matches_played: number
+          player_id: string
+          position: string
+          province: string
+          total_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
