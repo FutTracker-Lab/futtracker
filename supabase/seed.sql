@@ -178,3 +178,151 @@ values
   ('11111111-1111-4111-8111-111111111111', 'Asistencia de taco', '11111111-1111-4111-8111-111111111111/a1b2c3d4-0001-4000-8000-000000000003.mp4'),
   ('22222222-2222-4222-8222-222222222222', 'Atajada abajo vs Newell''s', '22222222-2222-4222-8222-222222222222/a1b2c3d4-0002-4000-8000-000000000001.mp4'),
   ('22222222-2222-4222-8222-222222222222', 'Penal atajado vs Central', '22222222-2222-4222-8222-222222222222/a1b2c3d4-0002-4000-8000-000000000002.mp4');
+
+
+-- =====================================================================
+-- Búsqueda de jugadores (T09a)
+--
+-- Escenario geográfico para `search_players`. Los nombres de código (D1-D3,
+-- P1-P7) son los del ticket y los reutilizan T09b y T12a; van en un
+-- comentario al lado de cada cuenta. UUID fijos para poder referenciarlos
+-- desde los tests: los delegados empiezan con `d`, los jugadores con `f` y
+-- el relleno con `e`.
+-- =====================================================================
+
+-- Fuera de la búsqueda: los jugadores de arriba con coordenadas que caen
+-- dentro de los radios de los criterios de T09a. Lucía está en Pilar (~0 km
+-- del origen), Diego en La Plata (~100 km) y Martín en Rosario. Con
+-- coordenadas, cambiarían los conteos exactos que el ticket fija.
+--
+-- Quedan sin coordenadas, igual que cualquier usuario real: ningún formulario
+-- las carga todavía (supuesto 3 de T09a). Ninguna pantalla las muestra, así
+-- que los perfiles no cambian. T12a hace lo mismo con los equipos del seed.
+update public.players
+set latitude = null, longitude = null
+where id in (
+  '11111111-1111-4111-8111-111111111111',  -- Lucía
+  '22222222-2222-4222-8222-222222222222',  -- Martín
+  '44444444-4444-4444-8444-444444444444'   -- Diego
+);
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+select
+  '00000000-0000-0000-0000-000000000000'::uuid, v.id::uuid, 'authenticated',
+  'authenticated', v.email,
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', v.full_name, 'role', v.role),
+  now(), now(), '', '', '', ''
+from (
+  values
+    ('d0000001-0000-4000-8000-000000000108', 'busqueda.d1@example.com', 'Hernán Castro',   'delegate'),  -- D1: equipo en Pilar
+    ('d0000002-0000-4000-8000-000000000108', 'busqueda.d2@example.com', 'Rocío Medina',    'delegate'),  -- D2: equipo sin coordenadas
+    ('d0000003-0000-4000-8000-000000000108', 'busqueda.d3@example.com', 'Julián Ferreyra', 'delegate'),  -- D3: sin equipo
+    ('f0000001-0000-4000-8000-000000000108', 'busqueda.p1@example.com', 'Tomás Aguirre',   'player'),    -- P1
+    ('f0000002-0000-4000-8000-000000000108', 'busqueda.p2@example.com', 'Nicolás Benítez', 'player'),    -- P2
+    ('f0000003-0000-4000-8000-000000000108', 'busqueda.p3@example.com', 'Agustín Rojas',   'player'),    -- P3
+    ('f0000004-0000-4000-8000-000000000108', 'busqueda.p4@example.com', 'Facundo Ríos',    'player'),    -- P4
+    ('f0000005-0000-4000-8000-000000000108', 'busqueda.p5@example.com', 'Lautaro Gil',     'player'),    -- P5
+    ('f0000006-0000-4000-8000-000000000108', 'busqueda.p6@example.com', 'Matías Vera',     'player'),    -- P6
+    ('f0000007-0000-4000-8000-000000000108', 'busqueda.p7@example.com', 'Gonzalo Peralta', 'player')     -- P7
+) as v (id, email, full_name, role);
+
+-- Relleno 01 a 25: el nombre es el que pide el ticket, para que se reconozcan
+-- en la paginación de T09b.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+select
+  '00000000-0000-0000-0000-000000000000'::uuid,
+  ('e00000' || lpad(n::text, 2, '0') || '-0000-4000-8000-000000000108')::uuid,
+  'authenticated', 'authenticated',
+  'busqueda.relleno' || lpad(n::text, 2, '0') || '@example.com',
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', 'Relleno ' || lpad(n::text, 2, '0'), 'role', 'player'),
+  now(), now(), '', '', '', ''
+from generate_series(1, 25) as n;
+
+-- El insert de identidades de arriba ya corrió y solo tomó las cuentas que
+-- existían en ese momento; estas necesitan el suyo.
+insert into auth.identities (
+  provider_id, user_id, identity_data, provider, last_sign_in_at,
+  created_at, updated_at
+)
+select
+  u.id::text,
+  u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  'email',
+  now(),
+  now(),
+  now()
+from auth.users u
+where u.email like 'busqueda.%@example.com';
+
+insert into public.teams (owner_id, name, city, province, latitude, longitude)
+values
+  -- D1: el origen de todos los criterios de T09a. Mismas coordenadas que P1,
+  -- así P1 da 0.0 km.
+  ('d0000001-0000-4000-8000-000000000108', 'Club Social Pilar Norte', 'Pilar', 'Buenos Aires', -34.458700, -58.914200),
+  -- D2: equipo sin coordenadas, para `search_origin_missing`.
+  ('d0000002-0000-4000-8000-000000000108', 'Deportivo Las Lomas', 'San Isidro', 'Buenos Aires', null, null);
+  -- D3 no tiene equipo a propósito.
+
+-- Fechas de nacimiento relativas: con una fecha fija, la edad de P1 dejaría
+-- de ser 25 al año siguiente y el criterio de la edad se rompería solo.
+insert into public.players (
+  id, birth_date, position, city, province, latitude, longitude, is_seeking_team
+)
+values
+  ('f0000001-0000-4000-8000-000000000108', (current_date - interval '25 years')::date, 'delantero',     'Pilar',      'Buenos Aires', -34.458700, -58.914200, true),   -- P1
+  ('f0000002-0000-4000-8000-000000000108', (current_date - interval '22 years')::date, 'delantero',     'San Isidro', 'Buenos Aires', -34.470800, -58.528600, true),   -- P2
+  ('f0000003-0000-4000-8000-000000000108', null,                                       'mediocampista', null,         null,           -34.460000, -58.500000, true),   -- P3: sin fecha de nacimiento y sin partidos
+  ('f0000004-0000-4000-8000-000000000108', (current_date - interval '27 years')::date, 'delantero',     'Rosario',    'Santa Fe',     -32.944200, -60.650500, true),   -- P4
+  ('f0000005-0000-4000-8000-000000000108', (current_date - interval '24 years')::date, 'delantero',     'Pilar',      'Buenos Aires', -34.458700, -58.914200, false),  -- P5: no busca equipo
+  ('f0000006-0000-4000-8000-000000000108', (current_date - interval '21 years')::date, 'delantero',     'Escobar',    'Buenos Aires', null,       null,       true),   -- P6: sin coordenadas
+  ('f0000007-0000-4000-8000-000000000108', (current_date - interval '29 years')::date, 'arquero',       'Rosario',    'Santa Fe',     -32.944200, -60.650500, true);   -- P7
+
+-- Relleno: delanteros en Pilar que no buscan equipo. Con el filtro por
+-- defecto (`p_seeking_only = true`) no aparecen, así que no alteran los
+-- resultados de los otros criterios; con `false` llevan el total a 29.
+insert into public.players (
+  id, birth_date, position, city, province, latitude, longitude, is_seeking_team
+)
+select
+  ('e00000' || lpad(n::text, 2, '0') || '-0000-4000-8000-000000000108')::uuid,
+  (current_date - make_interval(years => 19 + n % 12))::date,
+  'delantero', 'Pilar', 'Buenos Aires', -34.458700, -58.914200, false
+from generate_series(1, 25) as n;
+
+-- P1 tiene 3 partidos, para `matches_played = 3`. Fechas relativas por el
+-- mismo motivo que las de nacimiento; los triggers de `match_stats` exigen
+-- que caigan dentro del período de la etapa.
+insert into public.career_entries (
+  player_id, team_id, club_name, category, position, start_date, end_date, is_current
+)
+values
+  ('f0000001-0000-4000-8000-000000000108', null, 'Club Atlético Pilar', 'Primera', 'delantero', (current_date - interval '2 years')::date, null, true);
+
+insert into public.match_stats (
+  career_entry_id, player_id, match_date, opponent, competition, started,
+  minutes_played, goals, assists, yellow_cards, red_cards, clean_sheet
+)
+select
+  ce.id, ce.player_id, (current_date - v.days_ago)::date, v.opponent,
+  'Liga Pilarense', true, 90, v.goals, 0, 0, 0, false
+from public.career_entries ce
+cross join (
+  values
+    (30, 'Club Atlético Del Viso', 1),
+    (60, 'Club Social Derqui',     0),
+    (90, 'Deportivo Fátima',       2)
+) as v (days_ago, opponent, goals)
+where ce.player_id = 'f0000001-0000-4000-8000-000000000108';
