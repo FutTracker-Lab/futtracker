@@ -157,3 +157,146 @@ export async function upsertPlayer(
 
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Búsqueda de jugadores (T09a): cliente tipado de la función `search_players`.
+// ---------------------------------------------------------------------------
+
+export type Position = z.infer<typeof positionSchema>;
+
+// Los topes repiten las validaciones de la función a propósito, igual que los
+// `check` de arriba: acá frenan un parámetro inválido antes del viaje a la
+// base. Si cambia uno, cambia el otro.
+export const SEARCH_MAX_RADIUS_KM = 200;
+export const SEARCH_MAX_LIMIT = 50;
+
+// Los parámetros van en camelCase porque es el contrato que usa T09b
+// (`searchPlayers({ radius, position, seekingOnly, limit, offset })`); el
+// helper los traduce a los `p_*` de la función.
+export const searchPlayersParamsSchema = z.object({
+  radius: z.number().int().min(1).max(SEARCH_MAX_RADIUS_KM),
+  position: positionSchema.nullable().default(null),
+  seekingOnly: z.boolean().default(true),
+  limit: z.number().int().min(1).max(SEARCH_MAX_LIMIT).default(20),
+  offset: z.number().int().min(0).default(0),
+});
+
+export type SearchPlayersParams = z.input<typeof searchPlayersParamsSchema>;
+
+// Tipo propio y no el generado: el generador de Supabase marca como no
+// nulas todas las columnas que devuelve una función, y `avatar_path`,
+// `position`, `age`, `city` y `province` pueden venir en null.
+export type PlayerSearchRow = {
+  player_id: string;
+  full_name: string;
+  avatar_path: string | null;
+  position: Position | null;
+  age: number | null;
+  city: string | null;
+  province: string | null;
+  matches_played: number;
+  is_seeking_team: boolean;
+  distance_km: number;
+};
+
+/**
+ * Las dos fallas esperables de la búsqueda, que la pantalla muestra como
+ * estados propios en vez de como error: el delegado sin equipo o con el equipo
+ * sin ubicación, y la cuenta que no es de delegado.
+ */
+export type SearchPlayersFailure = "origin_missing" | "delegates_only";
+
+export type SearchPlayersResult =
+  | { ok: true; rows: PlayerSearchRow[]; total: number }
+  | { ok: false; reason: SearchPlayersFailure };
+
+/**
+ * Traduce el error de `search_players` a una falla esperable, o null si es
+ * cualquier otra cosa.
+ *
+ * Se mira el código **y** el mensaje. Un `42501` sin `search_delegates_only`
+ * no es "no sos delegado": es, por ejemplo, un grant que falta en la base
+ * ("permission denied for function"). Tratarlo como `delegates_only` le
+ * mostraría un 404 a un delegado de verdad y escondería el bug.
+ *
+ * Función pura y sin Supabase, como `mapStatsError`, para poder testear el
+ * mapeo sin una base corriendo.
+ */
+export function mapSearchPlayersError(
+  error: unknown,
+): SearchPlayersFailure | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+
+  const { code, message } = error as { code?: string; message?: string };
+
+  if (code === "P0001" && message === "search_origin_missing") {
+    return "origin_missing";
+  }
+
+  if (code === "42501" && message === "search_delegates_only") {
+    return "delegates_only";
+  }
+
+  return null;
+}
+
+/**
+ * Jugadores cerca del equipo del delegado con sesión, del más cercano al más
+ * lejano.
+ *
+ * Las fallas esperables vuelven como valor (`ok: false`) para que la pantalla
+ * muestre su estado; cualquier otro error se lanza y lo agarra el
+ * `error.tsx`. Un parámetro inválido también se lanza: la pantalla valida la
+ * URL antes y nunca debería mandar uno.
+ *
+ * `total` sale de la primera fila. Con una página vacía (un `offset` más allá
+ * del último resultado) no hay fila de donde leerlo y vale 0.
+ */
+export async function searchPlayers(
+  client: Client,
+  params: SearchPlayersParams,
+): Promise<SearchPlayersResult> {
+  const parsed = searchPlayersParamsSchema.parse(params);
+
+  const { data, error } = await client.rpc("search_players", {
+    p_radius_km: parsed.radius,
+    // Sin posición se omite y la función usa su default (todas).
+    ...(parsed.position ? { p_position: parsed.position } : {}),
+    p_seeking_only: parsed.seekingOnly,
+    p_limit: parsed.limit,
+    p_offset: parsed.offset,
+  });
+
+  if (error) {
+    const reason = mapSearchPlayersError(error);
+
+    if (reason) {
+      return { ok: false, reason };
+    }
+
+    throw error;
+  }
+
+  const results = data ?? [];
+
+  return {
+    ok: true,
+    // Lista explícita de campos: si la función empezara a devolver una
+    // columna nueva, no se filtra sola hacia la pantalla.
+    rows: results.map((row) => ({
+      player_id: row.player_id,
+      full_name: row.full_name,
+      avatar_path: row.avatar_path,
+      position: row.position as Position | null,
+      age: row.age,
+      city: row.city,
+      province: row.province,
+      matches_played: row.matches_played,
+      is_seeking_team: row.is_seeking_team,
+      distance_km: row.distance_km,
+    })),
+    total: results[0]?.total_count ?? 0,
+  };
+}
