@@ -41,7 +41,10 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
   // El delegado no tiene "editar" fijo porque la ruta depende del id de su
   // equipo, y puede no tener ninguno todavía: "Mi equipo" resuelve los dos
   // casos (el perfil o el estado vacío que invita a crearlo).
-  delegate: [{ href: RouteConstants.team.mine, label: "Mi equipo" }],
+  delegate: [
+    { href: RouteConstants.team.mine, label: "Mi equipo" },
+    { href: RouteConstants.search, label: "Buscar jugadores" },
+  ],
 };
 
 
