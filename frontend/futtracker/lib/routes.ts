@@ -32,6 +32,7 @@ export const RouteConstants = {
     careerMatchEdit: (entryId: string, matchId: string) =>
       `/jugadores/mi-perfil/trayectoria/${entryId}/partidos/${matchId}/editar`,
   },
+  search: "/jugadores",
   team: {
     view: (id: string) => `/equipos/${id}`,
     mine: "/equipos/mi-equipo",

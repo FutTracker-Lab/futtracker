@@ -22,6 +22,15 @@ export function formatInteger(value: number | null | undefined): string {
   return INTEGER_FORMATTER.format(value ?? 0);
 }
 
+const DISTANCE_FORMATTER = new Intl.NumberFormat("es-AR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+export function formatDistanceKm(value: number): string {
+  return `${DISTANCE_FORMATTER.format(value)} km`;
+}
+
 export function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? singular : plural;
 }

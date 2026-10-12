@@ -53,25 +53,24 @@ describe("formatCareerPeriod", () => {
 });
 
 describe("formatShortDate", () => {
-  const NOW = new Date("2026-10-07T15:00:00Z");
+  const NOW = new Date("2026-10-05T15:00:00Z");
 
-  it("omite el año si es el actual", () => {
+  it("omite el año cuando es el actual", () => {
     expect(formatShortDate("2026-08-03T15:00:00Z", NOW)).toBe("3 ago");
   });
 
-  it("agrega el año si no es el actual", () => {
+  it("agrega el año cuando no es el actual", () => {
     expect(formatShortDate("2025-08-03T15:00:00Z", NOW)).toBe("3 ago 2025");
   });
 
-  it("usa el día de Argentina y no el de UTC", () => {
-    // 01:00 UTC del 4 de agosto todavía es 3 de agosto en UTC-3.
+  // 01:00 UTC del 4 todavía es el 3 a la noche en Argentina.
+  it("toma el día en hora de Argentina", () => {
     expect(formatShortDate("2026-08-04T01:00:00Z", NOW)).toBe("3 ago");
   });
 
-  it("decide el año con la fecha de Argentina", () => {
-    // 1 de enero 02:00 UTC sigue siendo 31 de diciembre del año anterior.
+  it("toma el año en hora de Argentina", () => {
     expect(
-      formatShortDate("2026-01-01T02:00:00Z", new Date("2026-03-01T12:00:00Z")),
+      formatShortDate("2026-01-01T02:00:00Z", new Date("2026-01-01T12:00:00Z")),
     ).toBe("31 dic 2025");
   });
 });
