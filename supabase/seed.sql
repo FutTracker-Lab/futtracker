@@ -326,3 +326,31 @@ cross join (
     (90, 'Deportivo Fátima',       2)
 ) as v (days_ago, opponent, goals)
 where ce.player_id = 'f0000001-0000-4000-8000-000000000108';
+
+
+-- =====================================================================
+-- Vacantes (T10a)
+--
+-- Sobre los equipos del seed de T05a. Convención de nombres que reutilizan
+-- los tickets siguientes de EPIC-03: E1, E2, E3 son los tres primeros equipos
+-- de este archivo, en orden (Carlos, Mariana y Gustavo); DE0 es Paula, la
+-- delegada sin equipo; PJ1 a PJ3 son Lucía, Martín y Sofía.
+--
+-- `created_at` relativo: los criterios ordenan por fecha, y con fechas fijas
+-- el orden no cambiaría, pero las vacantes envejecerían en la pantalla.
+-- UUID fijos que terminan en `0120`, para referenciarlas desde los tests.
+-- =====================================================================
+insert into public.vacancies (
+  id, team_id, position, modality, level, description, status, created_at
+)
+values
+  -- V1: E1, abierta.
+  ('0a000001-0000-4000-8000-000000000120', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'mediocampista', 'futbol_11', 'competitivo', 'Volante con llegada al área. Entrenamos martes y jueves.', 'open', now() - interval '3 days'),
+  -- V2: E1, abierta.
+  ('0a000002-0000-4000-8000-000000000120', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'arquero', 'futbol_11', 'competitivo', 'Buscamos arquero titular para el torneo de la liga.', 'open', now() - interval '2 days'),
+  -- V3: E1, cerrada. Sirve para probar que una cerrada no bloquea abrir otra
+  -- de la misma posición.
+  ('0a000003-0000-4000-8000-000000000120', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'defensor', 'futbol_11', 'recreativo', null, 'closed', now() - interval '5 days'),
+  -- V4: E2, abierta.
+  ('0a000004-0000-4000-8000-000000000120', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'delantero', 'futbol_7', 'intermedio', null, 'open', now() - interval '1 day');
+  -- E3 queda sin vacantes, para el estado vacío.
