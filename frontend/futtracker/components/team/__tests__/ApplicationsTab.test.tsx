@@ -77,7 +77,7 @@ describe("loadTeamApplications", () => {
 
   beforeEach(() => {
     vi.mocked(listVacancyApplications).mockReset().mockResolvedValue([]);
-    vi.mocked(getAvatarSignedUrls).mockReset().mockResolvedValue({});
+    vi.mocked(getAvatarSignedUrls).mockReset().mockResolvedValue(new Map());
   });
 
   async function load(requested: string | undefined) {
@@ -107,7 +107,7 @@ describe("loadTeamApplications", () => {
       application({ id: "a1", avatar_path: "pj1/a.png" }),
       application({ id: "a2", avatar_path: null }),
     ]);
-    vi.mocked(getAvatarSignedUrls).mockResolvedValue({ "pj1/a.png": "https://signed/a" });
+    vi.mocked(getAvatarSignedUrls).mockResolvedValue(new Map([["pj1/a.png", "https://signed/a"]]));
 
     const result = await load(undefined);
 

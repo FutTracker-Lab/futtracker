@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
+import HeaderHighlightUpload from "@/components/player/HeaderHighlightUpload";
+import HighlightsSkeleton from "@/components/player/HighlightsSkeleton";
+import HighlightsTab from "@/components/player/HighlightsTab";
 import PlayerAttributesCard from "@/components/player/PlayerAttributesCard";
 import PlayerPresentationCard from "@/components/player/PlayerPresentationCard";
 import PlayerProfileHeader from "@/components/player/PlayerProfileHeader";
@@ -65,12 +69,15 @@ export default async function MyPlayerProfilePage() {
             isOwner
             avatarUrl={avatarUrl}
             actions={
-              <Link
-                href={RouteConstants.profile.edit}
-                className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:opacity-90"
-              >
-                {player ? "Editar perfil" : "Completá tu perfil"}
-              </Link>
+              <div className="flex flex-col items-start gap-2 sm:items-end">
+                <Link
+                  href={RouteConstants.profile.edit}
+                  className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:opacity-90"
+                >
+                  {player ? "Editar perfil" : "Completá tu perfil"}
+                </Link>
+                {player ? <HeaderHighlightUpload playerId={player.id} /> : null}
+              </div>
             }
           />
         </div>
@@ -97,6 +104,10 @@ export default async function MyPlayerProfilePage() {
             </div>
           </>
         ) : null}
+
+        <Suspense fallback={<HighlightsSkeleton />}>
+          <HighlightsTab playerId={profile.id} isOwner hasPlayerRow={player !== null} />
+        </Suspense>
       </div>
     </div>
   );

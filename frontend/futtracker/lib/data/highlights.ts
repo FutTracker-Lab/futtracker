@@ -7,7 +7,7 @@ type Client = SupabaseClient<Database>;
 
 export type PlayerHighlight = Tables<"player_highlights">;
 
-const HIGHLIGHTS_BUCKET = "highlights";
+export const HIGHLIGHTS_BUCKET = "highlights";
 const HIGHLIGHT_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
 
 // El límite y los tipos repiten lo que ya imponen el trigger y el bucket: acá
@@ -20,12 +20,15 @@ export const HIGHLIGHT_MIME_TYPES = [
   "video/quicktime",
 ] as const;
 export const HIGHLIGHT_MAX_BYTES = 52428800;
+export const HIGHLIGHT_TITLE_MAX = 80;
+
+export type HighlightActionResult = { ok: true } | { ok: false; error: string };
 
 // Sin `id`, `player_id` ni `created_at`: los tres salen de la sesión o de la
 // base, nunca de un formulario. `storage_path` sí, porque lo arma quien sube
 // el archivo, pero la base lo ata a la carpeta del dueño con un check.
 export const highlightInputSchema = z.object({
-  title: z.string().trim().min(1).max(80),
+  title: z.string().trim().min(1).max(HIGHLIGHT_TITLE_MAX),
   storage_path: z.string().trim().min(1),
 });
 
@@ -112,6 +115,20 @@ export async function getHighlightSignedUrls(
   return urls;
 }
 
+export async function createHighlight(
+  client: Client,
+  playerId: string,
+  input: HighlightInput,
+): Promise<void> {
+  const { error } = await client
+    .from("player_highlights")
+    .insert({ player_id: playerId, ...input });
+
+  if (error) {
+    throw error;
+  }
+}
+
 /**
  * Borra el highlight: primero la fila, después el objeto.
  *
@@ -127,7 +144,7 @@ export async function getHighlightSignedUrls(
 export async function deleteHighlight(
   client: Client,
   id: string,
-): Promise<void> {
+): Promise<boolean> {
   const { data, error } = await client
     .from("player_highlights")
     .delete()
@@ -141,9 +158,8 @@ export async function deleteHighlight(
   const deleted = data?.[0];
 
   if (!deleted) {
-    // La RLS rechazó el borrado o la fila no existe. No es un error para el
-    // que llama: el highlight no está, que es el estado que pedía.
-    return;
+    // La RLS rechazó el borrado o la fila no existe.
+    return false;
   }
 
   const { error: storageError } = await client.storage
@@ -159,4 +175,6 @@ export async function deleteHighlight(
       storageError,
     );
   }
+
+  return true;
 }

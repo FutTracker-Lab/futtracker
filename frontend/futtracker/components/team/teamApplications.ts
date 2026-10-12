@@ -41,10 +41,12 @@ export async function loadTeamApplications(
       vacancyId: vacancyId ?? undefined,
     });
     // Sin firma se muestran las iniciales: no vale la pena perder la lista por eso.
-    const avatarUrls = await getAvatarSignedUrls(
-      client,
-      applications.map((application) => application.avatar_path),
-    ).catch(() => ({}) as Record<string, string>);
+    const paths = applications.flatMap((application) =>
+      application.avatar_path ? [application.avatar_path] : [],
+    );
+    const avatarUrls = await getAvatarSignedUrls(client, [...new Set(paths)]).catch(
+      () => new Map<string, string>(),
+    );
 
     return {
       ok: true,
@@ -52,7 +54,7 @@ export async function loadTeamApplications(
       vacancyId,
       applications: applications.map((application) => ({
         ...application,
-        avatarUrl: application.avatar_path ? (avatarUrls[application.avatar_path] ?? null) : null,
+        avatarUrl: avatarUrls.get(application.avatar_path ?? "") ?? null,
       })),
     };
   } catch {
