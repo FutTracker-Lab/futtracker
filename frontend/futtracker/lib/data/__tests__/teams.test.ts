@@ -22,8 +22,6 @@ const INPUT: TeamInput = {
   club_name: "Club Atlético Pilar",
   category: "Primera",
   league: "Liga de Pilar",
-  city: "Pilar",
-  province: "Buenos Aires",
   country: "AR",
   zone_id: "pilar",
   founded_year: 1954,
@@ -104,16 +102,25 @@ describe("teamInputSchema", () => {
     ["founded_year", 2200],
     ["contact_email", "delegado@"],
     ["zone_id", ""],
+    ["zone_id", null],
   ])("rechaza %s = %s", (field, value) => {
     const result = teamInputSchema.safeParse({ ...INPUT, [field]: value });
 
     expect(result.success).toBe(false);
   });
 
-  // T09c: las coordenadas las deriva la base de la zona.
-  it("descarta latitude y longitude si llegan en el input", () => {
-    const parsed = teamInputSchema.parse({ ...INPUT, latitude: 0, longitude: 0 });
+  // T09c: la ubicación la deriva la base de la zona.
+  it("descarta la ubicación derivada si llega en el input", () => {
+    const parsed = teamInputSchema.parse({
+      ...INPUT,
+      city: "Otra",
+      province: "Otra",
+      latitude: 0,
+      longitude: 0,
+    });
 
+    expect(parsed).not.toHaveProperty("city");
+    expect(parsed).not.toHaveProperty("province");
     expect(parsed).not.toHaveProperty("latitude");
     expect(parsed).not.toHaveProperty("longitude");
   });

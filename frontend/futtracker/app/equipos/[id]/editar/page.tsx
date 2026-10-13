@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import TeamForm from "@/components/team/TeamForm";
 import { getTeamProfileById } from "@/lib/data/teamProfiles";
+import { listZones } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,7 +19,10 @@ export default async function EditTeamPage({
     redirect(`/login?redirectTo=${RouteConstants.team.edit(id)}`);
   }
 
-  const data = await getTeamProfileById(id);
+  const [data, zones] = await Promise.all([
+    getTeamProfileById(id),
+    listZones(supabase).catch(() => []),
+  ]);
 
   // Requisito 5: si no es el dueño, 404 y no 403. Un 403 confirmaría que ese
   // equipo existe; el 404 no dice nada. Tampoco un redirect silencioso, que
@@ -42,7 +46,7 @@ export default async function EditTeamPage({
           </p>
         </div>
 
-        <TeamForm team={team} initialCrestUrl={crestUrl} />
+        <TeamForm team={team} initialCrestUrl={crestUrl} zones={zones} />
       </div>
     </div>
   );
