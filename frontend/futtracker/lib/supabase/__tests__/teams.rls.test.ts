@@ -245,3 +245,44 @@ describe.skipIf(!IS_LOCAL)("RLS de public.teams", () => {
     });
   });
 });
+
+// T09c: la ciudad del equipo sale de la zona, y el índice único de nombre y
+// ciudad sigue valiendo con el nombre de la zona como ciudad.
+describe.skipIf(!IS_LOCAL)("zona de public.teams (T09c)", () => {
+  const ZONE_NAME = `Racing zona ${RUN}`;
+
+  async function createTeam(delegate: TestUser, name: string, zoneId: string) {
+    return delegate.client
+      .from("teams")
+      .insert({ owner_id: delegate.id, name, zone_id: zoneId })
+      .select("city, province, latitude, longitude")
+      .single();
+  }
+
+  it("un equipo creado con zona toma ciudad y coordenadas", async () => {
+    const delegate = await signUpUser("delegate");
+    const { data, error } = await createTeam(delegate, ZONE_NAME, "pilar");
+
+    expect(error).toBeNull();
+    expect(data).toEqual({
+      city: "Pilar",
+      province: "Buenos Aires",
+      latitude: -34.4587,
+      longitude: -58.9142,
+    });
+  });
+
+  it("el mismo nombre en la misma zona choca, aunque cambien las mayúsculas", async () => {
+    const delegate = await signUpUser("delegate");
+    const { error } = await createTeam(delegate, ZONE_NAME.toLowerCase(), "pilar");
+
+    expect(error?.code).toBe("23505");
+  });
+
+  it("el mismo nombre en otra zona funciona", async () => {
+    const delegate = await signUpUser("delegate");
+    const { error } = await createTeam(delegate, ZONE_NAME, "san-isidro");
+
+    expect(error).toBeNull();
+  });
+});

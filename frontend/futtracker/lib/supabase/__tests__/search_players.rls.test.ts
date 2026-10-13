@@ -67,8 +67,11 @@ describe.skipIf(!IS_LOCAL)("search_players", () => {
       expect(data?.[0].distance_km).toBe(0);
       expect(data?.[1].distance_km).toBeGreaterThanOrEqual(35);
       expect(data?.[1].distance_km).toBeLessThanOrEqual(36);
-      expect(data?.[2].distance_km).toBeGreaterThanOrEqual(37);
-      expect(data?.[2].distance_km).toBeLessThanOrEqual(39);
+      // Desde T09c, P3 está en el centro de la zona `san-isidro`, igual que P2:
+      // la misma distancia, y el desempate por `player_id` deja a P2 primero.
+      // El criterio de T09a decía entre 37 y 39; lo corrige el PO (supuesto 4
+      // de T09c).
+      expect(data?.[2].distance_km).toBe(data?.[1].distance_km);
       expect(data?.every((row) => row.total_count === 3)).toBe(true);
     });
 
