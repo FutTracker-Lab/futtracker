@@ -37,11 +37,8 @@ const VALID_INPUT = {
   club_name: null,
   category: "Primera",
   league: null,
-  city: "Pilar",
-  province: "Buenos Aires",
+  zone_id: "pilar",
   country: "AR",
-  latitude: null,
-  longitude: null,
   founded_year: 1954,
   bio: null,
   contact_email: null,
@@ -54,6 +51,11 @@ function uniqueViolation(constraint: string) {
     message: `duplicate key value violates unique constraint "${constraint}"`,
   };
 }
+
+const UNKNOWN_ZONE = {
+  code: "23503",
+  message: 'insert or update on table "teams" violates foreign key constraint "teams_zone_id_fkey"',
+};
 
 describe("createTeamAction", () => {
   beforeEach(() => {
@@ -81,7 +83,7 @@ describe("createTeamAction", () => {
 
   // Los dos constraints llegan con el mismo código 23505 y hay que
   // distinguirlos por nombre, o el usuario ve el error crudo del driver.
-  it("traduce el duplicado de nombre+ciudad y lo apunta al campo", async () => {
+  it("traduce el duplicado de nombre+zona y lo apunta al campo", async () => {
     createTeamMock.mockRejectedValue(uniqueViolation("teams_name_city_unique"));
     const { createTeamAction } = await import("@/app/equipos/actions");
 
@@ -89,7 +91,7 @@ describe("createTeamAction", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "Ya existe un equipo con ese nombre en esa ciudad.",
+      error: "Ya existe un equipo con ese nombre en esa zona.",
       field: "name",
     });
   });
@@ -101,6 +103,19 @@ describe("createTeamAction", () => {
     const result = await createTeamAction(VALID_INPUT);
 
     expect(result).toEqual({ ok: false, error: "Ya tenés un equipo creado." });
+  });
+
+  it("apunta al campo zona un zone_id que no existe", async () => {
+    createTeamMock.mockRejectedValue(UNKNOWN_ZONE);
+    const { createTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await createTeamAction({ ...VALID_INPUT, zone_id: "no-existe" });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Elegí una zona de la lista.",
+      field: "zone_id",
+    });
   });
 
   it("no confunde un error cualquiera con un duplicado", async () => {
@@ -130,6 +145,19 @@ describe("updateTeamAction", () => {
 
     expect(result).toEqual({ ok: true, teamId: TEAM_ID });
     expect(updateTeamMock).toHaveBeenCalled();
+  });
+
+  it("apunta al campo zona un zone_id que no existe", async () => {
+    updateTeamMock.mockRejectedValue(UNKNOWN_ZONE);
+    const { updateTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await updateTeamAction(TEAM_ID, { ...VALID_INPUT, zone_id: "no-existe" });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Elegí una zona de la lista.",
+      field: "zone_id",
+    });
   });
 
   // La RLS ya lo impide en la base; el chequeo acá es para que el usuario vea

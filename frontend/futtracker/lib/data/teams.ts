@@ -26,11 +26,10 @@ export const teamInputSchema = z.object({
   club_name: z.string().trim().min(1).max(120).nullable(),
   category: z.string().trim().min(1).max(120).nullable(),
   league: z.string().trim().min(1).max(120).nullable(),
-  city: z.string().trim().min(1).max(120).nullable(),
-  province: z.string().trim().min(1).max(120).nullable(),
   country: z.string().trim().length(2).nullable(),
-  latitude: z.number().min(-90).max(90).nullable(),
-  longitude: z.number().min(-180).max(180).nullable(),
+  // `city`, `province` y las coordenadas las deriva de la zona un trigger de
+  // la base (T09c). Si llegan en el input, Zod las descarta.
+  zone_id: z.string().trim().min(1),
   founded_year: z.number().int().min(1850).max(2100).nullable(),
   bio: z.string().trim().max(1000).nullable(),
   contact_email: z.email().nullable(),

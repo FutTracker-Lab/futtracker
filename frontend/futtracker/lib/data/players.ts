@@ -36,11 +36,10 @@ export const playerInputSchema = z.object({
   preferred_foot: preferredFootSchema.nullable(),
   height_cm: z.number().int().min(100).max(250).nullable(),
   weight_kg: z.number().int().min(30).max(200).nullable(),
-  city: z.string().trim().min(1).max(120).nullable(),
-  province: z.string().trim().min(1).max(120).nullable(),
   country: z.string().trim().length(2).nullable(),
-  latitude: z.number().min(-90).max(90).nullable(),
-  longitude: z.number().min(-180).max(180).nullable(),
+  // `city`, `province` y las coordenadas las deriva de la zona un trigger de
+  // la base (T09c). Si llegan en el input, Zod las descarta.
+  zone_id: z.string().trim().min(1),
   bio: z.string().trim().max(1000).nullable(),
   phone: z.string().trim().min(6).max(30).nullable(),
   is_seeking_team: z.boolean(),
