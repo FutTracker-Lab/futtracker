@@ -27,7 +27,7 @@ const STEPS: { title: string; description: string; icon: ReactNode }[] = [
   },
 ];
 
-export default function Benefits() {
+export default function HowItWorks() {
   return (
     <section className="bg-surface">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

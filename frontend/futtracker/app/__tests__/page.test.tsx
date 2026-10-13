@@ -89,5 +89,14 @@ describe("landing en /", () => {
 
       await expect(Home()).rejects.toThrow(`NEXT_REDIRECT ${path}`);
     });
+
+    it("muestra la landing si el perfil no tiene un rol válido", async () => {
+      mocks.single.mockResolvedValue({ data: null });
+
+      const html = await renderLanding();
+
+      expect(mocks.redirect).not.toHaveBeenCalled();
+      expect(html).toContain("El fútbol amateur, con perfil propio.");
+    });
   });
 });

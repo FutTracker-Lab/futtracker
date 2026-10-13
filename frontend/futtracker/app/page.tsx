@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import AudienceCards from "@/components/landing/AudienceCards";
-import Benefits from "@/components/landing/Benefits";
 import FinalCta from "@/components/landing/FinalCta";
 import Hero from "@/components/landing/Hero";
+import HowItWorks from "@/components/landing/HowItWorks";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingHeader from "@/components/landing/LandingHeader";
 import { REDIRECT_BY_ROLE } from "@/lib/auth/constants";
@@ -24,7 +24,6 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    // Mismo destino que el login (signIn en app/(auth)/actions.ts).
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -32,7 +31,10 @@ export default async function Home() {
       .single();
     const role = roleSchema.safeParse(profile?.role);
 
-    redirect(REDIRECT_BY_ROLE[role.success ? role.data : "player"]);
+    // Sin rol válido no se fuerza destino: /jugadores/mi-perfil devolvería a / en loop.
+    if (role.success) {
+      redirect(REDIRECT_BY_ROLE[role.data]);
+    }
   }
 
   return (
@@ -40,7 +42,7 @@ export default async function Home() {
       <LandingHeader />
       <main className="flex-1">
         <Hero />
-        <Benefits />
+        <HowItWorks />
         <AudienceCards />
         <FinalCta />
       </main>

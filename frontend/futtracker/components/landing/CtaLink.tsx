@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 const VARIANTS = {
   primary: "bg-brand text-brand-foreground hover:bg-brand/90",
-  dark: "bg-white/10 text-panel-foreground hover:bg-white/15",
+  secondary: "bg-white/10 text-panel-foreground hover:bg-white/15",
   navy: "bg-navy text-white hover:bg-navy/90",
 };
 

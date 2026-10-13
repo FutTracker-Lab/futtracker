@@ -29,7 +29,7 @@ export default function Hero() {
             </CtaLink>
             <CtaLink
               href={RouteConstants.signIn}
-              variant="dark"
+              variant="secondary"
               className="w-full sm:w-auto"
             >
               Ya tengo cuenta

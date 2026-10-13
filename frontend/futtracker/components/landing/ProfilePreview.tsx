@@ -42,8 +42,8 @@ export default function ProfilePreview() {
         </dl>
 
         <div className="mt-4 flex items-center gap-3 rounded-lg bg-brand-tint p-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-brand-foreground">
-            92%
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-[10px] font-bold whitespace-nowrap text-brand-foreground">
+            92 %
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold">

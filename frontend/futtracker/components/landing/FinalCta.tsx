@@ -16,7 +16,7 @@ export default function FinalCta() {
           </div>
           <div className="flex shrink-0 gap-3">
             <CtaLink href={RouteConstants.signUp}>Crear cuenta</CtaLink>
-            <CtaLink href={RouteConstants.signIn} variant="dark">
+            <CtaLink href={RouteConstants.signIn} variant="secondary">
               Entrar
             </CtaLink>
           </div>
