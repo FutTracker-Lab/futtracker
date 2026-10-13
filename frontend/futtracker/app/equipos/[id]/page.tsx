@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
+import OpenVacanciesSection from "@/components/team/OpenVacanciesSection";
+import VacanciesSkeleton from "@/components/team/VacanciesSkeleton";
 import TeamProfileDetails from "@/components/team/TeamProfileDetails";
 import TeamProfileHeader from "@/components/team/TeamProfileHeader";
 import { getTeamProfileById } from "@/lib/data/teamProfiles";
@@ -60,7 +63,15 @@ export default async function TeamProfilePage({
           </Link>
         ) : null}
       </div>
-      <TeamProfileDetails team={team} />
+      <TeamProfileDetails
+        team={team}
+        // Va después del `notFound()`: el 404 se resuelve antes del stream.
+        openingsSlot={
+          <Suspense fallback={<VacanciesSkeleton />}>
+            <OpenVacanciesSection teamId={team.id} />
+          </Suspense>
+        }
+      />
     </div>
   );
 }
