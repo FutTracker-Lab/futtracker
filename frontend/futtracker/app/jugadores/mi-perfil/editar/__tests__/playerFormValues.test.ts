@@ -19,6 +19,7 @@ const PLAYER: Player = {
   country: "AR",
   latitude: -34.45,
   longitude: -58.91,
+  zone_id: null,
   bio: "Nueve de área.",
   phone: "+54 9 11 4000-0001",
   is_seeking_team: true,
