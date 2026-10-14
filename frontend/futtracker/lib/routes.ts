@@ -40,4 +40,8 @@ export const RouteConstants = {
     new: "/equipos/nuevo",
     edit: (id: string) => `/equipos/${id}/editar`,
   },
+  vacancies: {
+    board: "/vacantes",
+    myApplications: "/vacantes?tab=postulaciones",
+  },
 } as const;

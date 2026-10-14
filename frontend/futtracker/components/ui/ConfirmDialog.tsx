@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 type Props = {
   // Texto del botón que abre el diálogo (ej. "Eliminar").
   triggerLabel: string;
+  triggerAriaLabel?: string;
   triggerClassName?: string;
   // El rol lo pone quien renderiza la opción, no el menú: ver
   // `docs/accesibilidad.md`.
@@ -29,6 +30,7 @@ const DEFAULT_TRIGGER_CLASS =
  */
 export default function ConfirmDialog({
   triggerLabel,
+  triggerAriaLabel,
   triggerClassName,
   triggerRole,
   title,
@@ -119,6 +121,7 @@ export default function ConfirmDialog({
         ref={triggerRef}
         type="button"
         role={triggerRole}
+        aria-label={triggerAriaLabel}
         onClick={() => setOpen(true)}
         className={triggerClassName ?? DEFAULT_TRIGGER_CLASS}
       >

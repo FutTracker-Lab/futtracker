@@ -6,7 +6,7 @@ import PlayerResultRow from "@/components/search/PlayerResultRow";
 import SearchPagination from "@/components/search/SearchPagination";
 import { flatten } from "@/components/player/__tests__/reactTree";
 import type { PlayerSearchRow } from "@/lib/data/players";
-import { DEFAULT_SEARCH_FILTERS } from "@/lib/search/params";
+import { DEFAULT_SEARCH_FILTERS, searchHref } from "@/lib/search/params";
 
 type Props = Record<string, unknown> & { children?: ReactNode };
 
@@ -113,19 +113,20 @@ describe("ActiveFilterChips", () => {
 
 describe("SearchPagination", () => {
   const filters = { ...DEFAULT_SEARCH_FILTERS, radius: 50 as const, status: "todos" as const };
+  const hrefFor = (page: number) => searchHref(filters, page);
 
   it("con una sola página no muestra controles", () => {
-    expect(SearchPagination({ filters, totalPages: 1 })).toBeNull();
+    expect(SearchPagination({ page: 1, totalPages: 1, hrefFor })).toBeNull();
   });
 
   it("en la página 1 'Anterior' está deshabilitado", () => {
-    const nav = SearchPagination({ filters, totalPages: 2 });
+    const nav = SearchPagination({ page: 1, totalPages: 2, hrefFor });
 
     expect(hrefs(nav)).toEqual(["/jugadores?radio=50&estado=todos&pagina=2"]);
   });
 
   it("en la última 'Siguiente' está deshabilitado y 'Anterior' conserva los filtros", () => {
-    const nav = SearchPagination({ filters: { ...filters, page: 2 }, totalPages: 2 });
+    const nav = SearchPagination({ page: 2, totalPages: 2, hrefFor });
 
     expect(hrefs(nav)).toEqual(["/jugadores?radio=50&estado=todos&pagina=1"]);
   });
