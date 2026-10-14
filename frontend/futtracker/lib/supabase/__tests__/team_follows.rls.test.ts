@@ -134,7 +134,9 @@ describe.skipIf(!IS_LOCAL)("RLS y reglas de team_follows", () => {
       ["E2", E2, 1],
       ["E3", E3, 0],
       ["un equipo que no existe", NO_TEAM, 0],
-    ])("PJ3 ve el número de %s: %i", async (_caso, teamId, count) => {
+    // Un `%s` por argumento, en orden: con `%i` en el segundo lugar, el título
+    // tomaba el uuid del equipo y mostraba "NaN" (observación de QA).
+    ])("PJ3 ve el número de %s (%s): %i", async (_caso, teamId, count) => {
       await expect(getFollowerCount(pj3, teamId)).resolves.toBe(count);
     });
 
@@ -205,6 +207,10 @@ describe.skipIf(!IS_LOCAL)("RLS y reglas de team_follows", () => {
 
       expect(error).toBeNull();
       expect(data).toEqual([]);
+
+      // PJ1 no puede ver la fila de PJ2 para releerla, pero el contador sí la
+      // cuenta: si el delete la hubiera borrado, E1 tendría 1 seguidor.
+      await expect(getFollowerCount(pj1, E1)).resolves.toBe(2);
     });
   });
 
