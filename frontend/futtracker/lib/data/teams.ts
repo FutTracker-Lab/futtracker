@@ -158,6 +158,33 @@ export async function updateCrestPath(
   return data;
 }
 
+export async function getCrestSignedUrls(
+  client: Client,
+  paths: string[],
+): Promise<Map<string, string>> {
+  const urls = new Map<string, string>();
+
+  if (paths.length === 0) {
+    return urls;
+  }
+
+  const { data, error } = await client.storage
+    .from(TEAM_CRESTS_BUCKET)
+    .createSignedUrls(paths, CREST_SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    throw error;
+  }
+
+  for (const item of data) {
+    if (item.signedUrl && !item.error) {
+      urls.set(item.path ?? "", item.signedUrl);
+    }
+  }
+
+  return urls;
+}
+
 export async function getCrestSignedUrl(
   client: Client,
   path: string | null,
