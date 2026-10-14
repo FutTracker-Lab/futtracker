@@ -12,7 +12,9 @@ type Props = {
   title: string;
   description: ReactNode;
   confirmLabel?: string;
-  onConfirm: () => Promise<void>;
+  pendingLabel?: string;
+  // Un string devuelto es un error ya traducido: se muestra sin cerrar.
+  onConfirm: () => Promise<void | string>;
 };
 
 const DEFAULT_TRIGGER_CLASS =
@@ -32,6 +34,7 @@ export default function ConfirmDialog({
   title,
   description,
   confirmLabel = "Eliminar",
+  pendingLabel = "Eliminando…",
   onConfirm,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -42,6 +45,7 @@ export default function ConfirmDialog({
   const titleId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +61,24 @@ export default function ConfirmDialog({
         // Mismo retorno de foco que el botón Cancelar: cerrar con teclado no
         // puede dejar el foco tirado en el <body>.
         triggerRef.current?.focus();
+        return;
+      }
+
+      // Foco atrapado: Tab desde el último botón vuelve al primero y al revés.
+      if (event.key === "Tab") {
+        const buttons = Array.from(
+          dialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
+        );
+        const first = buttons[0];
+        const last = buttons[buttons.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
       }
     }
 
@@ -76,7 +98,13 @@ export default function ConfirmDialog({
     setError(null);
 
     try {
-      await onConfirm();
+      const failure = await onConfirm();
+
+      if (failure) {
+        setError(failure);
+        return;
+      }
+
       setOpen(false);
     } catch {
       setError("No pudimos completar la acción. Probá de nuevo.");
@@ -100,6 +128,7 @@ export default function ConfirmDialog({
       {open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4">
           <div
+            ref={dialogRef}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -134,7 +163,7 @@ export default function ConfirmDialog({
                 disabled={isPending}
                 className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {isPending ? "Eliminando…" : confirmLabel}
+                {isPending ? pendingLabel : confirmLabel}
               </button>
             </div>
           </div>
