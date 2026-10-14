@@ -9,6 +9,7 @@ import {
   updateCrestPath,
   updateTeam,
 } from "@/lib/data/teams";
+import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,6 +57,18 @@ function duplicateFrom(error: unknown): { error: string; field?: string } | null
   return { error: "Ese dato ya está en uso." };
 }
 
+// Lo que ve el usuario cuando falla la escritura del equipo. Una zona que no
+// está en el catálogo rebota en la foránea (23503, T09c); sin este caso el
+// usuario veía "Ocurrió un error inesperado". Sin `field`: el formulario
+// todavía no tiene el select de zona (T09d), así que el error va arriba.
+function actionErrorFrom(error: unknown): { error: string; field?: string } {
+  if (isUnknownZoneError(error)) {
+    return { error: UNKNOWN_ZONE_MESSAGE };
+  }
+
+  return duplicateFrom(error) ?? { error: UNEXPECTED };
+}
+
 export async function createTeamAction(input: unknown): Promise<TeamActionResult> {
   const parsed = teamInputSchema.safeParse(input);
 
@@ -73,8 +86,7 @@ export async function createTeamAction(input: unknown): Promise<TeamActionResult
 
     return { ok: true, teamId: team.id };
   } catch (error) {
-    const duplicate = duplicateFrom(error);
-    return duplicate ? { ok: false, ...duplicate } : { ok: false, error: UNEXPECTED };
+    return { ok: false, ...actionErrorFrom(error) };
   }
 }
 
@@ -112,8 +124,7 @@ export async function updateTeamAction(
 
     return { ok: true, teamId };
   } catch (error) {
-    const duplicate = duplicateFrom(error);
-    return duplicate ? { ok: false, ...duplicate } : { ok: false, error: UNEXPECTED };
+    return { ok: false, ...actionErrorFrom(error) };
   }
 }
 

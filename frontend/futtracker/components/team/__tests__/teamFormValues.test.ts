@@ -19,6 +19,7 @@ const TEAM: Team = {
   country: "AR",
   latitude: -34.4583,
   longitude: -58.9142,
+  zone_id: null,
   founded_year: 1954,
   crest_path: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/escudo.png",
   bio: "Club de barrio con cancha propia.",
