@@ -273,7 +273,16 @@ describe.skipIf(!IS_LOCAL)("RLS y reglas de vacancy_applications", () => {
       await applyToVacancy(a.client, vacancyId);
       await applyToVacancy(b.client, vacancyId);
 
-      await owner.client.from("vacancies").update({ status: "closed" }).eq("id", vacancyId);
+      // Se chequea que el cierre funcionó: si fallara, la vacante seguiría
+      // abierta y el conteo daría 2 igual, sin probar nada.
+      const closed = await owner.client
+        .from("vacancies")
+        .update({ status: "closed" })
+        .eq("id", vacancyId)
+        .select("status")
+        .single();
+      expect(closed.error).toBeNull();
+      expect(closed.data?.status).toBe("closed");
 
       const counts = await countApplicationsByVacancy(owner.client, teamId);
       expect(counts[vacancyId]).toBe(2);
