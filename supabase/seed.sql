@@ -354,3 +354,45 @@ values
   -- V4: E2, abierta.
   ('0a000004-0000-4000-8000-000000000120', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'delantero', 'futbol_7', 'intermedio', null, 'open', now() - interval '1 day');
   -- E3 queda sin vacantes, para el estado vacío.
+
+-- =====================================================================
+-- T22 · Reporter de KPIs (FUT-132)
+--
+-- La cuenta que usa `scripts/kpis/kpis.mts` en local. Es un delegado con
+-- equipo porque `search_players` toma el origen del equipo de quien busca, y
+-- el reporter mide la latencia de la búsqueda. Lo que la distingue es
+-- `app_metadata.kpi_reporter`, que en dev y prod pone a mano un
+-- administrador (ver docs/kpis.md).
+-- =====================================================================
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+values (
+  '00000000-0000-0000-0000-000000000000', 'c0000001-0000-4000-8000-000000000132',
+  'authenticated', 'authenticated', 'kpi.reporter@example.com',
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"],"kpi_reporter":true}',
+  '{"full_name":"Reporter de KPIs","role":"delegate"}',
+  now(), now(), '', '', '', ''
+);
+
+insert into auth.identities (
+  provider_id, user_id, identity_data, provider, last_sign_in_at,
+  created_at, updated_at
+)
+select
+  u.id::text,
+  u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  'email',
+  now(),
+  now(),
+  now()
+from auth.users u
+where u.email = 'kpi.reporter@example.com';
+
+-- Mismo origen que D1 (Pilar), así las búsquedas del reporter devuelven filas.
+insert into public.teams (owner_id, name, city, province, latitude, longitude)
+values ('c0000001-0000-4000-8000-000000000132', 'FutTracker KPIs (interno)', 'Pilar', 'Buenos Aires', -34.458700, -58.914200);
