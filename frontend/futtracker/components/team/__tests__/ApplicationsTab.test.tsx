@@ -98,7 +98,12 @@ describe("loadTeamApplications", () => {
     ["de otro equipo", V4],
     ["que no es un uuid", "abc"],
   ])("ignora una vacante %s", async (_, requested) => {
-    await expect(load(requested)).resolves.toMatchObject({ ok: true, vacancyId: null });
+    vi.mocked(listVacancyApplications).mockResolvedValue(SEED);
+
+    const result = await load(requested);
+
+    expect(result).toMatchObject({ ok: true, vacancyId: null });
+    expect(result.ok && result.applications.map((row) => row.id)).toEqual(["a1", "a2"]);
     expect(listVacancyApplications).toHaveBeenCalledWith({}, { teamId: TEAM_ID, vacancyId: undefined });
   });
 
