@@ -19,7 +19,7 @@ type Props = {
 const BADGE_CLASS = "rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700";
 
 const TAB_CLASS =
-  "flex shrink-0 items-center gap-2 border-b-2 whitespace-nowrap px-1 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset";
+  "flex items-center gap-2 border-b-2 px-1 py-2 text-sm leading-tight font-medium sm:shrink-0 sm:whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset";
 
 async function OpenCount({ result }: { result: Promise<TeamVacanciesResult> }) {
   const loaded = await result;
@@ -71,9 +71,9 @@ export default function TeamTabs({ active, vacancies, applicationCounts }: Props
     },
   ] as const;
 
-  // Con badges no entran a 375 px: scroll propio, y la línea es sombra porque un borde quedaría fuera del recorte.
+  // A 375 px no entran en una línea: se parte el label sin badge en vez de esconder un badge detrás de un scroll.
   return (
-    <nav aria-label="Secciones del equipo" className="flex gap-3 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-zinc-200)] sm:gap-6">
+    <nav aria-label="Secciones del equipo" className="flex gap-3 shadow-[inset_0_-1px_0_var(--color-zinc-200)] sm:gap-6">
       {tabs.map((tab) => {
         const isActive = tab.id === active;
 
@@ -82,7 +82,7 @@ export default function TeamTabs({ active, vacancies, applicationCounts }: Props
             key={tab.id}
             href={tab.href}
             aria-current={isActive ? "page" : undefined}
-            className={`${TAB_CLASS} ${
+            className={`${TAB_CLASS} ${tab.badge ? "shrink-0 whitespace-nowrap" : ""} ${
               isActive
                 ? "border-brand text-zinc-900"
                 : "border-transparent text-zinc-500 hover:text-zinc-900"
