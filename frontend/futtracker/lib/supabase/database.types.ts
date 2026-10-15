@@ -34,6 +34,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_error_log: {
+        Row: {
+          created_at: string
+          id: number
+          method: string
+          route: string
+          status: number
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          method: string
+          route: string
+          status: number
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          method?: string
+          route?: string
+          status?: number
+        }
+        Relationships: []
+      }
       career_entries: {
         Row: {
           category: string | null
@@ -90,6 +114,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      kpi_report_runs: {
+        Row: {
+          attempts: number
+          created_at: string
+          env: string
+          fallbacks: string[]
+          kpi_date: string
+          payload: Json
+          response_status: number | null
+          run_id: string
+        }
+        Insert: {
+          attempts: number
+          created_at?: string
+          env: string
+          fallbacks?: string[]
+          kpi_date: string
+          payload: Json
+          response_status?: number | null
+          run_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          env?: string
+          fallbacks?: string[]
+          kpi_date?: string
+          payload?: Json
+          response_status?: number | null
+          run_id?: string
+        }
+        Relationships: []
       }
       match_stats: {
         Row: {
@@ -459,7 +516,23 @@ export type Database = {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
+      is_kpi_reporter: { Args: never; Returns: boolean }
       is_team_owner: { Args: { team: string }; Returns: boolean }
+      kpi_daily_counts: {
+        Args: { p_date: string }
+        Returns: {
+          complete_profiles: number
+          contacts_started: number
+          contacts_successful: number
+          errors_5xx: number
+          players_following: number
+          players_registered: number
+        }[]
+      }
+      log_api_error: {
+        Args: { p_method: string; p_route: string; p_status: number }
+        Returns: undefined
+      }
       safe_uuid: { Args: { value: string }; Returns: string }
       search_players: {
         Args: {
