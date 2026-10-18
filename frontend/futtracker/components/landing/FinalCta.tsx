@@ -14,9 +14,15 @@ export default function FinalCta() {
               Después de crear la cuenta vas directo a completar tu perfil.
             </p>
           </div>
-          <div className="flex shrink-0 gap-3">
-            <CtaLink href={RouteConstants.signUp}>Crear cuenta</CtaLink>
-            <CtaLink href={RouteConstants.signIn} variant="secondary">
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
+            <CtaLink href={RouteConstants.signUp} className="w-full sm:w-auto">
+              Crear cuenta
+            </CtaLink>
+            <CtaLink
+              href={RouteConstants.signIn}
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
               Entrar
             </CtaLink>
           </div>

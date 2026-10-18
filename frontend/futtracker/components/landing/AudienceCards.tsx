@@ -23,7 +23,10 @@ export default function AudienceCards() {
             <p className="mt-2 text-sm text-zinc-700">
               Armás tu perfil, cargás partidos y te postulás a equipos.
             </p>
-            <CtaLink href={RouteConstants.signUpPlayer} className="mt-5">
+            <CtaLink
+              href={RouteConstants.signUpPlayer}
+              className="mt-5 w-full sm:w-auto"
+            >
               Crear cuenta como jugador
             </CtaLink>
           </article>
@@ -40,7 +43,7 @@ export default function AudienceCards() {
             <CtaLink
               href={RouteConstants.signUpDelegate}
               variant="navy"
-              className="mt-5"
+              className="mt-5 w-full sm:w-auto"
             >
               Crear cuenta como delegado
             </CtaLink>
