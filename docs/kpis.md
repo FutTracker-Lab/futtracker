@@ -67,6 +67,14 @@ Si el deploy de un ambiente tiene activada la protección de Vercel (Deployment 
 
 El reporter **no usa `service_role`**. Es una cuenta común con una marca en `app_metadata`, que solo se escribe con privilegios de administrador. La marca le permite dos cosas y nada más: llamar a `kpi_daily_counts`, que devuelve solo conteos, e insertar en `kpi_report_runs`.
 
+**Por qué una cuenta y no `service_role`.** La guía de la cátedra no dice cómo leer nuestra base; el ticket pide una credencial de lectura como secreto y recomienda no usar `service_role`, que lee y escribe toda la base. Con esta cuenta, si la contraseña se filtra, se ven conteos, no datos de nadie.
+
+**Por qué delegado con equipo.** `latencia_busqueda` mide `search_players`, que solo atiende a delegados y toma el origen de la búsqueda del equipo de quien busca. Sin equipo, las 5 búsquedas fallan.
+
+**Pendiente de definir con el TL:** en prod, el equipo "FutTracker KPIs (interno)" es visible y seguible por los usuarios reales. Las opciones son ocultarlo, dejarlo con un nombre explícito o medir la latencia de otra forma.
+
+Cuentas creadas: `futtracker.lab4+kpidev@gmail.com` en dev y `futtracker.lab4+kpiprod@gmail.com` en prod, sobre el Gmail del equipo `futtracker.lab4@gmail.com`.
+
 Una vez por ambiente (dev y prod):
 
 1. **Registrar la cuenta desde la app**, como **delegado**, con un mail del equipo, y confirmar el mail.
@@ -88,7 +96,7 @@ El token nuevo trae la marca recién en el próximo inicio de sesión, y el repo
 **El cron y el botón "Run workflow" existen recién cuando el workflow está en `main`.** GitHub solo programa y muestra los workflows de la rama por defecto: mientras `kpi-report.yml` esté solo en `dev`, no corre nada y no aparece en Actions. El primer envío se hace después de la bajada `dev → main`, y desde esa noche corre el cron.
 
 1. **Catálogo de dev:** Actions → *Reporte diario de KPIs* → Run workflow, con `environment: dev` y `command: catalog`. Se puede correr las veces que haga falta: da de alta lo que falta y no duplica.
-2. **Primer reporte a dev:** lo mismo con `command: report`. Tiene que terminar en verde con `Plataforma: 201`.
+2. **Primer reporte a dev:** lo mismo con `command: report`. Tiene que terminar en verde con `Plataforma: 201`. Para ver lo que recibió la plataforma: [Mi equipo](https://lab4-kpis.github.io/kpis/#/mi-equipo), entrando con la `PROJECT_KEY` del ambiente; muestra el catálogo, las mediciones y el cumplimiento.
 3. **Prod:** completar `kpi-prod`, correr `catalog` y `report` contra `prod`, y borrar `KPI_SCHEDULE_ENV`.
 
 Desde la terminal:
