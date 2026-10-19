@@ -8,6 +8,11 @@
 // con las mismas rutas hardcodeadas — se deja así para no tocar un módulo
 // ajeno sin necesidad.
 export const RouteConstants = {
+  // FUT-133: no hay /registro, el alta es una tab de /login; `rol` todavía no se lee.
+  signIn: "/login",
+  signUp: "/login?tab=crear-cuenta",
+  signUpPlayer: "/login?tab=crear-cuenta&rol=jugador",
+  signUpDelegate: "/login?tab=crear-cuenta&rol=delegado",
   profile: {
     view: (id: string) => `/jugadores/${id}`,
     mine: "/jugadores/mi-perfil",
@@ -37,7 +42,15 @@ export const RouteConstants = {
     view: (id: string) => `/equipos/${id}`,
     mine: "/equipos/mi-equipo",
     myVacancies: "/equipos/mi-equipo?tab=vacantes",
+    myApplications: (vacancyId?: string) =>
+      vacancyId
+        ? `/equipos/mi-equipo?tab=postulaciones&vacante=${vacancyId}`
+        : "/equipos/mi-equipo?tab=postulaciones",
     new: "/equipos/nuevo",
     edit: (id: string) => `/equipos/${id}/editar`,
+  },
+  vacancies: {
+    board: "/vacantes",
+    myApplications: "/vacantes?tab=postulaciones",
   },
 } as const;

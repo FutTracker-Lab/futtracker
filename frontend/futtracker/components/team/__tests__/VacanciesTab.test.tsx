@@ -54,8 +54,13 @@ const SEED = [
   vacancy({ id: "v3", position: "defensor", level: "recreativo", status: "closed" }),
 ];
 
-async function renderTab(result: Parameters<typeof VacanciesTab>[0]["result"]) {
-  render(await VacanciesTab({ result }));
+type TabProps = Parameters<typeof VacanciesTab>[0];
+
+async function renderTab(
+  result: TabProps["result"],
+  applicationCounts: TabProps["applicationCounts"] = Promise.resolve({ ok: true, counts: {} }),
+) {
+  render(await VacanciesTab({ result, applicationCounts }));
 }
 
 function rows() {
@@ -85,6 +90,27 @@ test("muestra las vacantes en el orden recibido con sus etiquetas", async () => 
   expect(rows()[1].textContent).toContain("Competitivo amateur");
   expect(rows()[1].textContent).toContain("Abierta");
   expect(rows()[2].textContent).toContain("Cerrada");
+});
+
+test("la columna Postulaciones enlaza la cantidad a la pestaña filtrada", async () => {
+  await renderTab(
+    Promise.resolve({ ok: true, vacancies: SEED }),
+    Promise.resolve({ ok: true, counts: { v1: 2, v2: 0, v3: 0 } }),
+  );
+
+  const links = rows().map((row) =>
+    row.querySelector<HTMLAnchorElement>('a[href*="tab=postulaciones"]'),
+  );
+  expect(links.map((link) => link?.textContent)).toEqual(["0", "2", "0"]);
+  expect(links[1]?.getAttribute("href")).toBe("/equipos/mi-equipo?tab=postulaciones&vacante=v1");
+  expect(links[1]?.getAttribute("aria-label")).toBe("2 postulaciones a Mediocampista");
+});
+
+test("si el conteo falla la columna muestra un guion y no un 0", async () => {
+  await renderTab(Promise.resolve({ ok: true, vacancies: SEED }), Promise.resolve({ ok: false }));
+
+  expect(container.querySelector('a[href*="tab=postulaciones"]')).toBeNull();
+  expect(rows()[0].textContent).toContain("Postulaciones: —");
 });
 
 test("una abierta ofrece cerrar y no reabrir", async () => {

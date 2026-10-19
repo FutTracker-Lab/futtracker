@@ -68,7 +68,7 @@ export default async function TeamProfilePage({
         // Va después del `notFound()`: el 404 se resuelve antes del stream.
         openingsSlot={
           <Suspense fallback={<VacanciesSkeleton />}>
-            <OpenVacanciesSection teamId={team.id} />
+            <OpenVacanciesSection teamId={team.id} teamName={team.name} />
           </Suspense>
         }
       />
