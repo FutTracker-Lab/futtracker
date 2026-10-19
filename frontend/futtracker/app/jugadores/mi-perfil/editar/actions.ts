@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { playerInputSchema, upsertPlayer } from "@/lib/data/players";
-import { UNKNOWN_ZONE_MESSAGE, isUnknownZoneError } from "@/lib/data/zones";
+import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 

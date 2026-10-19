@@ -9,7 +9,7 @@ import {
   updateCrestPath,
   updateTeam,
 } from "@/lib/data/teams";
-import { UNKNOWN_ZONE_MESSAGE, isUnknownZoneError } from "@/lib/data/zones";
+import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 

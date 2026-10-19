@@ -44,6 +44,14 @@ const VALID_INPUT = {
   contact_email: null,
 };
 
+// Lo que tira supabase-js cuando `zone_id` no está en el catálogo (T09c).
+function unknownZone(table: "teams" | "players") {
+  return {
+    code: "23503",
+    message: `insert or update on table "${table}" violates foreign key constraint "${table}_zone_id_fkey"`,
+  };
+}
+
 // Lo que tira supabase-js ante una violación de unicidad.
 function uniqueViolation(constraint: string) {
   return {
@@ -51,11 +59,6 @@ function uniqueViolation(constraint: string) {
     message: `duplicate key value violates unique constraint "${constraint}"`,
   };
 }
-
-const UNKNOWN_ZONE = {
-  code: "23503",
-  message: 'insert or update on table "teams" violates foreign key constraint "teams_zone_id_fkey"',
-};
 
 describe("createTeamAction", () => {
   beforeEach(() => {
@@ -106,7 +109,7 @@ describe("createTeamAction", () => {
   });
 
   it("apunta al campo zona un zone_id que no existe", async () => {
-    createTeamMock.mockRejectedValue(UNKNOWN_ZONE);
+    createTeamMock.mockRejectedValue(unknownZone("teams"));
     const { createTeamAction } = await import("@/app/equipos/actions");
 
     const result = await createTeamAction({ ...VALID_INPUT, zone_id: "no-existe" });
@@ -115,6 +118,22 @@ describe("createTeamAction", () => {
       ok: false,
       error: "Elegí una zona de la lista.",
       field: "zone_id",
+    });
+  });
+
+  // `teams.owner_id` también es una foránea: un 23503 de esa no es una zona.
+  it("no confunde otra foránea con una zona", async () => {
+    createTeamMock.mockRejectedValue({
+      code: "23503",
+      message: 'violates foreign key constraint "teams_owner_id_fkey"',
+    });
+    const { createTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await createTeamAction(VALID_INPUT);
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Ocurrió un error inesperado. Probá de nuevo.",
     });
   });
 
@@ -148,7 +167,7 @@ describe("updateTeamAction", () => {
   });
 
   it("apunta al campo zona un zone_id que no existe", async () => {
-    updateTeamMock.mockRejectedValue(UNKNOWN_ZONE);
+    updateTeamMock.mockRejectedValue(unknownZone("teams"));
     const { updateTeamAction } = await import("@/app/equipos/actions");
 
     const result = await updateTeamAction(TEAM_ID, { ...VALID_INPUT, zone_id: "no-existe" });

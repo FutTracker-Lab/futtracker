@@ -367,3 +367,86 @@ values
   -- V4: E2, abierta.
   ('0a000004-0000-4000-8000-000000000120', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'delantero', 'futbol_7', 'intermedio', null, 'open', now() - interval '1 day');
   -- E3 queda sin vacantes, para el estado vacío.
+
+-- =====================================================================
+-- Postulaciones (T11a)
+--
+-- Convención de nombres de T10a: PJ1 Lucía, PJ2 Martín, PJ3 Sofía; V1-V4 las
+-- vacantes de esa sección. Las cuentas y filas nuevas de acá terminan en
+-- `0123` para referenciarlas desde los tests: PJ0 empieza con `c0000000`, los
+-- delegados de relleno con `c000000N`, sus equipos con `c00000a0`/`c00000b0`
+-- y las vacantes de relleno con `0b`.
+-- =====================================================================
+
+-- PJ0: cuenta de jugador sin fila en `players`, para el 23503 de la foránea.
+-- DR1 y DR2: delegados de los equipos de relleno.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+select
+  '00000000-0000-0000-0000-000000000000'::uuid, v.id::uuid, 'authenticated',
+  'authenticated', v.email,
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', v.full_name, 'role', v.role),
+  now(), now(), '', '', '', ''
+from (
+  values
+    ('c0000000-0000-4000-8000-000000000123', 'postulaciones.pj0@example.com', 'Bruno Sin Perfil',  'player'),    -- PJ0
+    ('c0000001-0000-4000-8000-000000000123', 'postulaciones.dr1@example.com', 'Delegado Relleno A', 'delegate'),  -- DR1
+    ('c0000002-0000-4000-8000-000000000123', 'postulaciones.dr2@example.com', 'Delegado Relleno B', 'delegate')   -- DR2
+) as v (id, email, full_name, role);
+
+insert into auth.identities (
+  provider_id, user_id, identity_data, provider, last_sign_in_at,
+  created_at, updated_at
+)
+select
+  u.id::text, u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  'email', now(), now(), now()
+from auth.users u
+where u.email like 'postulaciones.%@example.com';
+
+-- PJ1 -> V1, PJ2 -> V1 y PJ1 -> V4. PJ3 no tiene postulaciones. Las fechas
+-- fijan el orden de los listados: en V1, PJ1 (hace 2 h) antes que PJ2 (ayer).
+insert into public.vacancy_applications (id, vacancy_id, player_id, created_at)
+values
+  ('0c000001-0000-4000-8000-000000000123', '0a000001-0000-4000-8000-000000000120', '11111111-1111-4111-8111-111111111111', now() - interval '2 hours'),
+  ('0c000002-0000-4000-8000-000000000123', '0a000001-0000-4000-8000-000000000120', '22222222-2222-4222-8222-222222222222', now() - interval '1 day'),
+  ('0c000003-0000-4000-8000-000000000123', '0a000004-0000-4000-8000-000000000120', '11111111-1111-4111-8111-111111111111', now() - interval '3 days');
+
+-- Relleno para paginar el job board de T11b: dos equipos sin coordenadas
+-- (así nunca entran en las sugerencias de T12a), con 4 vacantes abiertas
+-- cada uno. Con V1, V2 y V4 suman 11 vacantes abiertas.
+insert into public.teams (id, owner_id, name)
+values
+  ('c00000a0-0000-4000-8000-000000000123', 'c0000001-0000-4000-8000-000000000123', 'Relleno A'),
+  ('c00000b0-0000-4000-8000-000000000123', 'c0000002-0000-4000-8000-000000000123', 'Relleno B');
+
+insert into public.vacancies (id, team_id, position, modality, level, status, created_at)
+select
+  ('0b00000' || n || '-0000-4000-8000-000000000123')::uuid,
+  case when n <= 4 then 'c00000a0-0000-4000-8000-000000000123'::uuid
+       else 'c00000b0-0000-4000-8000-000000000123'::uuid end,
+  (array['arquero', 'defensor', 'mediocampista', 'delantero'])[((n - 1) % 4) + 1],
+  'futbol_11', 'recreativo', 'open',
+  -- R1 a R4: de 10 a 13 días; R5 a R8: de 14 a 17.
+  now() - make_interval(days => 9 + n)
+from generate_series(1, 8) as n;
+
+-- =====================================================================
+-- Seguir equipos (T13a)
+--
+-- Convención de T10a: PJ1 Lucía, PJ2 Martín, PJ3 Sofía; E1, E2 y E3 los tres
+-- equipos del sprint 1. Las fechas fijan el orden de los listados: para PJ1,
+-- E2 (ayer) antes que E1 (hace 2 días); en E1, PJ2 (hace 3 h) antes que PJ1.
+-- PJ3 no sigue a nadie y E3 no tiene seguidores.
+-- =====================================================================
+insert into public.team_follows (follower_id, team_id, created_at)
+values
+  ('11111111-1111-4111-8111-111111111111', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now() - interval '2 days'),   -- PJ1 -> E1
+  ('11111111-1111-4111-8111-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', now() - interval '1 day'),    -- PJ1 -> E2
+  ('22222222-2222-4222-8222-222222222222', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now() - interval '3 hours');  -- PJ2 -> E1

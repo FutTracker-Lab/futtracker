@@ -294,6 +294,39 @@ export type Database = {
         }
         Relationships: []
       }
+      team_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_follows_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           bio: string | null
@@ -416,6 +449,42 @@ export type Database = {
           },
         ]
       }
+      vacancy_applications: {
+        Row: {
+          created_at: string
+          id: string
+          player_id: string
+          vacancy_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          player_id: string
+          vacancy_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_id?: string
+          vacancy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacancy_applications_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacancy_applications_vacancy_id_fkey"
+            columns: ["vacancy_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zones: {
         Row: {
           id: string
@@ -530,6 +599,7 @@ export type Database = {
           total_count: number
         }[]
       }
+      team_follower_count: { Args: { p_team_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
