@@ -17,14 +17,9 @@ FutTracker manda todos los días 10 KPIs a la plataforma central de la cátedra.
 | `NEXT_PUBLIC_SUPABASE_*` | el nuestro (dev o prod) | lo que se **mide** |
 | `KPI_*` | el de la cátedra | adonde se **envía** |
 
-**La cátedra también tiene un proyecto por ambiente**, cada uno con su URL y su clave pública. Las dos son públicas (figuran en los portales):
+**La plataforma de la cátedra es un solo proyecto** (`https://rzlalzowistpiphmdqpp.supabase.co`, portal [lab4-kpis.github.io/kpis](https://lab4-kpis.github.io/kpis/)) con una sola clave pública para dev y prod. Lo que separa los ambientes es la `PROJECT_KEY`: hay una para `dev` y otra para `prod`.
 
-| `env` | portal | `KPI_API_URL` |
-|---|---|---|
-| `dev` | [lab4-kpis.github.io/kpis/dev](https://lab4-kpis.github.io/kpis/dev/) | `https://gapkrqfdshqbowdtldzc.supabase.co` |
-| `prod` | [lab4-kpis.github.io/kpis](https://lab4-kpis.github.io/kpis/) | `https://rzlalzowistpiphmdqpp.supabase.co` |
-
-Cada clave de equipo (`KPI_PROJECT_KEY`) llega con la URL y la clave pública de su ambiente: van juntas. Una clave de prod contra la URL de dev rebota con 403.
+`gapkrqfdshqbowdtldzc` (el portal `/kpis/dev/`) es la instancia de desarrollo **de la propia plataforma**, no el ambiente dev de los equipos: no se usa.
 
 El script se niega a correr si las dos URLs apuntan al mismo proyecto, o si se reporta a `prod` midiendo el stack local.
 
@@ -49,8 +44,6 @@ Settings → Environments → **New environment**, una vez con `kpi-dev` y otra 
 
 | nombre | tipo | valor |
 |---|---|---|
-| `KPI_API_URL` | variable | la `SUPABASE_URL` que vino con la clave de ese ambiente (tabla de arriba) |
-| `KPI_SUPABASE_PUBLISHABLE_KEY` | secreto | la `SUPABASE_PUBLISHABLE_KEY` que vino con la clave de ese ambiente |
 | `KPI_PROJECT_KEY` | secreto | la `PROJECT_KEY` del equipo **para ese ambiente** (se muestra una sola vez al emitirla) |
 | `KPI_REPORTER_EMAIL` | secreto | el mail de la cuenta del reporter de ese ambiente |
 | `KPI_REPORTER_PASSWORD` | secreto | su contraseña |
@@ -58,7 +51,15 @@ Settings → Environments → **New environment**, una vez con `kpi-dev` y otra 
 | `SUPABASE_PUBLISHABLE_KEY` | variable | la publishable de **nuestro** proyecto (la misma que usa Vercel) |
 | `KPI_APP_URL` | variable | la URL del deploy, sin barra final: `https://futtracker-dev.vercel.app` o `https://futtracker.vercel.app` |
 
-Y a nivel repo (Settings → Secrets and variables → Actions → Variables): `KPI_SCHEDULE_ENV` = `dev` mientras `kpi-prod` no esté completo; después se borra y el cron va a prod.
+Y a nivel repo (Settings → Secrets and variables → Actions), una sola vez porque son iguales para los dos ambientes:
+
+| nombre | tipo | valor |
+|---|---|---|
+| `KPI_API_URL` | variable | `https://rzlalzowistpiphmdqpp.supabase.co` |
+| `KPI_SUPABASE_PUBLISHABLE_KEY` | secreto | la `SUPABASE_PUBLISHABLE_KEY` que vino con las claves de la cátedra |
+| `KPI_SCHEDULE_ENV` | variable | `dev` mientras `kpi-prod` no esté completo; después se borra y el cron va a prod |
+
+Si algún día la cátedra separa los ambientes, se cargan `KPI_API_URL` y `KPI_SUPABASE_PUBLISHABLE_KEY` dentro de cada ambiente y GitHub usa esas en vez de las del repo.
 
 Si el deploy de un ambiente tiene activada la protección de Vercel (Deployment Protection), `/api/health` responde 401 y `api_alcanzable` da 0 en ese ambiente.
 
@@ -102,7 +103,7 @@ Crear un `.env.kpi` (gitignoreado por el `.env*` del `.gitignore`) con:
 
 ```
 KPI_ENV=dev
-KPI_API_URL=https://gapkrqfdshqbowdtldzc.supabase.co
+KPI_API_URL=https://rzlalzowistpiphmdqpp.supabase.co
 KPI_SUPABASE_PUBLISHABLE_KEY=
 KPI_PROJECT_KEY=
 KPI_APP_URL=http://127.0.0.1:3000

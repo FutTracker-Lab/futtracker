@@ -329,9 +329,9 @@ export function readPlatformConfig(env: Env): PlatformConfig {
 
   return {
     env: kpiEnv as KpiEnv,
-    // Sin valor por defecto: la cátedra tiene un proyecto de Supabase por
-    // ambiente, cada uno con su clave pública. Un default mandaría las
-    // mediciones de prod a la plataforma de dev, que no cuenta para la nota.
+    // Sin valor por defecto: la cátedra ya cambió de proyecto una vez (el del
+    // contrato original era su instancia de desarrollo). Un default viejo
+    // mandaría las mediciones a un lugar que no cuenta para la nota.
     apiUrl: withoutTrailingSlash(required(env, "KPI_API_URL")),
     publishableKey: required(env, "KPI_SUPABASE_PUBLISHABLE_KEY"),
     projectKey: required(env, "KPI_PROJECT_KEY"),
