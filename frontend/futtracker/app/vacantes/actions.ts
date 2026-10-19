@@ -19,6 +19,7 @@ const idSchema = z.uuid();
 
 function revalidateApplicationPages() {
   revalidatePath(RouteConstants.vacancies.board);
+  revalidatePath(RouteConstants.suggestions);
   revalidatePath("/equipos/[id]", "page");
 }
 

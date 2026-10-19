@@ -92,6 +92,13 @@ describe("Buscar jugadores", () => {
 });
 
 describe("NAV_ITEMS_BY_ROLE", () => {
+  it("'Equipos sugeridos' es solo del jugador y lleva a /sugerencias", () => {
+    expect(byLabel("Equipos sugeridos").href).toBe("/sugerencias");
+    expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain(
+      "Equipos sugeridos",
+    );
+  });
+
   it("'Vacantes' es solo del jugador", () => {
     expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).toContain("Vacantes");
     expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain("Vacantes");

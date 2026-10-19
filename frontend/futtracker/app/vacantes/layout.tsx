@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 
-import { getVacanciesAccess } from "@/app/vacantes/access";
+import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import AppShell from "@/components/nav/AppShell";
 import { RouteConstants } from "@/lib/routes";
 
 // Acá y no solo en page.tsx: dentro del Suspense de loading.tsx el notFound() sale con status 200.
 export default async function VacanciesLayout({ children }: LayoutProps<"/vacantes">) {
-  const access = await getVacanciesAccess();
+  const access = await getPlayerAccess();
 
   if (access === "signedOut") {
     redirect(`/login?redirectTo=${RouteConstants.vacancies.board}`);

@@ -11,7 +11,7 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Es un chequeo optimista de UX, no la autorización: esa la hacen RLS y los
  * chequeos dentro de cada Server Action.
  */
-const PROTECTED_ROUTES = ["/jugadores", "/equipos", "/vacantes"];
+const PROTECTED_ROUTES = ["/jugadores", "/equipos", "/vacantes", "/sugerencias"];
 
 function requiresSession(pathname: string): boolean {
   const isProtected = PROTECTED_ROUTES.some(
