@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 import type { Team } from "@/lib/data/teams";
+import type { Zone } from "@/lib/data/zones";
+import { isListedZone } from "@/lib/format/zones";
 
 /**
  * Lo que el formulario de equipo sabe sobre sus valores, sin JSX ni estado:
@@ -14,8 +16,7 @@ export type TeamFormValues = {
   name: string;
   category: string;
   league: string;
-  city: string;
-  province: string;
+  zoneId: string;
   country: string;
   foundedYear: string;
   bio: string;
@@ -31,8 +32,7 @@ const FIELD_ERROR_MESSAGES: Record<string, string> = {
   name: "El nombre tiene que tener entre 2 y 80 caracteres.",
   category: "Ingresá una categoría válida.",
   league: "Ingresá una liga válida.",
-  city: "Ingresá una ciudad válida.",
-  province: "Ingresá una provincia válida.",
+  zone_id: "Elegí una zona de la lista.",
   country: "Elegí un país.",
   // El schema de T05a acepta hasta 2100 a propósito ("el filtro real es el
   // formulario", dice la migración), así que el mensaje no promete el año
@@ -61,13 +61,14 @@ export const MIN_FOUNDED_YEAR = 1850;
 
 export const BIO_MAX_LENGTH = 1000;
 
-export function initialValuesFrom(team: Team | null): TeamFormValues {
+export function initialValuesFrom(team: Team | null, zones: Zone[]): TeamFormValues {
+  const zoneId = team?.zone_id ?? "";
+
   return {
     name: team?.name ?? "",
     category: team?.category ?? "",
     league: team?.league ?? "",
-    city: team?.city ?? "",
-    province: team?.province ?? "",
+    zoneId: isListedZone(zoneId, zones) ? zoneId : "",
     country: team?.country ?? "AR",
     foundedYear: team?.founded_year?.toString() ?? "",
     bio: team?.bio ?? "",
@@ -80,10 +81,9 @@ export function initialValuesFrom(team: Team | null): TeamFormValues {
  * se traduce a null: las columnas son nullable y guardar "" fallaría contra
  * el `min(1)` del schema.
  *
- * `club_name` queda fuera a propósito (discrepancia 4 del ticket: el diseño
- * muestra un solo campo de nombre y `name` es el obligatorio), igual que
- * `latitude`/`longitude`, que se arrastran de la fila porque el formulario no
- * las edita y mandarlas en null las borraría en cada guardado.
+ * `club_name` se arrastra de la fila (discrepancia 4 del ticket: el diseño
+ * muestra un solo campo de nombre y `name` es el obligatorio): el formulario no
+ * lo edita y mandarlo en null lo borraría en cada guardado.
  */
 export function toTeamInput(values: TeamFormValues, team: Team | null) {
   return {
@@ -91,11 +91,8 @@ export function toTeamInput(values: TeamFormValues, team: Team | null) {
     club_name: team?.club_name ?? null,
     category: values.category || null,
     league: values.league || null,
-    city: values.city || null,
-    province: values.province || null,
+    zone_id: values.zoneId || null,
     country: values.country || null,
-    latitude: team?.latitude ?? null,
-    longitude: team?.longitude ?? null,
     founded_year: values.foundedYear ? Number(values.foundedYear) : null,
     bio: values.bio || null,
     contact_email: values.contactEmail || null,
