@@ -85,6 +85,8 @@ El token nuevo trae la marca recién en el próximo inicio de sesión, y el repo
 
 ## Puesta en marcha
 
+**El cron y el botón "Run workflow" existen recién cuando el workflow está en `main`.** GitHub solo programa y muestra los workflows de la rama por defecto: mientras `kpi-report.yml` esté solo en `dev`, no corre nada y no aparece en Actions. El primer envío se hace después de la bajada `dev → main`, y desde esa noche corre el cron.
+
 1. **Catálogo de dev:** Actions → *Reporte diario de KPIs* → Run workflow, con `environment: dev` y `command: catalog`. Se puede correr las veces que haga falta: da de alta lo que falta y no duplica.
 2. **Primer reporte a dev:** lo mismo con `command: report`. Tiene que terminar en verde con `Plataforma: 201`.
 3. **Prod:** completar `kpi-prod`, correr `catalog` y `report` contra `prod`, y borrar `KPI_SCHEDULE_ENV`.
@@ -128,10 +130,10 @@ node --env-file=.env.local --env-file=.env.kpi scripts/kpis/kpis.mts report
 | `tasa_conexion_jugador_club` | cuentas de jugador que siguen al menos un club / cuentas de jugador × 100 | 0 |
 | `perfiles_completos` | fichas de jugador (`players`) | 0 |
 | `tasa_contactos_exitosos` | 0 hasta que exista "Mensajería directa" | 0 |
-| `latencia_p95` | p95 de 20 lecturas del listado de equipos | 10000 |
-| `latencia_busqueda` | p95 de las 5 búsquedas fijas (`SEARCHES` en el script) | 10000 |
-| `errores_5xx` | registros de `api_error_log` del día | 0 |
-| `busquedas_fallidas` | búsquedas fijas con error o más de 10 s | 5 |
+| `latencia_p95` | p95 de 20 lecturas del listado de equipos contra la API de datos (PostgREST), desde el runner de GitHub Actions. **No pasa por la app**: no es la latencia que ve el usuario en el navegador | 10000 |
+| `latencia_busqueda` | p95 de 20 búsquedas: las 5 combinaciones fijas (`SEARCHES` en el script), 4 rondas | 10000 |
+| `errores_5xx` | registros de `api_error_log` del día. La tabla guarda 30 días | 0 |
+| `busquedas_fallidas` | combinaciones fijas que fallaron o tardaron más de 10 s en alguna de sus 4 rondas (de 0 a 5) | 5 |
 | `api_alcanzable` | `/api/health` responde 200 en menos de 5 s | 0 |
 | `db_alcanzable` | una consulta trivial responde | 0 |
 | `auth_alcanzable` | `/auth/v1/health` responde 200 | 0 |
