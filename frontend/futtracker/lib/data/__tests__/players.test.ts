@@ -23,8 +23,7 @@ const INPUT: PlayerInput = {
   city: "Pilar",
   province: "Buenos Aires",
   country: "AR",
-  latitude: -34.4583,
-  longitude: -58.9142,
+  zone_id: "pilar",
   bio: "Nueve de área",
   phone: "+54 9 11 4000-0001",
   is_seeking_team: true,
@@ -234,8 +233,7 @@ describe("playerInputSchema", () => {
       city: null,
       province: null,
       country: null,
-      latitude: null,
-      longitude: null,
+      zone_id: null,
       bio: null,
       phone: null,
       is_seeking_team: true,
@@ -251,12 +249,21 @@ describe("playerInputSchema", () => {
     ["height_cm", 251],
     ["weight_kg", 29],
     ["weight_kg", 201],
-    ["latitude", -91],
-    ["longitude", 181],
-  ])("rechaza %s = %s", (field, value) => {
+    ["zone_id", ""],
+    ["zone_id", "   "],
+  ])("rechaza %s = %j", (field, value) => {
     const result = playerInputSchema.safeParse({ ...INPUT, [field]: value });
 
     expect(result.success).toBe(false);
+  });
+
+  // T09c: las coordenadas las deriva la base de la zona. Si un formulario
+  // viejo o una llamada directa las manda, Zod las descarta antes de escribir.
+  it("descarta latitude y longitude si llegan en el input", () => {
+    const parsed = playerInputSchema.parse({ ...INPUT, latitude: 0, longitude: 0 });
+
+    expect(parsed).not.toHaveProperty("latitude");
+    expect(parsed).not.toHaveProperty("longitude");
   });
 
   it("rechaza una bio de más de 1000 caracteres", () => {

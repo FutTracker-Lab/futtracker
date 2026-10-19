@@ -96,6 +96,21 @@ describe("updatePlayerProfile", () => {
     expect(callOrder).toEqual(["players", "profiles"]);
   });
 
+  // T09c: una zona que no está en el catálogo rebota en la foránea (23503).
+  it("traduce una zona que no está en el catálogo", async () => {
+    upsertPlayerMock.mockRejectedValue({
+      code: "23503",
+      message:
+        'insert or update on table "players" violates foreign key constraint "players_zone_id_fkey"',
+    });
+    const { updatePlayerProfile } = await import("@/app/jugadores/mi-perfil/editar/actions");
+
+    const result = await updatePlayerProfile(VALID_INPUT, "Juan Pérez");
+
+    expect(result).toEqual({ ok: false, error: "Elegí una zona de la lista." });
+    expect(profilesUpdateMock).not.toHaveBeenCalled();
+  });
+
   it("no escribe profiles si upsertPlayer falla", async () => {
     upsertPlayerMock.mockRejectedValue(new Error("db down"));
     const { updatePlayerProfile } = await import("@/app/jugadores/mi-perfil/editar/actions");
