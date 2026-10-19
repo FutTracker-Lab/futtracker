@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { publicEnv } from "@/lib/env/public";
 import {
   IS_LOCAL,
   newClient,
@@ -76,9 +77,35 @@ describe.skipIf(!IS_LOCAL)("T22 · reporter de KPIs", () => {
       expect((await player.client.rpc("is_kpi_reporter")).data).toBe(false);
     });
 
-    it("la marca no se la puede poner un usuario a sí mismo", async () => {
+    // Los dos caminos por los que un usuario podría intentar escribir su
+    // app_metadata con su propio token: Auth los rechaza con 403 not_admin.
+    it.each([
+      ["PUT /auth/v1/user", () => "/auth/v1/user"],
+      ["PUT /auth/v1/admin/users/:id", (id: string) => `/auth/v1/admin/users/${id}`],
+    ])("un usuario no puede escribir su app_metadata (%s)", async (_case, path) => {
       const user = await signUpUser("player");
-      // `data` del usuario es user_metadata, que sí es editable. app_metadata no.
+      const { data } = await user.client.auth.getSession();
+
+      const response = await fetch(`${publicEnv.NEXT_PUBLIC_SUPABASE_URL}${path(user.id)}`, {
+        method: "PUT",
+        headers: {
+          apikey: publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${data.session!.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ app_metadata: { kpi_reporter: true } }),
+      });
+
+      expect(response.status).toBe(403);
+      expect((await response.json()).error_code).toBe("not_admin");
+
+      // Y la marca no aparece en un token nuevo.
+      await user.client.auth.refreshSession();
+      expect((await user.client.rpc("is_kpi_reporter")).data).toBe(false);
+    });
+
+    it("kpi_reporter en user_metadata, que sí es editable, no da la marca", async () => {
+      const user = await signUpUser("player");
       const { error } = await user.client.auth.updateUser({ data: { kpi_reporter: true } });
       expect(error).toBeNull();
       await user.client.auth.refreshSession();
