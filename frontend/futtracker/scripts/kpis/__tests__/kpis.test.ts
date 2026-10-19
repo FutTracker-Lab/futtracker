@@ -190,6 +190,7 @@ describe("cálculos", () => {
 describe("readReportConfig", () => {
   const ENV = {
     KPI_ENV: "dev",
+    KPI_API_URL: "https://plataforma-dev.supabase.co/",
     KPI_SUPABASE_PUBLISHABLE_KEY: "p",
     KPI_PROJECT_KEY: "k",
     NEXT_PUBLIC_SUPABASE_URL: "https://nuestro.supabase.co/",
@@ -200,15 +201,19 @@ describe("readReportConfig", () => {
   };
   const NOW = new Date("2026-10-14T06:00:00Z");
 
-  it("arma la config con el día anterior y la URL de la cátedra por defecto", () => {
+  it("arma la config con el día anterior y las URLs sin barra final", () => {
     const config = readReportConfig(ENV, NOW);
     expect(config.date).toBe("2026-10-13");
-    expect(config.apiUrl).toBe("https://gapkrqfdshqbowdtldzc.supabase.co");
+    expect(config.apiUrl).toBe("https://plataforma-dev.supabase.co");
     expect(config.supabaseUrl).toBe("https://nuestro.supabase.co");
   });
 
   it("falla si falta una variable", () => {
     expect(() => readReportConfig({ ...ENV, KPI_PROJECT_KEY: "" }, NOW)).toThrow(/KPI_PROJECT_KEY/);
+  });
+
+  it("no tiene una URL de la cátedra por defecto: cada ambiente tiene la suya", () => {
+    expect(() => readReportConfig({ ...ENV, KPI_API_URL: undefined }, NOW)).toThrow(/KPI_API_URL/);
   });
 
   it("rechaza un env que no existe", () => {

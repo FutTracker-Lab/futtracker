@@ -70,7 +70,10 @@ jobs:
           KPI_COMMAND: ${{ inputs.command || 'report' }}
           KPI_ENV: ${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }}
           KPI_DATE: ${{ inputs.date }}
-          # La plataforma de la cátedra.
+          # La plataforma de la cátedra. Tiene un proyecto de Supabase por
+          # ambiente, con su propia URL y su propia clave pública: van las tres
+          # en el ambiente, nunca a nivel repo.
+          KPI_API_URL: ${{ vars.KPI_API_URL }}
           KPI_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.KPI_SUPABASE_PUBLISHABLE_KEY }}
           KPI_PROJECT_KEY: ${{ secrets.KPI_PROJECT_KEY }}
           # Lo nuestro, del ambiente elegido.

@@ -17,6 +17,15 @@ FutTracker manda todos los días 10 KPIs a la plataforma central de la cátedra.
 | `NEXT_PUBLIC_SUPABASE_*` | el nuestro (dev o prod) | lo que se **mide** |
 | `KPI_*` | el de la cátedra | adonde se **envía** |
 
+**La cátedra también tiene un proyecto por ambiente**, cada uno con su URL y su clave pública. Las dos son públicas (figuran en los portales):
+
+| `env` | portal | `KPI_API_URL` |
+|---|---|---|
+| `dev` | [lab4-kpis.github.io/kpis/dev](https://lab4-kpis.github.io/kpis/dev/) | `https://gapkrqfdshqbowdtldzc.supabase.co` |
+| `prod` | [lab4-kpis.github.io/kpis](https://lab4-kpis.github.io/kpis/) | `https://rzlalzowistpiphmdqpp.supabase.co` |
+
+Cada clave de equipo (`KPI_PROJECT_KEY`) llega con la URL y la clave pública de su ambiente: van juntas. Una clave de prod contra la URL de dev rebota con 403.
+
 El script se niega a correr si las dos URLs apuntan al mismo proyecto, o si se reporta a `prod` midiendo el stack local.
 
 ## Configuración en GitHub
@@ -25,8 +34,9 @@ Settings → Environments. Cada ambiente mide lo suyo y reporta a su `env`: los 
 
 | nombre | tipo | dónde | valor |
 |---|---|---|---|
-| `KPI_SUPABASE_PUBLISHABLE_KEY` | secreto | repo | la clave pública del Supabase de la cátedra |
-| `KPI_PROJECT_KEY` | secreto | `dev` y `prod` | la clave del equipo **para ese ambiente** (se muestra una sola vez al emitirla) |
+| `KPI_API_URL` | variable | `dev` y `prod` | la `SUPABASE_URL` que vino con la clave de ese ambiente (tabla de arriba) |
+| `KPI_SUPABASE_PUBLISHABLE_KEY` | secreto | `dev` y `prod` | la `SUPABASE_PUBLISHABLE_KEY` que vino con la clave de ese ambiente |
+| `KPI_PROJECT_KEY` | secreto | `dev` y `prod` | la `PROJECT_KEY` del equipo **para ese ambiente** (se muestra una sola vez al emitirla) |
 | `KPI_REPORTER_EMAIL` | secreto | `dev` y `prod` | el mail de la cuenta del reporter de ese ambiente |
 | `KPI_REPORTER_PASSWORD` | secreto | `dev` y `prod` | su contraseña |
 | `SUPABASE_PUBLISHABLE_KEY` | variable | `dev` y `prod` | la publishable de **nuestro** proyecto (la misma que usa Vercel) |
@@ -77,6 +87,7 @@ Crear un `.env.kpi` (gitignoreado por el `.env*` del `.gitignore`) con:
 
 ```
 KPI_ENV=dev
+KPI_API_URL=https://gapkrqfdshqbowdtldzc.supabase.co
 KPI_SUPABASE_PUBLISHABLE_KEY=
 KPI_PROJECT_KEY=
 KPI_APP_URL=http://127.0.0.1:3000

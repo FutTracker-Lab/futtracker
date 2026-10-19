@@ -282,9 +282,6 @@ export function buildMeasurements(
 // Configuración
 // =====================================================================
 
-/** La plataforma de la cátedra. Es pública: figura en su contrato. */
-export const DEFAULT_KPI_API_URL = "https://gapkrqfdshqbowdtldzc.supabase.co";
-
 export type PlatformConfig = {
   env: KpiEnv;
   apiUrl: string;
@@ -332,7 +329,10 @@ export function readPlatformConfig(env: Env): PlatformConfig {
 
   return {
     env: kpiEnv as KpiEnv,
-    apiUrl: withoutTrailingSlash(env.KPI_API_URL?.trim() || DEFAULT_KPI_API_URL),
+    // Sin valor por defecto: la cátedra tiene un proyecto de Supabase por
+    // ambiente, cada uno con su clave pública. Un default mandaría las
+    // mediciones de prod a la plataforma de dev, que no cuenta para la nota.
+    apiUrl: withoutTrailingSlash(required(env, "KPI_API_URL")),
     publishableKey: required(env, "KPI_SUPABASE_PUBLISHABLE_KEY"),
     projectKey: required(env, "KPI_PROJECT_KEY"),
   };
