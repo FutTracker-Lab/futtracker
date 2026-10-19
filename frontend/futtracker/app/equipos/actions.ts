@@ -27,12 +27,21 @@ const DUPLICATE_MESSAGES: Record<string, { error: string; field?: string }> = {
     error: "Ya tenés un equipo creado.",
   },
   teams_name_city_unique: {
-    error: "Ya existe un equipo con ese nombre en esa ciudad.",
+    error: "Ya existe un equipo con ese nombre en esa zona.",
     field: "name",
   },
 };
 
 const UNEXPECTED = "Ocurrió un error inesperado. Probá de nuevo.";
+
+function failureFrom(error: unknown): TeamActionResult {
+  if (isUnknownZoneError(error)) {
+    return { ok: false, error: UNKNOWN_ZONE_MESSAGE, field: "zone_id" };
+  }
+
+  const duplicate = duplicateFrom(error);
+  return duplicate ? { ok: false, ...duplicate } : { ok: false, error: UNEXPECTED };
+}
 
 // `unknown` y no el tipo del error: lo que tira supabase-js no está tipado y
 // una Server Action es un endpoint público, así que nada garantiza la forma.
@@ -57,18 +66,6 @@ function duplicateFrom(error: unknown): { error: string; field?: string } | null
   return { error: "Ese dato ya está en uso." };
 }
 
-// Lo que ve el usuario cuando falla la escritura del equipo. Una zona que no
-// está en el catálogo rebota en la foránea (23503, T09c); sin este caso el
-// usuario veía "Ocurrió un error inesperado". Sin `field`: el formulario
-// todavía no tiene el select de zona (T09d), así que el error va arriba.
-function actionErrorFrom(error: unknown): { error: string; field?: string } {
-  if (isUnknownZoneError(error)) {
-    return { error: UNKNOWN_ZONE_MESSAGE };
-  }
-
-  return duplicateFrom(error) ?? { error: UNEXPECTED };
-}
-
 export async function createTeamAction(input: unknown): Promise<TeamActionResult> {
   const parsed = teamInputSchema.safeParse(input);
 
@@ -86,7 +83,7 @@ export async function createTeamAction(input: unknown): Promise<TeamActionResult
 
     return { ok: true, teamId: team.id };
   } catch (error) {
-    return { ok: false, ...actionErrorFrom(error) };
+    return failureFrom(error);
   }
 }
 
@@ -124,7 +121,7 @@ export async function updateTeamAction(
 
     return { ok: true, teamId };
   } catch (error) {
-    return { ok: false, ...actionErrorFrom(error) };
+    return failureFrom(error);
   }
 }
 

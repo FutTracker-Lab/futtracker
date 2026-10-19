@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { createTeamAction, updateTeamAction } from "@/app/equipos/actions";
@@ -21,7 +21,10 @@ import SelectField from "@/components/ui/SelectField";
 import SubmitButton from "@/components/ui/SubmitButton";
 import TextField from "@/components/ui/TextField";
 import Toast from "@/components/ui/Toast";
+import ZoneSelect from "@/components/ui/ZoneSelect";
 import { teamInputSchema, type Team } from "@/lib/data/teams";
+import type { Zone } from "@/lib/data/zones";
+import { previousLocationHint, zoneGroupsFrom } from "@/lib/format/zones";
 import { RouteConstants } from "@/lib/routes";
 
 // `savedAt` marca cada guardado exitoso: es lo que le cambia la `key` al
@@ -33,14 +36,13 @@ type FormState =
 const INITIAL_STATE: FormState = { ok: true };
 
 // Mismo criterio que el formulario de jugador: un error de una clave sin
-// control en pantalla (`club_name`, `latitude`...) no tendría dónde
+// control en pantalla (`club_name`...) no tendría dónde
 // renderizarse y dejaría el submit sin efecto y sin explicación.
 const FIELDS_WITH_CONTROL = new Set([
   "name",
   "category",
   "league",
-  "city",
-  "province",
+  "zone_id",
   "country",
   "founded_year",
   "bio",
@@ -52,13 +54,16 @@ type Props = {
   // escudo — el bucket necesita el id del equipo en el path.
   team: Team | null;
   initialCrestUrl: string | null;
+  // Vacío si `listZones` falló: el formulario lo muestra y no deja guardar.
+  zones: Zone[];
 };
 
-export default function TeamForm({ team, initialCrestUrl }: Props) {
+export default function TeamForm({ team, initialCrestUrl, zones }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<TeamFormValues>(() =>
-    initialValuesFrom(team),
+    initialValuesFrom(team, zones),
   );
+  const zoneGroups = useMemo(() => zoneGroupsFrom(zones), [zones]);
 
   function setField<K extends keyof TeamFormValues>(
     field: K,
@@ -95,8 +100,8 @@ export default function TeamForm({ team, initialCrestUrl }: Props) {
       return { ok: true };
     }
 
-    // Un duplicado de nombre+ciudad apunta a un campo concreto; el de dueño
-    // repetido no, y va al banner.
+    // Un duplicado de nombre+zona o una zona inexistente apuntan a un campo
+    // concreto; el de dueño repetido no, y va al banner.
     return result.field
       ? { ok: false, fieldErrors: { [result.field]: result.error } }
       : { ok: false, error: result.error };
@@ -243,24 +248,14 @@ export default function TeamForm({ team, initialCrestUrl }: Props) {
             optionalHint
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <TextField
-              id="city"
-              name="city"
-              type="text"
-              label="Ciudad"
-              value={values.city}
-              onChange={(event) => setField("city", event.target.value)}
-              error={fieldErrors.city}
-            />
-            <TextField
-              id="province"
-              name="province"
-              type="text"
-              label="Provincia"
-              value={values.province}
-              onChange={(event) => setField("province", event.target.value)}
-              error={fieldErrors.province}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ZoneSelect
+              groups={zoneGroups}
+              value={values.zoneId}
+              onValueChange={(value) => setField("zoneId", value)}
+              placeholder="Elegí la zona del equipo"
+              hint={previousLocationHint(team, zones) ?? undefined}
+              error={fieldErrors.zone_id}
             />
             <SelectField
               id="country"
@@ -275,7 +270,10 @@ export default function TeamForm({ team, initialCrestUrl }: Props) {
         </div>
       </Card>
 
-      <SubmitButton label={team ? "Guardar cambios" : "Crear equipo"} />
+      <SubmitButton
+        label={team ? "Guardar cambios" : "Crear equipo"}
+        disabled={zoneGroups.length === 0}
+      />
     </form>
   );
 }

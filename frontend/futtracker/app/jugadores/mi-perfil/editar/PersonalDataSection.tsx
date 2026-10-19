@@ -2,6 +2,8 @@ import AvatarUploader from "@/components/player/AvatarUploader";
 import Card from "@/components/ui/Card";
 import SelectField from "@/components/ui/SelectField";
 import TextField from "@/components/ui/TextField";
+import ZoneSelect from "@/components/ui/ZoneSelect";
+import type { ZoneGroup } from "@/lib/format/zones";
 import {
   COUNTRIES,
   type PlayerFormErrors,
@@ -18,6 +20,8 @@ type Props = {
   initialAvatarUrl: string | null;
   initialAvatarPath: string | null;
   userId: string;
+  zoneGroups: ZoneGroup[];
+  zoneHint: string;
 };
 
 // Sin "use client": no usa hooks, y al importarlo un Client Component ya
@@ -29,6 +33,8 @@ export default function PersonalDataSection({
   initialAvatarUrl,
   initialAvatarPath,
   userId,
+  zoneGroups,
+  zoneHint,
 }: Props) {
   return (
     <Card title="Datos personales">
@@ -75,25 +81,14 @@ export default function PersonalDataSection({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <TextField
-            id="city"
-            name="city"
-            type="text"
-            label="Ciudad"
-            hint="Desde dónde te movés para entrenar."
-            value={values.city}
-            onChange={(event) => onChange("city", event.target.value)}
-            error={errors.city}
-          />
-          <TextField
-            id="province"
-            name="province"
-            type="text"
-            label="Provincia"
-            value={values.province}
-            onChange={(event) => onChange("province", event.target.value)}
-            error={errors.province}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ZoneSelect
+            groups={zoneGroups}
+            value={values.zoneId}
+            onValueChange={(value) => onChange("zoneId", value)}
+            placeholder="Elegí tu zona"
+            hint={zoneHint}
+            error={errors.zone_id}
           />
           <SelectField
             id="country"

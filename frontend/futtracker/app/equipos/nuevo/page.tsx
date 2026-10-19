@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import TeamForm from "@/components/team/TeamForm";
 import { getMyTeam } from "@/lib/data/teams";
 import { getProfileById } from "@/lib/data/profiles";
+import { listZones } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,7 +39,10 @@ export default async function NewTeamPage() {
   // Requisito 6: el `unique` de `owner_id` nunca debería llegar a dispararse
   // desde la UI, así que el delegado que ya tiene equipo vuelve a su pantalla
   // con un aviso en vez de ver el formulario.
-  const myTeam = await getMyTeam(supabase);
+  const [myTeam, zones] = await Promise.all([
+    getMyTeam(supabase),
+    listZones(supabase).catch(() => []),
+  ]);
 
   if (myTeam) {
     redirect(`${RouteConstants.team.mine}?aviso=equipo-existente`);
@@ -57,7 +61,7 @@ export default async function NewTeamPage() {
           </p>
         </div>
 
-        <TeamForm team={null} initialCrestUrl={null} />
+        <TeamForm team={null} initialCrestUrl={null} zones={zones} />
       </div>
     </div>
   );

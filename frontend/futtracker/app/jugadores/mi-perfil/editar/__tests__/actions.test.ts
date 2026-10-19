@@ -42,11 +42,8 @@ const VALID_INPUT = {
   preferred_foot: "derecha",
   height_cm: 180,
   weight_kg: 75,
-  city: "CABA",
-  province: "Buenos Aires",
+  zone_id: "san-isidro",
   country: "AR",
-  latitude: null,
-  longitude: null,
   bio: null,
   phone: null,
   is_seeking_team: true,
@@ -96,21 +93,6 @@ describe("updatePlayerProfile", () => {
     expect(callOrder).toEqual(["players", "profiles"]);
   });
 
-  // T09c: una zona que no está en el catálogo rebota en la foránea (23503).
-  it("traduce una zona que no está en el catálogo", async () => {
-    upsertPlayerMock.mockRejectedValue({
-      code: "23503",
-      message:
-        'insert or update on table "players" violates foreign key constraint "players_zone_id_fkey"',
-    });
-    const { updatePlayerProfile } = await import("@/app/jugadores/mi-perfil/editar/actions");
-
-    const result = await updatePlayerProfile(VALID_INPUT, "Juan Pérez");
-
-    expect(result).toEqual({ ok: false, error: "Elegí una zona de la lista." });
-    expect(profilesUpdateMock).not.toHaveBeenCalled();
-  });
-
   it("no escribe profiles si upsertPlayer falla", async () => {
     upsertPlayerMock.mockRejectedValue(new Error("db down"));
     const { updatePlayerProfile } = await import("@/app/jugadores/mi-perfil/editar/actions");
@@ -118,6 +100,24 @@ describe("updatePlayerProfile", () => {
     const result = await updatePlayerProfile(VALID_INPUT, "Juan Pérez");
 
     expect(result.ok).toBe(false);
+    expect(profilesUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("apunta al campo zona un zone_id que no existe, sin tocar profiles", async () => {
+    upsertPlayerMock.mockRejectedValue({
+      code: "23503",
+      message:
+        'insert or update on table "players" violates foreign key constraint "players_zone_id_fkey"',
+    });
+    const { updatePlayerProfile } = await import("@/app/jugadores/mi-perfil/editar/actions");
+
+    const result = await updatePlayerProfile({ ...VALID_INPUT, zone_id: "no-existe" }, "Juan Pérez");
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Elegí una zona de la lista.",
+      field: "zone_id",
+    });
     expect(profilesUpdateMock).not.toHaveBeenCalled();
   });
 

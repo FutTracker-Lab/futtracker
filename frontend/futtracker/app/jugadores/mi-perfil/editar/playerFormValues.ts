@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 import type { Player } from "@/lib/data/players";
+import type { Zone } from "@/lib/data/zones";
+import { isListedZone } from "@/lib/format/zones";
 
 /**
  * Todo lo que el formulario de perfil sabe sobre sus valores, sin JSX ni
@@ -20,8 +22,7 @@ export type PlayerFormValues = {
   heightCm: string;
   weightKg: string;
   birthDate: string;
-  city: string;
-  province: string;
+  zoneId: string;
   country: string;
   phone: string;
   bio: string;
@@ -39,8 +40,7 @@ const FIELD_ERROR_MESSAGES: Record<string, string> = {
   preferred_foot: "Elegí una opción de la lista.",
   height_cm: "La altura tiene que estar entre 100 y 250 cm.",
   weight_kg: "El peso tiene que estar entre 30 y 200 kg.",
-  city: "Ingresá una ciudad válida.",
-  province: "Ingresá una provincia válida.",
+  zone_id: "Elegí una zona de la lista.",
   country: "Elegí un país.",
   bio: "La bio no puede superar los 1000 caracteres.",
   phone: "El teléfono tiene que tener entre 6 y 30 caracteres.",
@@ -61,7 +61,10 @@ export const COUNTRIES = [
 export function initialValuesFrom(
   fullName: string,
   player: Player | null,
+  zones: Zone[],
 ): PlayerFormValues {
+  const zoneId = player?.zone_id ?? "";
+
   return {
     fullName,
     position: player?.position ?? "",
@@ -69,8 +72,7 @@ export function initialValuesFrom(
     heightCm: player?.height_cm?.toString() ?? "",
     weightKg: player?.weight_kg?.toString() ?? "",
     birthDate: player?.birth_date ?? "",
-    city: player?.city ?? "",
-    province: player?.province ?? "",
+    zoneId: isListedZone(zoneId, zones) ? zoneId : "",
     country: player?.country ?? "AR",
     phone: player?.phone ?? "",
     bio: player?.bio ?? "",
@@ -82,24 +84,16 @@ export function initialValuesFrom(
  * Arma el objeto que espera `playerInputSchema`. El string vacío de un
  * <input> se traduce a null: la columna es nullable y guardar "" haría que
  * un campo vacío falle contra el `min(1)` del schema.
- *
- * `latitude`/`longitude` se arrastran de la fila en vez de mandarse en null:
- * el formulario no las edita (el supuesto 5 del doc de decisiones posterga la
- * búsqueda por cercanía a T09a) y mandarlas vacías las borraría en cada
- * guardado.
  */
-export function toPlayerInput(values: PlayerFormValues, player: Player | null) {
+export function toPlayerInput(values: PlayerFormValues) {
   return {
     birth_date: values.birthDate || null,
     position: values.position || null,
     preferred_foot: values.preferredFoot || null,
     height_cm: values.heightCm ? Number(values.heightCm) : null,
     weight_kg: values.weightKg ? Number(values.weightKg) : null,
-    city: values.city || null,
-    province: values.province || null,
+    zone_id: values.zoneId || null,
     country: values.country || null,
-    latitude: player?.latitude ?? null,
-    longitude: player?.longitude ?? null,
     bio: values.bio || null,
     phone: values.phone || null,
     is_seeking_team: values.isSeekingTeam,

@@ -20,8 +20,6 @@ const INPUT: PlayerInput = {
   preferred_foot: "derecha",
   height_cm: 168,
   weight_kg: 62,
-  city: "Pilar",
-  province: "Buenos Aires",
   country: "AR",
   zone_id: "pilar",
   bio: "Nueve de área",
@@ -230,10 +228,8 @@ describe("playerInputSchema", () => {
       preferred_foot: null,
       height_cm: null,
       weight_kg: null,
-      city: null,
-      province: null,
       country: null,
-      zone_id: null,
+      zone_id: "pilar",
       bio: null,
       phone: null,
       is_seeking_team: true,
@@ -251,6 +247,7 @@ describe("playerInputSchema", () => {
     ["weight_kg", 201],
     ["zone_id", ""],
     ["zone_id", "   "],
+    ["zone_id", null],
   ])("rechaza %s = %j", (field, value) => {
     const result = playerInputSchema.safeParse({ ...INPUT, [field]: value });
 
@@ -259,9 +256,17 @@ describe("playerInputSchema", () => {
 
   // T09c: las coordenadas las deriva la base de la zona. Si un formulario
   // viejo o una llamada directa las manda, Zod las descarta antes de escribir.
-  it("descarta latitude y longitude si llegan en el input", () => {
-    const parsed = playerInputSchema.parse({ ...INPUT, latitude: 0, longitude: 0 });
+  it("descarta la ubicación derivada si llega en el input", () => {
+    const parsed = playerInputSchema.parse({
+      ...INPUT,
+      city: "Otra",
+      province: "Otra",
+      latitude: 0,
+      longitude: 0,
+    });
 
+    expect(parsed).not.toHaveProperty("city");
+    expect(parsed).not.toHaveProperty("province");
     expect(parsed).not.toHaveProperty("latitude");
     expect(parsed).not.toHaveProperty("longitude");
   });

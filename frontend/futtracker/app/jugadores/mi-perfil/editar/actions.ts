@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type UpdatePlayerResult =
   | { ok: true }
-  | { ok: false; error: string };
+  | { ok: false; error: string; field?: string };
 
 /**
  * Guarda el path del avatar recién subido. La subida del archivo la hace el
@@ -87,12 +87,9 @@ export async function updatePlayerProfile(
   try {
     await upsertPlayer(supabase, parsed.data);
   } catch (error) {
-    // Una zona que no está en el catálogo rebota en la foránea (23503, T09c).
-    if (isUnknownZoneError(error)) {
-      return { ok: false, error: UNKNOWN_ZONE_MESSAGE };
-    }
-
-    return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
+    return isUnknownZoneError(error)
+      ? { ok: false, error: UNKNOWN_ZONE_MESSAGE, field: "zone_id" }
+      : { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
   }
 
   const { error: profileError } = await supabase

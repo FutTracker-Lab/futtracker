@@ -14,6 +14,7 @@ import { loadTeamVacancies } from "@/components/team/teamVacancies";
 import { getProfileById } from "@/lib/data/profiles";
 import { getMyTeam } from "@/lib/data/teams";
 import { getTeamProfileById } from "@/lib/data/teamProfiles";
+import { listZones } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -85,7 +86,10 @@ export default async function MyTeamPage({
 
   // Vuelve por `getTeamProfileById` para traer la URL firmada del escudo, que
   // `getMyTeam` no resuelve.
-  const data = await getTeamProfileById(myTeam.id);
+  const [data, zones] = await Promise.all([
+    getTeamProfileById(myTeam.id),
+    listZones(supabase).catch(() => []),
+  ]);
 
   if (!data) {
     redirect(RouteConstants.team.new);
@@ -149,7 +153,7 @@ export default async function MyTeamPage({
             />
           </Suspense>
         ) : (
-          <TeamForm team={team} initialCrestUrl={crestUrl} />
+          <TeamForm team={team} initialCrestUrl={crestUrl} zones={zones} />
         )}
       </div>
     </div>
