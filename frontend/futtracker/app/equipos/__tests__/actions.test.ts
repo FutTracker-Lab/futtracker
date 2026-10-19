@@ -47,6 +47,14 @@ const VALID_INPUT = {
   contact_email: null,
 };
 
+// Lo que tira supabase-js cuando `zone_id` no está en el catálogo (T09c).
+function unknownZone(table: "teams" | "players") {
+  return {
+    code: "23503",
+    message: `insert or update on table "${table}" violates foreign key constraint "${table}_zone_id_fkey"`,
+  };
+}
+
 // Lo que tira supabase-js ante una violación de unicidad.
 function uniqueViolation(constraint: string) {
   return {
@@ -103,6 +111,31 @@ describe("createTeamAction", () => {
     expect(result).toEqual({ ok: false, error: "Ya tenés un equipo creado." });
   });
 
+  it("traduce una zona que no está en el catálogo", async () => {
+    createTeamMock.mockRejectedValue(unknownZone("teams"));
+    const { createTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await createTeamAction(VALID_INPUT);
+
+    expect(result).toEqual({ ok: false, error: "Elegí una zona de la lista." });
+  });
+
+  // `teams.owner_id` también es una foránea: un 23503 de esa no es una zona.
+  it("no confunde otra foránea con una zona", async () => {
+    createTeamMock.mockRejectedValue({
+      code: "23503",
+      message: 'violates foreign key constraint "teams_owner_id_fkey"',
+    });
+    const { createTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await createTeamAction(VALID_INPUT);
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Ocurrió un error inesperado. Probá de nuevo.",
+    });
+  });
+
   it("no confunde un error cualquiera con un duplicado", async () => {
     createTeamMock.mockRejectedValue({ code: "42501", message: "denied" });
     const { createTeamAction } = await import("@/app/equipos/actions");
@@ -130,6 +163,15 @@ describe("updateTeamAction", () => {
 
     expect(result).toEqual({ ok: true, teamId: TEAM_ID });
     expect(updateTeamMock).toHaveBeenCalled();
+  });
+
+  it("traduce una zona que no está en el catálogo", async () => {
+    updateTeamMock.mockRejectedValue(unknownZone("teams"));
+    const { updateTeamAction } = await import("@/app/equipos/actions");
+
+    const result = await updateTeamAction(TEAM_ID, VALID_INPUT);
+
+    expect(result).toEqual({ ok: false, error: "Elegí una zona de la lista." });
   });
 
   // La RLS ya lo impide en la base; el chequeo acá es para que el usuario vea

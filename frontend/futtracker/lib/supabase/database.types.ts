@@ -210,6 +210,7 @@ export type Database = {
           province: string | null
           updated_at: string
           weight_kg: number | null
+          zone_id: string | null
         }
         Insert: {
           bio?: string | null
@@ -228,6 +229,7 @@ export type Database = {
           province?: string | null
           updated_at?: string
           weight_kg?: number | null
+          zone_id?: string | null
         }
         Update: {
           bio?: string | null
@@ -246,6 +248,7 @@ export type Database = {
           province?: string | null
           updated_at?: string
           weight_kg?: number | null
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -253,6 +256,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
             referencedColumns: ["id"]
           },
         ]
@@ -336,6 +346,7 @@ export type Database = {
           owner_id: string
           province: string | null
           updated_at: string
+          zone_id: string | null
         }
         Insert: {
           bio?: string | null
@@ -355,6 +366,7 @@ export type Database = {
           owner_id: string
           province?: string | null
           updated_at?: string
+          zone_id?: string | null
         }
         Update: {
           bio?: string | null
@@ -374,6 +386,7 @@ export type Database = {
           owner_id?: string
           province?: string | null
           updated_at?: string
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -381,6 +394,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
             referencedColumns: ["id"]
           },
         ]
@@ -464,6 +484,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      zones: {
+        Row: {
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          province: string
+        }
+        Insert: {
+          id: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          province: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          province?: string
+        }
+        Relationships: []
       }
     }
     Views: {

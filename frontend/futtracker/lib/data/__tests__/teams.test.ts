@@ -25,8 +25,7 @@ const INPUT: TeamInput = {
   city: "Pilar",
   province: "Buenos Aires",
   country: "AR",
-  latitude: -34.4583,
-  longitude: -58.9142,
+  zone_id: "pilar",
   founded_year: 1954,
   bio: "Club de barrio con cancha propia",
   contact_email: "delegado@example.com",
@@ -104,12 +103,19 @@ describe("teamInputSchema", () => {
     ["founded_year", 1700],
     ["founded_year", 2200],
     ["contact_email", "delegado@"],
-    ["latitude", 91],
-    ["longitude", -181],
+    ["zone_id", ""],
   ])("rechaza %s = %s", (field, value) => {
     const result = teamInputSchema.safeParse({ ...INPUT, [field]: value });
 
     expect(result.success).toBe(false);
+  });
+
+  // T09c: las coordenadas las deriva la base de la zona.
+  it("descarta latitude y longitude si llegan en el input", () => {
+    const parsed = teamInputSchema.parse({ ...INPUT, latitude: 0, longitude: 0 });
+
+    expect(parsed).not.toHaveProperty("latitude");
+    expect(parsed).not.toHaveProperty("longitude");
   });
 });
 
