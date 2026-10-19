@@ -11,7 +11,7 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Es un chequeo optimista de UX, no la autorización: esa la hacen RLS y los
  * chequeos dentro de cada Server Action.
  */
-const PROTECTED_ROUTES = ["/jugadores", "/equipos"];
+const PROTECTED_ROUTES = ["/jugadores", "/equipos", "/vacantes"];
 
 function requiresSession(pathname: string): boolean {
   const isProtected = PROTECTED_ROUTES.some(
@@ -29,7 +29,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const login = new URL("/login", request.url);
-  login.searchParams.set("redirectTo", request.nextUrl.pathname);
+  // Con la query: si no, una búsqueda con filtros vuelve sin ellos tras el login.
+  login.searchParams.set(
+    "redirectTo",
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
+  );
 
   const redirect = NextResponse.redirect(login);
 

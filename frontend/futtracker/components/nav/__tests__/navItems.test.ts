@@ -76,3 +76,24 @@ describe("isNavItemActive", () => {
     expect(byLabel("Mi perfil").activeOn).toBeUndefined();
   });
 });
+
+describe("Buscar jugadores", () => {
+  it("aparece en el nav del delegado y lleva a /jugadores", () => {
+    const item = NAV_ITEMS_BY_ROLE.delegate.find(
+      (candidate) => candidate.label === "Buscar jugadores",
+    );
+
+    expect(item?.href).toBe("/jugadores");
+  });
+
+  it("no aparece en el nav del jugador", () => {
+    expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).not.toContain("Buscar jugadores");
+  });
+});
+
+describe("NAV_ITEMS_BY_ROLE", () => {
+  it("'Vacantes' es solo del jugador", () => {
+    expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).toContain("Vacantes");
+    expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain("Vacantes");
+  });
+});

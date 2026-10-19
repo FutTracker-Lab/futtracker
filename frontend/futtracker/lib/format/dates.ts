@@ -59,3 +59,26 @@ export function formatCareerPeriod(
 
   return `${start} – ${end}`;
 }
+
+// `Intl` solo para pasar a hora de Argentina; los números no traen el "de".
+const ARGENTINA_DATE_PARTS = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Argentina/Buenos_Aires",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+});
+
+function toArgentinaParts(date: Date) {
+  const parts = ARGENTINA_DATE_PARTS.formatToParts(date);
+  const get = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value);
+
+  return { year: get("year"), month: get("month"), day: get("day") };
+}
+
+export function formatShortDate(timestamp: string, now: Date = new Date()): string {
+  const { year, month, day } = toArgentinaParts(new Date(timestamp));
+  const label = `${day} ${MONTH_ABBREVIATIONS[month - 1]}`;
+
+  return year === toArgentinaParts(now).year ? label : `${label} ${year}`;
+}

@@ -9,6 +9,7 @@ import {
   updateCrestPath,
   updateTeam,
 } from "@/lib/data/teams";
+import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,12 +27,21 @@ const DUPLICATE_MESSAGES: Record<string, { error: string; field?: string }> = {
     error: "Ya tenés un equipo creado.",
   },
   teams_name_city_unique: {
-    error: "Ya existe un equipo con ese nombre en esa ciudad.",
+    error: "Ya existe un equipo con ese nombre en esa zona.",
     field: "name",
   },
 };
 
 const UNEXPECTED = "Ocurrió un error inesperado. Probá de nuevo.";
+
+function failureFrom(error: unknown): TeamActionResult {
+  if (isUnknownZoneError(error)) {
+    return { ok: false, error: UNKNOWN_ZONE_MESSAGE, field: "zone_id" };
+  }
+
+  const duplicate = duplicateFrom(error);
+  return duplicate ? { ok: false, ...duplicate } : { ok: false, error: UNEXPECTED };
+}
 
 // `unknown` y no el tipo del error: lo que tira supabase-js no está tipado y
 // una Server Action es un endpoint público, así que nada garantiza la forma.
@@ -73,8 +83,7 @@ export async function createTeamAction(input: unknown): Promise<TeamActionResult
 
     return { ok: true, teamId: team.id };
   } catch (error) {
-    const duplicate = duplicateFrom(error);
-    return duplicate ? { ok: false, ...duplicate } : { ok: false, error: UNEXPECTED };
+    return failureFrom(error);
   }
 }
 
@@ -112,8 +121,7 @@ export async function updateTeamAction(
 
     return { ok: true, teamId };
   } catch (error) {
-    const duplicate = duplicateFrom(error);
-    return duplicate ? { ok: false, ...duplicate } : { ok: false, error: UNEXPECTED };
+    return failureFrom(error);
   }
 }
 

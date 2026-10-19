@@ -4,6 +4,7 @@ import {
   formatCareerPeriod,
   formatDayMonthYear,
   formatMonthYear,
+  formatShortDate,
 } from "@/lib/format/dates";
 
 describe("formatMonthYear", () => {
@@ -48,5 +49,28 @@ describe("formatCareerPeriod", () => {
 
   it("cae a un guion si una etapa cerrada no tiene end_date (dato inconsistente)", () => {
     expect(formatCareerPeriod("2021-08-01", null, false)).toBe("ago 2021 – —");
+  });
+});
+
+describe("formatShortDate", () => {
+  const NOW = new Date("2026-10-05T15:00:00Z");
+
+  it("omite el año cuando es el actual", () => {
+    expect(formatShortDate("2026-08-03T15:00:00Z", NOW)).toBe("3 ago");
+  });
+
+  it("agrega el año cuando no es el actual", () => {
+    expect(formatShortDate("2025-08-03T15:00:00Z", NOW)).toBe("3 ago 2025");
+  });
+
+  // 01:00 UTC del 4 todavía es el 3 a la noche en Argentina.
+  it("toma el día en hora de Argentina", () => {
+    expect(formatShortDate("2026-08-04T01:00:00Z", NOW)).toBe("3 ago");
+  });
+
+  it("toma el año en hora de Argentina", () => {
+    expect(
+      formatShortDate("2026-01-01T02:00:00Z", new Date("2026-01-01T12:00:00Z")),
+    ).toBe("31 dic 2025");
   });
 });

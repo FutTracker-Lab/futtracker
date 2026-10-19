@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { playerInputSchema, upsertPlayer } from "@/lib/data/players";
+import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
 export type UpdatePlayerResult =
   | { ok: true }
-  | { ok: false; error: string };
+  | { ok: false; error: string; field?: string };
 
 /**
  * Guarda el path del avatar recién subido. La subida del archivo la hace el
@@ -85,8 +86,10 @@ export async function updatePlayerProfile(
   // pero sin fila de jugador.
   try {
     await upsertPlayer(supabase, parsed.data);
-  } catch {
-    return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
+  } catch (error) {
+    return isUnknownZoneError(error)
+      ? { ok: false, error: UNKNOWN_ZONE_MESSAGE, field: "zone_id" }
+      : { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
   }
 
   const { error: profileError } = await supabase

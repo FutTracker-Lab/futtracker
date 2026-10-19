@@ -34,6 +34,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_error_log: {
+        Row: {
+          created_at: string
+          id: number
+          method: string
+          route: string
+          status: number
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          method: string
+          route: string
+          status: number
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          method?: string
+          route?: string
+          status?: number
+        }
+        Relationships: []
+      }
       career_entries: {
         Row: {
           category: string | null
@@ -90,6 +114,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      kpi_report_runs: {
+        Row: {
+          attempts: number
+          created_at: string
+          env: string
+          fallbacks: string[]
+          kpi_date: string
+          payload: Json
+          response_status: number | null
+          run_id: string
+        }
+        Insert: {
+          attempts: number
+          created_at?: string
+          env: string
+          fallbacks?: string[]
+          kpi_date: string
+          payload: Json
+          response_status?: number | null
+          run_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          env?: string
+          fallbacks?: string[]
+          kpi_date?: string
+          payload?: Json
+          response_status?: number | null
+          run_id?: string
+        }
+        Relationships: []
       }
       match_stats: {
         Row: {
@@ -210,6 +267,7 @@ export type Database = {
           province: string | null
           updated_at: string
           weight_kg: number | null
+          zone_id: string | null
         }
         Insert: {
           bio?: string | null
@@ -228,6 +286,7 @@ export type Database = {
           province?: string | null
           updated_at?: string
           weight_kg?: number | null
+          zone_id?: string | null
         }
         Update: {
           bio?: string | null
@@ -246,6 +305,7 @@ export type Database = {
           province?: string | null
           updated_at?: string
           weight_kg?: number | null
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -253,6 +313,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
             referencedColumns: ["id"]
           },
         ]
@@ -284,6 +351,39 @@ export type Database = {
         }
         Relationships: []
       }
+      team_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_follows_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           bio: string | null
@@ -303,6 +403,7 @@ export type Database = {
           owner_id: string
           province: string | null
           updated_at: string
+          zone_id: string | null
         }
         Insert: {
           bio?: string | null
@@ -322,6 +423,7 @@ export type Database = {
           owner_id: string
           province?: string | null
           updated_at?: string
+          zone_id?: string | null
         }
         Update: {
           bio?: string | null
@@ -341,6 +443,7 @@ export type Database = {
           owner_id?: string
           province?: string | null
           updated_at?: string
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -350,7 +453,121 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "teams_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      vacancies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          level: string
+          modality: string
+          position: string
+          status: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          level: string
+          modality: string
+          position: string
+          status?: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          level?: string
+          modality?: string
+          position?: string
+          status?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacancies_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacancy_applications: {
+        Row: {
+          created_at: string
+          id: string
+          player_id: string
+          vacancy_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          player_id: string
+          vacancy_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_id?: string
+          vacancy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacancy_applications_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacancy_applications_vacancy_id_fkey"
+            columns: ["vacancy_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zones: {
+        Row: {
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          province: string
+        }
+        Insert: {
+          id: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          province: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          province?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -411,8 +628,51 @@ export type Database = {
       }
     }
     Functions: {
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
+      is_kpi_reporter: { Args: never; Returns: boolean }
       is_team_owner: { Args: { team: string }; Returns: boolean }
+      kpi_daily_counts: {
+        Args: { p_date: string }
+        Returns: {
+          complete_profiles: number
+          contacts_started: number
+          contacts_successful: number
+          errors_5xx: number
+          players_following: number
+          players_registered: number
+        }[]
+      }
+      log_api_error: {
+        Args: { p_method: string; p_route: string; p_status: number }
+        Returns: undefined
+      }
       safe_uuid: { Args: { value: string }; Returns: string }
+      search_players: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_position?: string
+          p_radius_km: number
+          p_seeking_only?: boolean
+        }
+        Returns: {
+          age: number
+          avatar_path: string
+          city: string
+          distance_km: number
+          full_name: string
+          is_seeking_team: boolean
+          matches_played: number
+          player_id: string
+          position: string
+          province: string
+          total_count: number
+        }[]
+      }
+      team_follower_count: { Args: { p_team_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never

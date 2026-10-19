@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import PersonalDataSection from "./PersonalDataSection";
@@ -15,6 +15,8 @@ import {
 } from "./playerFormValues";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { playerInputSchema, type Player } from "@/lib/data/players";
+import type { Zone } from "@/lib/data/zones";
+import { previousLocationHint, zoneGroupsFrom } from "@/lib/format/zones";
 
 type FormState =
   | { ok: true }
@@ -23,16 +25,14 @@ type FormState =
 const INITIAL_STATE: FormState = { ok: true };
 
 // Los campos que tienen un control en pantalla y por lo tanto pueden mostrar
-// su propio error. Un error de cualquier otra clave (`latitude`/`longitude`,
-// que el formulario no edita, o una columna nueva del schema que todavía no
-// tenga control) no tiene dónde renderizarse: sin esta lista terminaría
-// descartado en silencio y el submit no haría nada sin decir por qué.
+// su propio error. Un error de cualquier otra clave (una columna nueva del
+// schema que todavía no tenga control) no tiene dónde renderizarse: sin esta
+// lista terminaría descartado en silencio y el submit no haría nada sin decir por qué.
 const FIELDS_WITH_CONTROL = new Set([
   "full_name",
   "birth_date",
   "phone",
-  "city",
-  "province",
+  "zone_id",
   "country",
   "position",
   "preferred_foot",
@@ -51,6 +51,8 @@ type Props = {
   initialAvatarUrl: string | null;
   initialAvatarPath: string | null;
   userId: string;
+  // Vacío si `listZones` falló: el formulario lo muestra y no deja guardar.
+  zones: Zone[];
 };
 
 export default function PlayerProfileForm({
@@ -59,6 +61,7 @@ export default function PlayerProfileForm({
   initialAvatarUrl,
   initialAvatarPath,
   userId,
+  zones,
 }: Props) {
   const router = useRouter();
   const [success, setSuccess] = useState(false);
@@ -69,8 +72,9 @@ export default function PlayerProfileForm({
   // React resetea un <form action={...}> no controlado apenas la action
   // termina, incluso en error, y borraba todo lo tipeado.
   const [values, setValues] = useState<PlayerFormValues>(() =>
-    initialValuesFrom(initialFullName, initialPlayer),
+    initialValuesFrom(initialFullName, initialPlayer, zones),
   );
+  const zoneGroups = useMemo(() => zoneGroupsFrom(zones), [zones]);
 
   function setField<K extends keyof PlayerFormValues>(
     field: K,
@@ -97,7 +101,7 @@ export default function PlayerProfileForm({
     // Mismo schema que usa la Server Action (playerInputSchema, de
     // lib/data/players.ts) — no una copia con los rangos repetidos a mano.
     const parsed = playerInputSchema.safeParse(
-      toPlayerInput(values, initialPlayer),
+      toPlayerInput(values),
     );
 
     if (!parsed.success) {
@@ -112,7 +116,9 @@ export default function PlayerProfileForm({
       return { ok: true };
     }
 
-    return { ok: false, error: result.error };
+    return result.field
+      ? { ok: false, fieldErrors: { [result.field]: result.error } }
+      : { ok: false, error: result.error };
   }
 
   const [state, action] = useActionState(handleSubmit, INITIAL_STATE);
@@ -153,6 +159,11 @@ export default function PlayerProfileForm({
         initialAvatarUrl={initialAvatarUrl}
         initialAvatarPath={initialAvatarPath}
         userId={userId}
+        zoneGroups={zoneGroups}
+        zoneHint={
+          previousLocationHint(initialPlayer, zones) ??
+          "Desde dónde te movés para entrenar."
+        }
       />
 
       <PlayStyleSection
@@ -161,7 +172,7 @@ export default function PlayerProfileForm({
         onChange={setField}
       />
 
-      <SubmitButton label="Guardar cambios" />
+      <SubmitButton label="Guardar cambios" disabled={zoneGroups.length === 0} />
     </form>
   );
 }

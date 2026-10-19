@@ -1,10 +1,20 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 
+import ApplicationsSkeleton from "@/components/team/ApplicationsSkeleton";
+import ApplicationsTab from "@/components/team/ApplicationsTab";
+import OpenVacanciesChip from "@/components/team/OpenVacanciesChip";
 import TeamForm from "@/components/team/TeamForm";
+import TeamTabs, { type TeamTab } from "@/components/team/TeamTabs";
+import VacanciesSkeleton from "@/components/team/VacanciesSkeleton";
+import VacanciesTab from "@/components/team/VacanciesTab";
+import { loadApplicationCounts, loadTeamApplications } from "@/components/team/teamApplications";
+import { loadTeamVacancies } from "@/components/team/teamVacancies";
 import { getProfileById } from "@/lib/data/profiles";
 import { getMyTeam } from "@/lib/data/teams";
 import { getTeamProfileById } from "@/lib/data/teamProfiles";
+import { listZones } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -76,13 +86,21 @@ export default async function MyTeamPage({
 
   // Vuelve por `getTeamProfileById` para traer la URL firmada del escudo, que
   // `getMyTeam` no resuelve.
-  const data = await getTeamProfileById(myTeam.id);
+  const [data, zones] = await Promise.all([
+    getTeamProfileById(myTeam.id),
+    listZones(supabase).catch(() => []),
+  ]);
 
   if (!data) {
     redirect(RouteConstants.team.new);
   }
 
   const { team, crestUrl } = data;
+  const tab: TeamTab =
+    params.tab === "vacantes" || params.tab === "postulaciones" ? params.tab : "datos";
+  // Sin `await`: la esperan el chip, el contador y la tabla, cada uno en su Suspense.
+  const vacancies = loadTeamVacancies(supabase, team.id);
+  const applicationCounts = loadApplicationCounts(supabase, team.id);
 
   return (
     <div className="flex flex-1 flex-col bg-surface">
@@ -104,15 +122,39 @@ export default async function MyTeamPage({
             Modo Equipo. Lo que editás acá es lo que ven los jugadores cuando
             les aparece el club en una búsqueda.
           </p>
-          <Link
-            href={RouteConstants.team.view(team.id)}
-            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-          >
-            Ver perfil público
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Suspense fallback={null}>
+              <OpenVacanciesChip result={vacancies} />
+            </Suspense>
+            <Link
+              href={RouteConstants.team.view(team.id)}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+            >
+              Ver perfil público
+            </Link>
+          </div>
         </div>
 
-        <TeamForm team={team} initialCrestUrl={crestUrl} />
+        <TeamTabs active={tab} vacancies={vacancies} applicationCounts={applicationCounts} />
+
+        {tab === "vacantes" ? (
+          <Suspense fallback={<VacanciesSkeleton />}>
+            <VacanciesTab result={vacancies} applicationCounts={applicationCounts} />
+          </Suspense>
+        ) : tab === "postulaciones" ? (
+          <Suspense fallback={<ApplicationsSkeleton />}>
+            <ApplicationsTab
+              result={loadTeamApplications(
+                supabase,
+                team.id,
+                vacancies,
+                typeof params.vacante === "string" ? params.vacante : undefined,
+              )}
+            />
+          </Suspense>
+        ) : (
+          <TeamForm team={team} initialCrestUrl={crestUrl} zones={zones} />
+        )}
       </div>
     </div>
   );

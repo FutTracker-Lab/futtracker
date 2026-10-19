@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import PlayerProfileForm from "./PlayerProfileForm";
 import { getPlayerProfileById } from "@/lib/data/profiles";
+import { listZones } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,7 +16,11 @@ export default async function EditPlayerProfilePage() {
     redirect(`/login?redirectTo=${RouteConstants.profile.edit}`);
   }
 
-  const data = await getPlayerProfileById(user.id);
+  // Después del chequeo de sesión: a un visitante no le llega ninguna zona.
+  const [data, zones] = await Promise.all([
+    getPlayerProfileById(user.id),
+    listZones(supabase).catch(() => []),
+  ]);
 
   if (!data) {
     redirect("/");
@@ -42,6 +47,7 @@ export default async function EditPlayerProfilePage() {
           initialAvatarUrl={avatarUrl}
           initialAvatarPath={profile.avatar_path}
           userId={user.id}
+          zones={zones}
         />
       </div>
     </div>
