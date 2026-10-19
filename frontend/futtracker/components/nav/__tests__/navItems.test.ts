@@ -90,3 +90,10 @@ describe("Buscar jugadores", () => {
     expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).not.toContain("Buscar jugadores");
   });
 });
+
+describe("NAV_ITEMS_BY_ROLE", () => {
+  it("'Vacantes' es solo del jugador", () => {
+    expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).toContain("Vacantes");
+    expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain("Vacantes");
+  });
+});
