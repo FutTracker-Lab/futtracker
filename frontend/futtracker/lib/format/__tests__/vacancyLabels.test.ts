@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { openVacanciesLabel } from "@/lib/format/vacancyLabels";
+import { applicationsCountLabel, openVacanciesLabel } from "@/lib/format/vacancyLabels";
 
 describe("openVacanciesLabel", () => {
   it.each([
@@ -10,5 +10,15 @@ describe("openVacanciesLabel", () => {
     [3, "3 vacantes abiertas"],
   ])("con %i dice %s", (count, label) => {
     expect(openVacanciesLabel(count)).toBe(label);
+  });
+});
+
+describe("applicationsCountLabel", () => {
+  it.each([
+    [0, "0 postulaciones"],
+    [1, "1 postulación"],
+    [2, "2 postulaciones"],
+  ])("con %i dice %s", (count, label) => {
+    expect(applicationsCountLabel(count)).toBe(label);
   });
 });

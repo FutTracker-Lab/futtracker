@@ -1,16 +1,27 @@
+import Link from "next/link";
+
+import type { ApplicationCountsResult } from "@/components/team/teamApplications";
 import VacanciesCard from "@/components/team/VacanciesCard";
 import VacancyRowMenu from "@/components/team/VacancyRowMenu";
 import type { TeamVacanciesResult } from "@/components/team/teamVacancies";
 import RetryButton from "@/components/ui/RetryButton";
 import { getPositionLabel } from "@/lib/format/playerLabels";
-import { getLevelLabel, getModalityLabel, getStatusLabel } from "@/lib/format/vacancyLabels";
+import {
+  applicationsCountLabel,
+  getLevelLabel,
+  getModalityLabel,
+  getStatusLabel,
+} from "@/lib/format/vacancyLabels";
+import { RouteConstants } from "@/lib/routes";
 
 export default async function VacanciesTab({
   result,
+  applicationCounts,
 }: {
   result: Promise<TeamVacanciesResult>;
+  applicationCounts: Promise<ApplicationCountsResult>;
 }) {
-  const loaded = await result;
+  const [loaded, countsResult] = await Promise.all([result, applicationCounts]);
 
   if (!loaded.ok) {
     return (
@@ -41,6 +52,7 @@ export default async function VacanciesTab({
             <th scope="col" className="py-2 pr-3 font-medium">Modalidad</th>
             <th scope="col" className="py-2 pr-3 font-medium">Nivel</th>
             <th scope="col" className="py-2 pr-3 font-medium">Estado</th>
+            <th scope="col" className="py-2 pr-3 text-right font-medium">Postulaciones</th>
             <th scope="col" className="py-2"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
@@ -48,6 +60,7 @@ export default async function VacanciesTab({
           {loaded.vacancies.map((vacancy) => {
             const positionLabel = getPositionLabel(vacancy.position) ?? vacancy.position;
             const isOpen = vacancy.status === "open";
+            const applicationsCount = countsResult.ok ? (countsResult.counts[vacancy.id] ?? 0) : null;
 
             return (
               <tr
@@ -67,6 +80,20 @@ export default async function VacanciesTab({
                   >
                     {getStatusLabel(vacancy.status)}
                   </span>
+                </td>
+                <td className="text-zinc-700 sm:py-3 sm:pr-3 sm:text-right">
+                  <span className="sm:hidden">Postulaciones: </span>
+                  {applicationsCount !== null ? (
+                    <Link
+                      href={RouteConstants.team.myApplications(vacancy.id)}
+                      aria-label={`${applicationsCountLabel(applicationsCount)} a ${positionLabel}`}
+                      className="font-medium text-zinc-900 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      {applicationsCount}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="absolute top-2.5 right-0 sm:static sm:py-3 sm:text-right">
                   <VacancyRowMenu vacancyId={vacancy.id} positionLabel={positionLabel} isOpen={isOpen} />

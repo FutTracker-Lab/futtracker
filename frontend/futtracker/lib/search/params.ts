@@ -34,15 +34,15 @@ export const DEFAULT_SEARCH_FILTERS: SearchCriteria = {
 const radiusSchema = z.coerce.number().pipe(z.literal(SEARCH_RADII));
 const statusSchema = z.enum(SEARCH_STATUSES);
 // Tope para que un `pagina` enorme no desborde el `int` del offset en la base.
-const pageSchema = z.coerce.number().int().min(1).max(100_000);
+export const pageSchema = z.coerce.number().int().min(1).max(100_000);
 
-type RawSearchParams = Record<string, string | string[] | undefined>;
+export type RawSearchParams = Record<string, string | string[] | undefined>;
 
-function first(value: string | string[] | undefined): string | undefined {
+export function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function valueOr<T>(schema: z.ZodType<T>, value: unknown, fallback: T): T {
+export function valueOr<T>(schema: z.ZodType<T>, value: unknown, fallback: T): T {
   const result = schema.safeParse(value);
   return result.success ? result.data : fallback;
 }

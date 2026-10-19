@@ -1,10 +1,9 @@
 import Link from "next/link";
 
-import { searchHref, type SearchCriteria } from "@/lib/search/params";
-
 type Props = {
-  filters: SearchCriteria;
+  page: number;
   totalPages: number;
+  hrefFor: (page: number) => string;
 };
 
 const LINK_CLASS =
@@ -29,22 +28,20 @@ function PageControl({ label, href }: { label: string; href: string | null }) {
   );
 }
 
-export default function SearchPagination({ filters, totalPages }: Props) {
+export default function SearchPagination({ page, totalPages, hrefFor }: Props) {
   if (totalPages <= 1) {
     return null;
   }
-
-  const { page } = filters;
 
   return (
     <nav aria-label="Paginación" className="flex items-center justify-between gap-3">
       <PageControl
         label="Anterior"
-        href={page > 1 ? searchHref(filters, page - 1) : null}
+        href={page > 1 ? hrefFor(page - 1) : null}
       />
       <PageControl
         label="Siguiente"
-        href={page < totalPages ? searchHref(filters, page + 1) : null}
+        href={page < totalPages ? hrefFor(page + 1) : null}
       />
     </nav>
   );

@@ -33,6 +33,9 @@
    * contrasten contra algo. Muestreado de la imagen de referencia del
    * ticket (T04b · Editar perfil). */
   --color-surface: #f6f7f9;
+
+  /* Azul del rol delegado y de la posición defensiva (maqueta de FUT-133). */
+  --color-navy: #1e2a5a;
 }
 
 @theme inline {
@@ -47,6 +50,7 @@
   --color-panel-foreground: var(--color-panel-foreground);
   --color-panel-muted: var(--color-panel-muted);
   --color-surface: var(--color-surface);
+  --color-navy: var(--color-navy);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
