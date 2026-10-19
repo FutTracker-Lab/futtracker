@@ -110,7 +110,11 @@ async function PlayerSearchResults({ filters }: { filters: SearchCriteria }) {
             </ul>
           )}
 
-          <SearchPagination filters={filters} totalPages={pageCount(total)} />
+          <SearchPagination
+            page={filters.page}
+            totalPages={pageCount(total)}
+            hrefFor={(page) => searchHref(filters, page)}
+          />
         </div>
       </div>
     </SearchLayout>
