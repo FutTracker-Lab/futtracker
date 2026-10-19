@@ -475,6 +475,7 @@ select
 from auth.users u
 where u.email = 'kpi.reporter@example.com';
 
--- Mismo origen que D1 (Pilar), así las búsquedas del reporter devuelven filas.
-insert into public.teams (owner_id, name, city, province, latitude, longitude)
-values ('c0000001-0000-4000-8000-000000000132', 'FutTracker KPIs (interno)', 'Pilar', 'Buenos Aires', -34.458700, -58.914200);
+-- En la zona de D1 (Pilar), así las búsquedas del reporter devuelven filas. La
+-- ciudad y las coordenadas las deriva el trigger de zonas (T09c).
+insert into public.teams (owner_id, name, zone_id)
+values ('c0000001-0000-4000-8000-000000000132', 'FutTracker KPIs (interno)', 'pilar');
