@@ -438,6 +438,20 @@ select
 from generate_series(1, 8) as n;
 
 -- =====================================================================
+-- Seguir equipos (T13a)
+--
+-- Convención de T10a: PJ1 Lucía, PJ2 Martín, PJ3 Sofía; E1, E2 y E3 los tres
+-- equipos del sprint 1. Las fechas fijan el orden de los listados: para PJ1,
+-- E2 (ayer) antes que E1 (hace 2 días); en E1, PJ2 (hace 3 h) antes que PJ1.
+-- PJ3 no sigue a nadie y E3 no tiene seguidores.
+-- =====================================================================
+insert into public.team_follows (follower_id, team_id, created_at)
+values
+  ('11111111-1111-4111-8111-111111111111', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now() - interval '2 days'),   -- PJ1 -> E1
+  ('11111111-1111-4111-8111-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', now() - interval '1 day'),    -- PJ1 -> E2
+  ('22222222-2222-4222-8222-222222222222', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now() - interval '3 hours');  -- PJ2 -> E1
+
+-- =====================================================================
 -- T22 · Reporter de KPIs (FUT-132)
 --
 -- La cuenta que usa `scripts/kpis/kpis.mts` en local. Es un delegado con
