@@ -262,6 +262,25 @@ describe.skipIf(!IS_LOCAL)("T22 · reporter de KPIs", () => {
       expect(row.contacts_successful).toBe(0);
     });
 
+    it("cuenta a cada jugador que sigue al menos un equipo una sola vez", async () => {
+      // Seed de T13a: PJ1 sigue a E1 y E2, PJ2 sigue a E1. Son 2 jugadores,
+      // no 3 seguimientos.
+      const today = dateInBuenosAires(new Date());
+      const before = (await reporter.rpc("kpi_daily_counts", { p_date: today })).data![0];
+      expect(before.players_following).toBeGreaterThanOrEqual(2);
+
+      const follower = await signUpUser("player");
+      const { error } = await follower.client.from("team_follows").insert([
+        { follower_id: follower.id, team_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+        { follower_id: follower.id, team_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+      ]);
+      expect(error).toBeNull();
+
+      const after = (await reporter.rpc("kpi_daily_counts", { p_date: today })).data![0];
+      expect(after.players_following).toBe(before.players_following + 1);
+      expect(after.players_registered).toBe(before.players_registered + 1);
+    });
+
     it("una fecha anterior a todo da una base sin jugadores", async () => {
       const { data, error } = await reporter.rpc("kpi_daily_counts", { p_date: "2000-01-01" });
 
