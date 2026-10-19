@@ -52,28 +52,40 @@ update public.profiles
 set avatar_path = '11111111-1111-4111-8111-111111111111/avatar.png'
 where id = '11111111-1111-4111-8111-111111111111';
 
+-- Zonas de prueba fuera del AMBA (T09c). Las 88 del AMBA las carga la
+-- migración; estas existen solo para tener jugadores y equipos "fuera de
+-- radio". Inactivas: el formulario no las ofrece, pero la base las acepta. No
+-- llegan a `prod` porque el seed no corre ahí.
+insert into public.zones (id, name, province, latitude, longitude, is_active)
+values
+  ('rosario', 'Rosario', 'Santa Fe', -32.944200, -60.650500, false),
+  ('cordoba', 'Córdoba', 'Córdoba', -31.420100, -64.188800, false),
+  ('mendoza', 'Mendoza', 'Mendoza', -32.889500, -68.845800, false);
+
+-- Cada jugador y equipo declara su zona; las coordenadas las pone el trigger
+-- de T09c, nunca este archivo.
 insert into public.players (
   id, birth_date, position, preferred_foot, height_cm, weight_kg,
-  city, province, country, latitude, longitude, bio, phone, is_seeking_team
+  city, province, country, zone_id, bio, phone, is_seeking_team
 )
 values
-  ('11111111-1111-4111-8111-111111111111', '1999-03-14', 'delantero', 'derecha', 168, 62, 'Pilar', 'Buenos Aires', 'AR', -34.458300, -58.914200, 'Nueve de área. Juego los martes en la liga de Pilar.', '+54 9 11 4000-0001', true),
-  ('22222222-2222-4222-8222-222222222222', '1996-11-02', 'arquero', 'derecha', 189, 84, 'Rosario', 'Santa Fe', 'AR', -32.944200, -60.650500, 'Arquero desde los ocho años. Disponible fines de semana.', '+54 9 341 400-0002', true),
-  ('33333333-3333-4333-8333-333333333333', '2001-06-27', 'mediocampista', 'izquierda', 172, 65, 'Córdoba', 'Córdoba', 'AR', -31.420100, -64.188800, 'Volante central, buen pie para la pelota parada.', '+54 9 351 400-0003', false),
-  ('44444444-4444-4444-8444-444444444444', '1994-01-19', 'defensor', 'derecha', 181, 78, 'La Plata', 'Buenos Aires', 'AR', -34.921500, -57.954500, 'Marcador central. Juego al fútbol 11 hace quince años.', '+54 9 221 400-0004', true),
-  ('55555555-5555-4555-8555-555555555555', '2003-09-08', 'mediocampista', 'ambidiestro', 165, 58, 'Mendoza', 'Mendoza', 'AR', -32.889500, -68.845800, 'Enganche. Busco equipo para el torneo de verano.', '+54 9 261 400-0005', true);
+  ('11111111-1111-4111-8111-111111111111', '1999-03-14', 'delantero', 'derecha', 168, 62, 'Pilar', 'Buenos Aires', 'AR', 'pilar', 'Nueve de área. Juego los martes en la liga de Pilar.', '+54 9 11 4000-0001', true),
+  ('22222222-2222-4222-8222-222222222222', '1996-11-02', 'arquero', 'derecha', 189, 84, 'Rosario', 'Santa Fe', 'AR', 'rosario', 'Arquero desde los ocho años. Disponible fines de semana.', '+54 9 341 400-0002', true),
+  ('33333333-3333-4333-8333-333333333333', '2001-06-27', 'mediocampista', 'izquierda', 172, 65, 'Córdoba', 'Córdoba', 'AR', 'cordoba', 'Volante central, buen pie para la pelota parada.', '+54 9 351 400-0003', false),
+  ('44444444-4444-4444-8444-444444444444', '1994-01-19', 'defensor', 'derecha', 181, 78, 'La Plata', 'Buenos Aires', 'AR', 'la-plata', 'Marcador central. Juego al fútbol 11 hace quince años.', '+54 9 221 400-0004', true),
+  ('55555555-5555-4555-8555-555555555555', '2003-09-08', 'mediocampista', 'ambidiestro', 165, 58, 'Mendoza', 'Mendoza', 'AR', 'mendoza', 'Enganche. Busco equipo para el torneo de verano.', '+54 9 261 400-0005', true);
 
 -- El escudo del primer equipo lo sube el CLI desde `supabase/team-crests/`
 -- (ver `config.toml`). En la base va el path y nunca la URL firmada: la firma
 -- vence, y una URL guardada queda muerta.
 insert into public.teams (
   id, owner_id, name, club_name, category, league, city, province, country,
-  latitude, longitude, founded_year, crest_path, bio, contact_email
+  zone_id, founded_year, crest_path, bio, contact_email
 )
 values
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '66666666-6666-4666-8666-666666666666', 'Club Atlético Pilar', 'Club Atlético Pilar', 'Primera', 'Liga de Pilar', 'Pilar', 'Buenos Aires', 'AR', -34.458300, -58.914200, 1954, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/escudo.png', 'Club de barrio con cancha propia. Entrenamos martes y jueves.', 'delegado@example.com'),
-  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '77777777-7777-4777-8777-777777777777', 'Racing de Rosario', 'Racing de Rosario', 'Reserva', 'Liga Rosarina', 'Rosario', 'Santa Fe', 'AR', -32.944200, -60.650500, 1978, null, 'Plantel joven de reserva. Buscamos arquero para el torneo.', null),
-  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', '88888888-8888-4888-8888-888888888888', 'Deportivo Córdoba', 'Deportivo Córdoba', 'Primera', 'Liga Cordobesa', 'Córdoba', 'Córdoba', 'AR', -31.420100, -64.188800, 1991, null, 'Fútbol 11 los domingos. Tres ascensos en la última década.', null);
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '66666666-6666-4666-8666-666666666666', 'Club Atlético Pilar', 'Club Atlético Pilar', 'Primera', 'Liga de Pilar', 'Pilar', 'Buenos Aires', 'AR', 'pilar', 1954, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/escudo.png', 'Club de barrio con cancha propia. Entrenamos martes y jueves.', 'delegado@example.com'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '77777777-7777-4777-8777-777777777777', 'Racing de Rosario', 'Racing de Rosario', 'Reserva', 'Liga Rosarina', 'Rosario', 'Santa Fe', 'AR', 'rosario', 1978, null, 'Plantel joven de reserva. Buscamos arquero para el torneo.', null),
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', '88888888-8888-4888-8888-888888888888', 'Deportivo Córdoba', 'Deportivo Córdoba', 'Primera', 'Liga Cordobesa', 'Córdoba', 'Córdoba', 'AR', 'cordoba', 1991, null, 'Fútbol 11 los domingos. Tres ascensos en la última década.', null);
 
 -- Trayectoria. Cada jugador tiene una sola entrada abierta (`is_current` con
 -- `end_date` nula, que es lo que exige el check de la tabla) y el resto
@@ -195,11 +207,12 @@ values
 -- del origen), Diego en La Plata (~100 km) y Martín en Rosario. Con
 -- coordenadas, cambiarían los conteos exactos que el ticket fija.
 --
--- Quedan sin coordenadas, igual que cualquier usuario real: ningún formulario
--- las carga todavía (supuesto 3 de T09a). Ninguna pantalla las muestra, así
--- que los perfiles no cambian. T12a hace lo mismo con los equipos del seed.
+-- Quedan sin zona y, por el trigger de T09c, sin coordenadas. Conservan su
+-- `city` de texto: son también el caso del perfil anterior al catálogo de
+-- zonas que pide T09c. Ninguna pantalla muestra las coordenadas, así que los
+-- perfiles no cambian. T12a hace lo mismo con los equipos del seed.
 update public.players
-set latitude = null, longitude = null
+set zone_id = null
 where id in (
   '11111111-1111-4111-8111-111111111111',  -- Lucía
   '22222222-2222-4222-8222-222222222222',  -- Martín
@@ -267,39 +280,39 @@ select
 from auth.users u
 where u.email like 'busqueda.%@example.com';
 
-insert into public.teams (owner_id, name, city, province, latitude, longitude)
+insert into public.teams (owner_id, name, city, province, zone_id)
 values
   -- D1: el origen de todos los criterios de T09a. Mismas coordenadas que P1,
   -- así P1 da 0.0 km.
-  ('d0000001-0000-4000-8000-000000000108', 'Club Social Pilar Norte', 'Pilar', 'Buenos Aires', -34.458700, -58.914200),
+  ('d0000001-0000-4000-8000-000000000108', 'Club Social Pilar Norte', 'Pilar', 'Buenos Aires', 'pilar'),
   -- D2: equipo sin coordenadas, para `search_origin_missing`.
-  ('d0000002-0000-4000-8000-000000000108', 'Deportivo Las Lomas', 'San Isidro', 'Buenos Aires', null, null);
+  ('d0000002-0000-4000-8000-000000000108', 'Deportivo Las Lomas', 'San Isidro', 'Buenos Aires', null);
   -- D3 no tiene equipo a propósito.
 
 -- Fechas de nacimiento relativas: con una fecha fija, la edad de P1 dejaría
 -- de ser 25 al año siguiente y el criterio de la edad se rompería solo.
 insert into public.players (
-  id, birth_date, position, city, province, latitude, longitude, is_seeking_team
+  id, birth_date, position, city, province, zone_id, is_seeking_team
 )
 values
-  ('f0000001-0000-4000-8000-000000000108', (current_date - interval '25 years')::date, 'delantero',     'Pilar',      'Buenos Aires', -34.458700, -58.914200, true),   -- P1
-  ('f0000002-0000-4000-8000-000000000108', (current_date - interval '22 years')::date, 'delantero',     'San Isidro', 'Buenos Aires', -34.470800, -58.528600, true),   -- P2
-  ('f0000003-0000-4000-8000-000000000108', null,                                       'mediocampista', null,         null,           -34.460000, -58.500000, true),   -- P3: sin fecha de nacimiento y sin partidos
-  ('f0000004-0000-4000-8000-000000000108', (current_date - interval '27 years')::date, 'delantero',     'Rosario',    'Santa Fe',     -32.944200, -60.650500, true),   -- P4
-  ('f0000005-0000-4000-8000-000000000108', (current_date - interval '24 years')::date, 'delantero',     'Pilar',      'Buenos Aires', -34.458700, -58.914200, false),  -- P5: no busca equipo
-  ('f0000006-0000-4000-8000-000000000108', (current_date - interval '21 years')::date, 'delantero',     'Escobar',    'Buenos Aires', null,       null,       true),   -- P6: sin coordenadas
-  ('f0000007-0000-4000-8000-000000000108', (current_date - interval '29 years')::date, 'arquero',       'Rosario',    'Santa Fe',     -32.944200, -60.650500, true);   -- P7
+  ('f0000001-0000-4000-8000-000000000108', (current_date - interval '25 years')::date, 'delantero',     'Pilar',      'Buenos Aires', 'pilar', true),   -- P1
+  ('f0000002-0000-4000-8000-000000000108', (current_date - interval '22 years')::date, 'delantero',     'San Isidro', 'Buenos Aires', 'san-isidro', true),   -- P2
+  ('f0000003-0000-4000-8000-000000000108', null,                                       'mediocampista', null,         null,           'san-isidro', true),   -- P3: sin fecha de nacimiento y sin partidos
+  ('f0000004-0000-4000-8000-000000000108', (current_date - interval '27 years')::date, 'delantero',     'Rosario',    'Santa Fe',     'rosario', true),   -- P4
+  ('f0000005-0000-4000-8000-000000000108', (current_date - interval '24 years')::date, 'delantero',     'Pilar',      'Buenos Aires', 'pilar', false),  -- P5: no busca equipo
+  ('f0000006-0000-4000-8000-000000000108', (current_date - interval '21 years')::date, 'delantero',     'Escobar',    'Buenos Aires', null,       true),   -- P6: sin coordenadas
+  ('f0000007-0000-4000-8000-000000000108', (current_date - interval '29 years')::date, 'arquero',       'Rosario',    'Santa Fe',     'rosario', true);   -- P7
 
 -- Relleno: delanteros en Pilar que no buscan equipo. Con el filtro por
 -- defecto (`p_seeking_only = true`) no aparecen, así que no alteran los
 -- resultados de los otros criterios; con `false` llevan el total a 29.
 insert into public.players (
-  id, birth_date, position, city, province, latitude, longitude, is_seeking_team
+  id, birth_date, position, city, province, zone_id, is_seeking_team
 )
 select
   ('e00000' || lpad(n::text, 2, '0') || '-0000-4000-8000-000000000108')::uuid,
   (current_date - make_interval(years => 19 + n % 12))::date,
-  'delantero', 'Pilar', 'Buenos Aires', -34.458700, -58.914200, false
+  'delantero', 'Pilar', 'Buenos Aires', 'pilar', false
 from generate_series(1, 25) as n;
 
 -- P1 tiene 3 partidos, para `matches_played = 3`. Fechas relativas por el

@@ -30,6 +30,7 @@ function player(overrides: Partial<Player> = {}): Player {
     is_seeking_team: false,
     latitude: null,
     longitude: null,
+    zone_id: null,
     phone: null,
     position: "mediocampista",
     preferred_foot: "derecha",

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { playerInputSchema, upsertPlayer } from "@/lib/data/players";
+import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
@@ -85,7 +86,12 @@ export async function updatePlayerProfile(
   // pero sin fila de jugador.
   try {
     await upsertPlayer(supabase, parsed.data);
-  } catch {
+  } catch (error) {
+    // Una zona que no está en el catálogo rebota en la foránea (23503, T09c).
+    if (isUnknownZoneError(error)) {
+      return { ok: false, error: UNKNOWN_ZONE_MESSAGE };
+    }
+
     return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
   }
 

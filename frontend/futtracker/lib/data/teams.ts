@@ -29,8 +29,13 @@ export const teamInputSchema = z.object({
   city: z.string().trim().min(1).max(120).nullable(),
   province: z.string().trim().min(1).max(120).nullable(),
   country: z.string().trim().length(2).nullable(),
-  latitude: z.number().min(-90).max(90).nullable(),
-  longitude: z.number().min(-180).max(180).nullable(),
+  // Las coordenadas ya no se mandan: las deriva de la zona un trigger de la
+  // base (T09c). Si llegan en el input, Zod las descarta.
+  //
+  // Opcional además de nullable: un formulario que todavía no tiene el select
+  // de zona (hasta T09d) no la manda, y entonces la columna no se toca. Si
+  // fuera obligatoria, esos formularios dejarían de poder guardar.
+  zone_id: z.string().trim().min(1).nullable().optional(),
   founded_year: z.number().int().min(1850).max(2100).nullable(),
   bio: z.string().trim().max(1000).nullable(),
   contact_email: z.email().nullable(),

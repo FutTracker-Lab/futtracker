@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { isUnknownZoneError } from "@/lib/data/zones";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import {
   IS_LOCAL,
   newClient,
@@ -249,5 +251,124 @@ describe.skipIf(!IS_LOCAL)("RLS de public.players", () => {
         new Date(after!.updated_at).getTime(),
       ).toBeGreaterThan(new Date(before!.updated_at).getTime());
     });
+  });
+});
+
+// T09c: la ubicación la deriva la base de la zona. Ni el formulario ni una
+// llamada directa pueden guardar coordenadas propias.
+//
+// Cada caso arma su propio punto de partida y chequea el error de cada update.
+// Encadenados sobre el estado del anterior, un update que fallara en silencio
+// dejaba la fila como venía, y algunos casos pasaban aunque no existiera el
+// trigger (observación de QA).
+describe.skipIf(!IS_LOCAL)("zona de public.players (T09c)", () => {
+  let playerA: TestUser;
+  let playerB: TestUser;
+
+  beforeAll(async () => {
+    [playerA, playerB] = await Promise.all([signUpUser("player"), signUpUser("player")]);
+
+    for (const player of [playerA, playerB]) {
+      const { error } = await player.client
+        .from("players")
+        .insert({ id: player.id, position: "delantero" });
+
+      if (error) {
+        throw new Error(`No se pudo preparar la ficha: ${error.message}`);
+      }
+    }
+  });
+
+  async function update(values: TablesUpdate<"players">) {
+    const { data, error } = await playerA.client
+      .from("players")
+      .update(values)
+      .eq("id", playerA.id)
+      .select("id");
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+  }
+
+  async function location() {
+    const { data } = await playerA.client
+      .from("players")
+      .select("zone_id, city, province, latitude, longitude")
+      .eq("id", playerA.id)
+      .single();
+
+    return data;
+  }
+
+  it("al elegir una zona, la fila toma ciudad, provincia y coordenadas", async () => {
+    await update({ zone_id: null, city: null, province: null });
+
+    await update({ zone_id: "san-isidro" });
+
+    expect(await location()).toEqual({
+      zone_id: "san-isidro",
+      city: "San Isidro",
+      province: "Buenos Aires",
+      latitude: -34.4708,
+      longitude: -58.5286,
+    });
+  });
+
+  it("con zona, un update directo de coordenadas no las pisa", async () => {
+    await update({ zone_id: "san-isidro" });
+
+    await update({ latitude: 0, longitude: 0 });
+
+    expect(await location()).toMatchObject({ latitude: -34.4708, longitude: -58.5286 });
+  });
+
+  it("al quitar la zona no quedan coordenadas, pero la ciudad de texto se conserva", async () => {
+    await update({ zone_id: "san-isidro" });
+
+    await update({ zone_id: null });
+
+    expect(await location()).toEqual({
+      zone_id: null,
+      city: "San Isidro",
+      province: "Buenos Aires",
+      latitude: null,
+      longitude: null,
+    });
+  });
+
+  // El update de coordenadas tiene que funcionar (se chequea su error) y aun
+  // así dejarlas en null: sin el trigger, quedarían guardadas.
+  it("un perfil sin zona no puede poner coordenadas a mano", async () => {
+    await update({ zone_id: null, city: "Pilar" });
+
+    await update({ latitude: -34.5, longitude: -58.9 });
+
+    expect(await location()).toMatchObject({
+      zone_id: null,
+      city: "Pilar",
+      latitude: null,
+      longitude: null,
+    });
+  });
+
+  it("una zona que no existe rebota en la foránea", async () => {
+    const { error } = await playerA.client
+      .from("players")
+      .update({ zone_id: "no-existe" })
+      .eq("id", playerA.id);
+
+    expect(error?.code).toBe("23503");
+    expect(isUnknownZoneError(error)).toBe(true);
+  });
+
+  it("no se cambia la zona de otro jugador: afecta 0 filas", async () => {
+    const { data, error } = await playerA.client
+      .from("players")
+      .update({ zone_id: "pilar" })
+      .eq("id", playerB.id)
+      .select("id");
+
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
   });
 });
