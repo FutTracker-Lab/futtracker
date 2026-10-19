@@ -1,0 +1,89 @@
+name: Reporte diario de KPIs
+
+# T22 (FUT-132). Mide FutTracker y manda los 10 KPIs a la plataforma de LAB4.
+# Alta de secretos y de la cuenta del reporter: docs/kpis.md.
+#
+# El cron de GitHub está en UTC y solo corre desde la rama por defecto (main):
+# 06:00 UTC son las 03:00 en Buenos Aires (R3.1). Puede llegar con demora,
+# y no importa: la plataforma cuenta el día de recepción.
+#
+# El ambiente es a la vez lo que se mide (nuestra base y nuestro deploy) y el
+# `env` al que se reporta: los secretos de `kpi-dev` solo miden dev y solo
+# reportan a dev. El cron va a `prod`; la variable de repo KPI_SCHEDULE_ENV=dev
+# lo apunta a dev mientras prod no esté configurado.
+#
+# Ambientes propios (`kpi-dev` y `kpi-prod`) y no los de deploy (`dev`, `prod`):
+# `prod` pide aprobación manual en cada corrida, y el cron de las 03:00 se
+# quedaría esperando; `dev` solo acepta la rama `dev`, y el cron corre desde
+# `main`. Además, así este job no ve los secretos de deploy.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente que se mide y al que se reporta
+        type: choice
+        options: [dev, prod]
+        default: dev
+      command:
+        description: report manda las mediciones; catalog da de alta los KPIs
+        type: choice
+        options: [report, catalog]
+        default: report
+      date:
+        description: "Día a reportar, YYYY-MM-DD (vacío: el día anterior en Buenos Aires)"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+# Dos corridas del mismo ambiente en paralelo medirían una la latencia de la
+# otra. No se cancela la que está corriendo: un envío a medias es peor.
+concurrency:
+  group: kpi-report-${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: ${{ inputs.command || 'report' }} (${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: kpi-${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }}
+    defaults:
+      run:
+        working-directory: frontend/futtracker
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22.18 o más: el script es TypeScript y Node lo corre sin compilar.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/futtracker/package-lock.json
+
+      - run: npm ci
+
+      # Los inputs viajan por variables de entorno y no interpolados en el
+      # comando, para que ningún valor se ejecute como shell.
+      - name: KPIs
+        run: node scripts/kpis/kpis.mts "$KPI_COMMAND"
+        env:
+          KPI_COMMAND: ${{ inputs.command || 'report' }}
+          KPI_ENV: ${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }}
+          KPI_DATE: ${{ inputs.date }}
+          # La plataforma de la cátedra. URL y clave pública son las mismas para
+          # dev y prod y van a nivel repo; la PROJECT_KEY es por ambiente. Si
+          # un ambiente define las suyas, GitHub usa esas.
+          KPI_API_URL: ${{ vars.KPI_API_URL }}
+          KPI_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.KPI_SUPABASE_PUBLISHABLE_KEY }}
+          KPI_PROJECT_KEY: ${{ secrets.KPI_PROJECT_KEY }}
+          # Lo nuestro, del ambiente elegido.
+          NEXT_PUBLIC_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          KPI_APP_URL: ${{ vars.KPI_APP_URL }}
+          KPI_REPORTER_EMAIL: ${{ secrets.KPI_REPORTER_EMAIL }}
+          KPI_REPORTER_PASSWORD: ${{ secrets.KPI_REPORTER_PASSWORD }}

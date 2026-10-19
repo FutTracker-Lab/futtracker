@@ -450,3 +450,46 @@ values
   ('11111111-1111-4111-8111-111111111111', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now() - interval '2 days'),   -- PJ1 -> E1
   ('11111111-1111-4111-8111-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', now() - interval '1 day'),    -- PJ1 -> E2
   ('22222222-2222-4222-8222-222222222222', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', now() - interval '3 hours');  -- PJ2 -> E1
+
+-- =====================================================================
+-- T22 · Reporter de KPIs (FUT-132)
+--
+-- La cuenta que usa `scripts/kpis/kpis.mts` en local. Es un delegado con
+-- equipo porque `search_players` toma el origen del equipo de quien busca, y
+-- el reporter mide la latencia de la búsqueda. Lo que la distingue es
+-- `app_metadata.kpi_reporter`, que en dev y prod pone a mano un
+-- administrador (ver docs/kpis.md).
+-- =====================================================================
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+values (
+  '00000000-0000-0000-0000-000000000000', 'c0000001-0000-4000-8000-000000000132',
+  'authenticated', 'authenticated', 'kpi.reporter@example.com',
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"],"kpi_reporter":true}',
+  '{"full_name":"Reporter de KPIs","role":"delegate"}',
+  now(), now(), '', '', '', ''
+);
+
+insert into auth.identities (
+  provider_id, user_id, identity_data, provider, last_sign_in_at,
+  created_at, updated_at
+)
+select
+  u.id::text,
+  u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  'email',
+  now(),
+  now(),
+  now()
+from auth.users u
+where u.email = 'kpi.reporter@example.com';
+
+-- En la zona de D1 (Pilar), así las búsquedas del reporter devuelven filas. La
+-- ciudad y las coordenadas las deriva el trigger de zonas (T09c).
+insert into public.teams (owner_id, name, zone_id)
+values ('c0000001-0000-4000-8000-000000000132', 'FutTracker KPIs (interno)', 'pilar');
