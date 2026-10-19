@@ -294,6 +294,39 @@ export type Database = {
         }
         Relationships: []
       }
+      team_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_follows_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           bio: string | null
@@ -566,6 +599,7 @@ export type Database = {
           total_count: number
         }[]
       }
+      team_follower_count: { Args: { p_team_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
