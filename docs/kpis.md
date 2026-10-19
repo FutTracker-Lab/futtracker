@@ -30,20 +30,35 @@ El script se niega a correr si las dos URLs apuntan al mismo proyecto, o si se r
 
 ## Configuración en GitHub
 
-Settings → Environments. Cada ambiente mide lo suyo y reporta a su `env`: los secretos de `dev` nunca llegan a `prod`.
+El reporter usa **dos ambientes propios**, `kpi-dev` y `kpi-prod`, y no los de deploy (`dev` y `prod`):
 
-| nombre | tipo | dónde | valor |
-|---|---|---|---|
-| `KPI_API_URL` | variable | `dev` y `prod` | la `SUPABASE_URL` que vino con la clave de ese ambiente (tabla de arriba) |
-| `KPI_SUPABASE_PUBLISHABLE_KEY` | secreto | `dev` y `prod` | la `SUPABASE_PUBLISHABLE_KEY` que vino con la clave de ese ambiente |
-| `KPI_PROJECT_KEY` | secreto | `dev` y `prod` | la `PROJECT_KEY` del equipo **para ese ambiente** (se muestra una sola vez al emitirla) |
-| `KPI_REPORTER_EMAIL` | secreto | `dev` y `prod` | el mail de la cuenta del reporter de ese ambiente |
-| `KPI_REPORTER_PASSWORD` | secreto | `dev` y `prod` | su contraseña |
-| `SUPABASE_PUBLISHABLE_KEY` | variable | `dev` y `prod` | la publishable de **nuestro** proyecto (la misma que usa Vercel) |
-| `KPI_APP_URL` | variable | `dev` y `prod` | la URL del deploy, sin barra final |
-| `KPI_SCHEDULE_ENV` | variable | repo | `dev` hasta que exista la clave de prod; después se borra o se pone `prod` |
+- `prod` pide aprobación manual en cada corrida, y el cron de las 03:00 se quedaría esperando a que alguien apruebe.
+- `dev` solo acepta la rama `dev`, y el cron de GitHub corre siempre desde `main`.
+- Así, además, el job del reporter no ve los secretos de deploy.
 
-`SUPABASE_PROJECT_REF` ya existe en los dos ambientes (lo usa el deploy de migraciones) y de ahí sale la URL de nuestra base.
+Cada ambiente mide lo suyo y reporta a su `env`: los secretos de `kpi-dev` nunca llegan a `kpi-prod`.
+
+### Crear los ambientes (una vez)
+
+Settings → Environments → **New environment**, una vez con `kpi-dev` y otra con `kpi-prod`. En cada uno:
+
+- **Required reviewers:** sin tildar.
+- **Deployment branches and tags:** *Selected branches and tags* → **Add deployment branch or tag rule** → `main`. En `kpi-dev` agregar también `dev`, para poder probar a mano desde esa rama.
+
+### Qué va en cada ambiente
+
+| nombre | tipo | valor |
+|---|---|---|
+| `KPI_API_URL` | variable | la `SUPABASE_URL` que vino con la clave de ese ambiente (tabla de arriba) |
+| `KPI_SUPABASE_PUBLISHABLE_KEY` | secreto | la `SUPABASE_PUBLISHABLE_KEY` que vino con la clave de ese ambiente |
+| `KPI_PROJECT_KEY` | secreto | la `PROJECT_KEY` del equipo **para ese ambiente** (se muestra una sola vez al emitirla) |
+| `KPI_REPORTER_EMAIL` | secreto | el mail de la cuenta del reporter de ese ambiente |
+| `KPI_REPORTER_PASSWORD` | secreto | su contraseña |
+| `SUPABASE_PROJECT_REF` | variable | el ref de **nuestro** proyecto: el mismo valor que tiene el ambiente de deploy (`dev` o `prod`) |
+| `SUPABASE_PUBLISHABLE_KEY` | variable | la publishable de **nuestro** proyecto (la misma que usa Vercel) |
+| `KPI_APP_URL` | variable | la URL del deploy, sin barra final: `https://futtracker-dev.vercel.app` o `https://futtracker.vercel.app` |
+
+Y a nivel repo (Settings → Secrets and variables → Actions → Variables): `KPI_SCHEDULE_ENV` = `dev` mientras `kpi-prod` no esté completo; después se borra y el cron va a prod.
 
 Si el deploy de un ambiente tiene activada la protección de Vercel (Deployment Protection), `/api/health` responde 401 y `api_alcanzable` da 0 en ese ambiente.
 
@@ -71,7 +86,7 @@ El token nuevo trae la marca recién en el próximo inicio de sesión, y el repo
 
 1. **Catálogo de dev:** Actions → *Reporte diario de KPIs* → Run workflow, con `environment: dev` y `command: catalog`. Se puede correr las veces que haga falta: da de alta lo que falta y no duplica.
 2. **Primer reporte a dev:** lo mismo con `command: report`. Tiene que terminar en verde con `Plataforma: 201`.
-3. **Cuando llegue la clave de prod:** cargar los secretos de `prod`, correr `catalog` y `report` contra `prod`, y borrar `KPI_SCHEDULE_ENV`.
+3. **Prod:** completar `kpi-prod`, correr `catalog` y `report` contra `prod`, y borrar `KPI_SCHEDULE_ENV`.
 
 Desde la terminal:
 

@@ -8,9 +8,14 @@ name: Reporte diario de KPIs
 # y no importa: la plataforma cuenta el día de recepción.
 #
 # El ambiente es a la vez lo que se mide (nuestra base y nuestro deploy) y el
-# `env` al que se reporta: los secretos de `dev` solo miden dev y solo
-# reportan a dev. El cron va a `prod`; mientras los profesores no emitan la
-# clave de prod, la variable de repo KPI_SCHEDULE_ENV=dev lo apunta a dev.
+# `env` al que se reporta: los secretos de `kpi-dev` solo miden dev y solo
+# reportan a dev. El cron va a `prod`; la variable de repo KPI_SCHEDULE_ENV=dev
+# lo apunta a dev mientras prod no esté configurado.
+#
+# Ambientes propios (`kpi-dev` y `kpi-prod`) y no los de deploy (`dev`, `prod`):
+# `prod` pide aprobación manual en cada corrida, y el cron de las 03:00 se
+# quedaría esperando; `dev` solo acepta la rama `dev`, y el cron corre desde
+# `main`. Además, así este job no ve los secretos de deploy.
 on:
   schedule:
     - cron: "0 6 * * *"
@@ -45,7 +50,7 @@ jobs:
     name: ${{ inputs.command || 'report' }} (${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: ${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }}
+    environment: kpi-${{ inputs.environment || vars.KPI_SCHEDULE_ENV || 'prod' }}
     defaults:
       run:
         working-directory: frontend/futtracker
