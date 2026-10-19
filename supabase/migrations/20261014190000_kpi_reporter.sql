@@ -53,8 +53,15 @@ alter table public.api_error_log enable row level security;
 
 -- La llama el wrapper de los route handlers (lib/api/error-log.ts) con la
 -- clave publishable y sin sesión, por eso va también para `anon`. Riesgo
--- residual aceptado: cualquiera con la clave pública puede sumar registros
--- válidos e inflar `errores_5xx`. La validación acota qué se guarda, no quién.
+-- residual aceptado por el TL: cualquiera con la clave pública puede sumar
+-- registros válidos e inflar `errores_5xx`. La validación acota qué se
+-- guarda, no quién; la retención acota cuánto ocupa.
+--
+-- Retención: cada registro borra los de más de 30 días. El reporter solo
+-- cuenta el día anterior, y 30 días alcanzan para reportar a mano un día
+-- pasado con KPI_DATE. Va acá y no en un cron porque pg_cron no está
+-- garantizado en el plan del proyecto; el índice por `created_at` hace que
+-- el borrado sea una búsqueda por rango, casi siempre vacía.
 create function public.log_api_error(
   p_route text,
   p_method text,
@@ -79,6 +86,9 @@ begin
      or p_method not in ('GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS') then
     raise exception 'invalid_method' using errcode = '22023';
   end if;
+
+  delete from public.api_error_log
+  where created_at < now() - interval '30 days';
 
   insert into public.api_error_log (route, method, status)
   values (p_route, p_method, p_status);
