@@ -5,6 +5,7 @@ import {
   KPIS,
   REQUEST_TIMEOUT_MS,
   SEARCHES,
+  SEARCH_ROUNDS,
   buildMeasurements,
   p95,
   percent,
@@ -237,6 +238,18 @@ describe("readReportConfig", () => {
     expect(() => readReportConfig({ ...ENV, KPI_DATE: "2026-10-15" }, NOW)).toThrow(/futura/);
     expect(() => readReportConfig({ ...ENV, KPI_DATE: "13/10/2026" }, NOW)).toThrow(/YYYY-MM-DD/);
   });
+
+  it.each(["2026-02-30", "2026-02-29", "2026-04-31", "2026-13-01", "2026-00-10"])(
+    "rechaza %s, que tiene la forma pero no existe",
+    (date) => {
+      expect(() => readReportConfig({ ...ENV, KPI_DATE: date }, NOW)).toThrow(/YYYY-MM-DD/);
+    },
+  );
+
+  it("acepta un 29 de febrero de un año bisiesto", () => {
+    const later = new Date("2028-03-05T12:00:00Z");
+    expect(readReportConfig({ ...ENV, KPI_DATE: "2028-02-29" }, later).date).toBe("2028-02-29");
+  });
 });
 
 // =====================================================================
@@ -398,6 +411,39 @@ describe("runReport", () => {
     const body = sentBody(fake.measurementCalls()[0]);
     expect(valueOf(body, "busquedas_fallidas")).toBe(2);
     expect(valueOf(body, "latencia_busqueda")).toBe(REQUEST_TIMEOUT_MS);
+  });
+
+  it("repite el set de búsquedas en 4 rondas: 20 muestras", async () => {
+    const fake = fakeFetch();
+    const calls: string[] = [];
+    const { db } = fakeDb({
+      search: async (search) => {
+        calls.push(`${search.position}/${search.radiusKm}`);
+      },
+    });
+
+    await runReport(CONFIG, deps(fake.impl, db));
+
+    expect(calls).toHaveLength(SEARCHES.length * SEARCH_ROUNDS);
+    // Por rondas: la segunda vuelta arranca después de la quinta búsqueda.
+    expect(calls.slice(0, 5)).toEqual(calls.slice(5, 10));
+  });
+
+  it("una búsqueda lenta una sola vez no define el p95, pero su combinación cuenta como fallida", async () => {
+    const fake = fakeFetch();
+    let arqueros = 0;
+    const { db } = fakeDb({
+      search: async (search) => {
+        if (search.position === "arquero" && arqueros++ === 0) throw new Error("timeout");
+      },
+    });
+
+    await runReport(CONFIG, deps(fake.impl, db));
+
+    const body = sentBody(fake.measurementCalls()[0]);
+    // 1 timeout en 20 muestras: el p95 (muestra 19 de 20) no es el máximo.
+    expect(valueOf(body, "latencia_busqueda")).toBe(10);
+    expect(valueOf(body, "busquedas_fallidas")).toBe(1);
   });
 
   it("con una base sin jugadores, tasa_conexion_jugador_club vale 0", async () => {

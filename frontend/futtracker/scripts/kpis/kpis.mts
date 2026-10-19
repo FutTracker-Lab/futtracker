@@ -48,6 +48,12 @@ type KpiDefinition = {
 export const REQUEST_TIMEOUT_MS = 10_000;
 export const HEALTH_TIMEOUT_MS = 5_000;
 export const LATENCY_SAMPLES = 20;
+/**
+ * Cada búsqueda del set se repite esta cantidad de veces: 5 × 4 = 20
+ * muestras, las mismas que `latencia_p95`. Con 5 muestras sueltas el p95 era
+ * el máximo, y una sola búsqueda lenta definía el KPI.
+ */
+export const SEARCH_ROUNDS = 4;
 export const MAX_RETRIES = 3;
 
 /**
@@ -113,9 +119,9 @@ export const KPIS = [
     kind: "technical",
     unit: "ms",
     aggregation: "avg",
-    name: "Latencia p95 de lectura",
-    description: `Percentil 95 de ${LATENCY_SAMPLES} lecturas del listado de equipos, medido al correr el reporter.`,
-    source: "Reporter diario contra la API de datos de FutTracker",
+    name: "Latencia p95 de lectura (API de datos)",
+    description: `Percentil 95 de ${LATENCY_SAMPLES} lecturas del listado de equipos contra la API de datos (PostgREST) de FutTracker, desde el runner de GitHub Actions. No incluye el render de la app: no es la latencia que ve el usuario en el navegador.`,
+    source: "Reporter diario contra la API de datos (PostgREST) de FutTracker",
     justification:
       "Una lectura lenta se nota en todas las pantallas: es el piso de la experiencia del usuario.",
     fallback: REQUEST_TIMEOUT_MS,
@@ -126,8 +132,7 @@ export const KPIS = [
     unit: "ms",
     aggregation: "avg",
     name: "Latencia p95 de búsqueda",
-    description:
-      "Percentil 95 del set fijo de 5 búsquedas de jugadores (posición y radio), medido al correr el reporter.",
+    description: `Percentil 95 de ${SEARCHES.length * SEARCH_ROUNDS} búsquedas de jugadores: el set fijo de ${SEARCHES.length} combinaciones de posición y radio, ${SEARCH_ROUNDS} veces cada una, contra search_players desde el runner de GitHub Actions.`,
     source: "Reporter diario contra search_players",
     justification:
       "La búsqueda de jugadores es la consulta más pesada y la que más usan los clubes.",
@@ -151,7 +156,7 @@ export const KPIS = [
     unit: "{request}",
     aggregation: "sum",
     name: "Búsquedas fallidas",
-    description: `Búsquedas del set fijo que terminaron con error o tardaron más de ${REQUEST_TIMEOUT_MS} ms.`,
+    description: `Combinaciones del set fijo de ${SEARCHES.length} búsquedas que terminaron con error o tardaron más de ${REQUEST_TIMEOUT_MS} ms en alguna de sus ${SEARCH_ROUNDS} repeticiones.`,
     source: "Reporter diario contra search_players",
     justification:
       "Distingue una búsqueda lenta de una que directamente no responde.",
@@ -312,6 +317,20 @@ function required(env: Env, name: string): string {
   return value;
 }
 
+/**
+ * YYYY-MM-DD y además una fecha que existe. `Date.parse("2026-02-30")` no
+ * falla: corre el día al 2 de marzo. Por eso se compara la vuelta.
+ */
+export function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const parsed = new Date(`${value}T00:00:00Z`);
+
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 function withoutTrailingSlash(url: string): string {
   return url.replace(/\/+$/, "");
 }
@@ -357,7 +376,7 @@ export function readReportConfig(env: Env, now: Date): ReportConfig {
 
   const date = env.KPI_DATE?.trim() || previousDayInBuenosAires(now);
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) {
+  if (!isCalendarDate(date)) {
     throw new ConfigError(`KPI_DATE tiene que ser YYYY-MM-DD (llegó "${date}").`);
   }
 
@@ -574,15 +593,19 @@ export async function measure(
   }
   measured.latencia_p95 = p95(reads);
 
+  // Por rondas y no cada combinación 4 veces seguidas: una lentitud pasajera
+  // se reparte entre combinaciones en vez de caerle entera a una.
   const searches: number[] = [];
-  let failed = 0;
-  for (const search of SEARCHES) {
-    const result = await timed(deps.now, () => db.search(search));
-    searches.push(result.ms);
-    if (!result.ok) failed++;
+  const failed = new Set<Search>();
+  for (let round = 0; round < SEARCH_ROUNDS; round++) {
+    for (const search of SEARCHES) {
+      const result = await timed(deps.now, () => db.search(search));
+      searches.push(result.ms);
+      if (!result.ok) failed.add(search);
+    }
   }
   measured.latencia_busqueda = p95(searches);
-  measured.busquedas_fallidas = failed;
+  measured.busquedas_fallidas = failed.size;
 
   return { measured, db };
 }
