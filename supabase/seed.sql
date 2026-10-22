@@ -493,3 +493,93 @@ where u.email = 'kpi.reporter@example.com';
 -- ciudad y las coordenadas las deriva el trigger de zonas (T09c).
 insert into public.teams (owner_id, name, zone_id)
 values ('c0000001-0000-4000-8000-000000000132', 'FutTracker KPIs (interno)', 'pilar');
+
+-- =====================================================================
+-- Sugerencias (T12a)
+--
+-- Convención de T09a y T10a: P1, P3 y P6 son los jugadores de la búsqueda; D1
+-- es el delegado del equipo de Pilar. Las filas nuevas terminan en `0125`.
+--
+--   TA  el equipo de D1 (Pilar): VA1 mediocampista y VA2 arquero, abiertas.
+--   TB  Vicente López: VB1 mediocampista y VB2 delantero, abiertas; VB3
+--       mediocampista, cerrada.
+--   TC  Rosario: VC1 mediocampista, abierta. Queda a más de 200 km de todos.
+--   TE  sin zona y sin coordenadas: VE1 mediocampista, abierta.
+--   P9  jugador sin posición, con coordenadas (en Mendoza, ver abajo).
+--
+-- TB va en Vicente López y no en San Isidro: P3 está en el centro de San
+-- Isidro (T09c), y en la misma zona quedaría a 0 km, así que `suggest_teams(1)`
+-- lo encontraría. Ninguna zona cae a los 2,5-3,5 km que pide el ticket: la más
+-- cercana es Vicente López, a 6,6 km. Las distancias de los criterios las
+-- corrige el PO, como en T09c.
+-- =====================================================================
+
+-- E1, E2, E3 y los equipos de relleno de T11a quedan sin coordenadas, así nunca
+-- aparecen en las sugerencias. El trigger de zonas borra las coordenadas al
+-- sacarles la zona; la ciudad de texto queda.
+update public.teams
+set zone_id = null
+where id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',  -- E1
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',  -- E2
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc'   -- E3
+);
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+select
+  '00000000-0000-0000-0000-000000000000'::uuid, v.id::uuid, 'authenticated',
+  'authenticated', v.email,
+  extensions.crypt('password123', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', v.full_name, 'role', v.role),
+  now(), now(), '', '', '', ''
+from (
+  values
+    ('d00000b0-0000-4000-8000-000000000125', 'sugerencias.db@example.com', 'Delegado TB',     'delegate'),
+    ('d00000c0-0000-4000-8000-000000000125', 'sugerencias.dc@example.com', 'Delegado TC',     'delegate'),
+    ('d00000e0-0000-4000-8000-000000000125', 'sugerencias.de@example.com', 'Delegado TE',     'delegate'),
+    ('f0000009-0000-4000-8000-000000000125', 'sugerencias.p9@example.com', 'Ezequiel Molina', 'player')    -- P9
+) as v (id, email, full_name, role);
+
+insert into auth.identities (
+  provider_id, user_id, identity_data, provider, last_sign_in_at,
+  created_at, updated_at
+)
+select
+  u.id::text, u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  'email', now(), now(), now()
+from auth.users u
+where u.email like 'sugerencias.%@example.com';
+
+insert into public.teams (id, owner_id, name, zone_id)
+values
+  ('c00000b0-0000-4000-8000-000000000125', 'd00000b0-0000-4000-8000-000000000125', 'Club Vicente López', 'vicente-lopez'),  -- TB
+  ('c00000c0-0000-4000-8000-000000000125', 'd00000c0-0000-4000-8000-000000000125', 'Atlético Rosario',   'rosario'),        -- TC
+  ('c00000e0-0000-4000-8000-000000000125', 'd00000e0-0000-4000-8000-000000000125', 'Club Sin Ubicación', null);             -- TE
+
+insert into public.vacancies (id, team_id, position, modality, level, status)
+values
+  -- TA, el equipo de D1. Va por `owner_id` porque su `id` no es fijo.
+  ('0d000a01-0000-4000-8000-000000000125', (select id from public.teams where owner_id = 'd0000001-0000-4000-8000-000000000108'), 'mediocampista', 'futbol_11', 'competitivo', 'open'),    -- VA1
+  ('0d000a02-0000-4000-8000-000000000125', (select id from public.teams where owner_id = 'd0000001-0000-4000-8000-000000000108'), 'arquero',       'futbol_11', 'competitivo', 'open'),    -- VA2
+  ('0d000b01-0000-4000-8000-000000000125', 'c00000b0-0000-4000-8000-000000000125', 'mediocampista', 'futbol_11', 'intermedio', 'open'),    -- VB1
+  ('0d000b02-0000-4000-8000-000000000125', 'c00000b0-0000-4000-8000-000000000125', 'delantero',     'futbol_7',  'recreativo', 'open'),    -- VB2
+  ('0d000b03-0000-4000-8000-000000000125', 'c00000b0-0000-4000-8000-000000000125', 'mediocampista', 'futbol_11', 'intermedio', 'closed'),  -- VB3
+  ('0d000c01-0000-4000-8000-000000000125', 'c00000c0-0000-4000-8000-000000000125', 'mediocampista', 'futbol_11', 'intermedio', 'open'),    -- VC1
+  ('0d000e01-0000-4000-8000-000000000125', 'c00000e0-0000-4000-8000-000000000125', 'mediocampista', 'futbol_11', 'intermedio', 'open');    -- VE1
+
+-- P9: ficha sin posición y con zona, para `suggestion_position_missing`. El
+-- ticket lo ubica en Pilar, pero ahí aparecería en las búsquedas de D1 (T09a)
+-- y cambiaría sus conteos. Solo necesita coordenadas, así que va a Mendoza,
+-- una zona de prueba a más de 200 km, el tope de la búsqueda.
+insert into public.players (id, birth_date, position, zone_id, is_seeking_team)
+values ('f0000009-0000-4000-8000-000000000125', (current_date - interval '22 years')::date, null, 'mendoza', true);
+
+-- P3 ya se postuló a VA1: sale en sus sugerencias con `applied = true`.
+insert into public.vacancy_applications (id, vacancy_id, player_id)
+values ('0c000a01-0000-4000-8000-000000000125', '0d000a01-0000-4000-8000-000000000125', 'f0000003-0000-4000-8000-000000000108');
