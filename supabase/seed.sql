@@ -583,3 +583,29 @@ values ('f0000009-0000-4000-8000-000000000125', (current_date - interval '22 yea
 -- P3 ya se postuló a VA1: sale en sus sugerencias con `applied = true`.
 insert into public.vacancy_applications (id, vacancy_id, player_id)
 values ('0c000a01-0000-4000-8000-000000000125', '0d000a01-0000-4000-8000-000000000125', 'f0000003-0000-4000-8000-000000000108');
+
+-- =====================================================================
+-- Mensajería (T14a)
+--
+-- Convención de T10a: PJ1 Lucía, PJ2 Martín, PJ3 Sofía; DE1 Carlos. UUID fijos
+-- que terminan en `0134`. Cada par va en orden canónico (`user_a < user_b`):
+-- los UUID de los jugadores (`1111…`, `2222…`) son menores que el de DE1
+-- (`6666…`).
+--
+--   PJ1↔DE1  3 mensajes: DE1 (hace 2 días, leído), PJ1 (hace 1 día, leído) y
+--            DE1 (hace 2 horas, sin leer).
+--   PJ2↔DE1  1 mensaje de PJ2 (hace 5 horas, sin leer).
+--   PJ3 y DE3 no tienen conversaciones.
+-- =====================================================================
+insert into public.conversations (id, user_a, user_b, created_at)
+values
+  ('0e000001-0000-4000-8000-000000000134', '11111111-1111-4111-8111-111111111111', '66666666-6666-4666-8666-666666666666', now() - interval '2 days'),   -- PJ1↔DE1
+  ('0e000002-0000-4000-8000-000000000134', '22222222-2222-4222-8222-222222222222', '66666666-6666-4666-8666-666666666666', now() - interval '5 hours');  -- PJ2↔DE1
+
+-- `last_message_at` lo pone el trigger al insertar cada mensaje.
+insert into public.messages (id, conversation_id, sender_id, body, created_at, read_at)
+values
+  ('0f000001-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '66666666-6666-4666-8666-666666666666', 'Hola Lucía, vimos tu perfil. ¿Te interesa probarte el martes?', now() - interval '2 days',  now() - interval '1 day 2 hours'),
+  ('0f000002-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '11111111-1111-4111-8111-111111111111', '¡Hola! Sí, me interesa. ¿A qué hora entrenan?',                 now() - interval '1 day',   now() - interval '20 hours'),
+  ('0f000003-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '66666666-6666-4666-8666-666666666666', 'A las 20 en la cancha del club. Te esperamos.',                 now() - interval '2 hours', null),
+  ('0f000004-0000-4000-8000-000000000134', '0e000002-0000-4000-8000-000000000134', '22222222-2222-4222-8222-222222222222', 'Buenas, ¿siguen buscando arquero?',                              now() - interval '5 hours', null);
