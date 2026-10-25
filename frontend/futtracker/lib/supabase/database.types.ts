@@ -672,6 +672,25 @@ export type Database = {
           total_count: number
         }[]
       }
+      suggest_teams: {
+        Args: { p_limit?: number; p_offset?: number; p_radius_km?: number }
+        Returns: {
+          applied: boolean
+          category: string
+          city: string
+          crest_path: string
+          description: string
+          distance_km: number
+          level: string
+          modality: string
+          position: string
+          province: string
+          team_id: string
+          team_name: string
+          total_count: number
+          vacancy_id: string
+        }[]
+      }
       team_follower_count: { Args: { p_team_id: string }; Returns: number }
     }
     Enums: {
