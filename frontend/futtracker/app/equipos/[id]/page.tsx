@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import OpenVacanciesSection from "@/components/team/OpenVacanciesSection";
 import VacanciesSkeleton from "@/components/team/VacanciesSkeleton";
 import TeamProfileDetails from "@/components/team/TeamProfileDetails";
+import StartConversationButton from "@/components/messages/StartConversationButton";
 import TeamProfileHeader from "@/components/team/TeamProfileHeader";
 import { getTeamProfileById } from "@/lib/data/teamProfiles";
 import { RouteConstants } from "@/lib/routes";
@@ -61,6 +62,11 @@ export default async function TeamProfilePage({
           >
             Editar equipo
           </Link>
+        ) : user ? (
+          // FUT-140: el destinatario es el delegado dueño del equipo.
+          <div className="shrink-0">
+            <StartConversationButton otherProfileId={team.owner_id} />
+          </div>
         ) : null}
       </div>
       <TeamProfileDetails

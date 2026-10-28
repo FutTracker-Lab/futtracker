@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import CareerTimeline from "@/components/player/CareerTimeline";
 import CareerTimelineSkeleton from "@/components/player/CareerTimelineSkeleton";
 import CareerTotalsStrip from "@/components/player/CareerTotalsStrip";
+import StartConversationButton from "@/components/messages/StartConversationButton";
 import HeaderHighlightUpload from "@/components/player/HeaderHighlightUpload";
 import HighlightsSkeleton from "@/components/player/HighlightsSkeleton";
 import HighlightsTab from "@/components/player/HighlightsTab";
@@ -112,6 +113,9 @@ export default async function PlayerProfilePage({
               </Link>
               {player ? <HeaderHighlightUpload playerId={player.id} /> : null}
             </div>
+          ) : user ? (
+            // FUT-140: a cualquier perfil que no sea el propio.
+            <StartConversationButton otherProfileId={profile.id} />
           ) : null
         }
       />
