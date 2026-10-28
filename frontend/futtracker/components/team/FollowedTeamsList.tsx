@@ -31,15 +31,19 @@ export default function FollowedTeamsList({ teams }: { teams: FollowedTeamItem[]
     focusIndex.current = null;
   }, [items]);
 
+  function notify(message: string, tone: Notice["tone"]) {
+    setNotice((current) => ({ message, tone, at: (current?.at ?? 0) + 1 }));
+  }
+
   function handleUnfollowed(team: FollowedTeamItem, result: FollowActionResult) {
     if (!result.ok) {
-      setNotice({ message: FOLLOW_ERROR_MESSAGES[result.error], tone: "error", at: Date.now() });
+      notify(FOLLOW_ERROR_MESSAGES[result.error], "error");
       return;
     }
 
     focusIndex.current = items.findIndex((item) => item.id === team.id);
     setItems((current) => current.filter((item) => item.id !== team.id));
-    setNotice({ message: unfollowSuccessMessage(team.name), tone: "success", at: Date.now() });
+    notify(unfollowSuccessMessage(team.name), "success");
   }
 
   const toast = notice ? <Toast key={notice.at} message={notice.message} tone={notice.tone} /> : null;
