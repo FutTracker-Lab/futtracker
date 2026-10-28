@@ -10,12 +10,13 @@ export const PROFILE_FAILURE_MESSAGES: Record<Exclude<SuggestTeamsFailure, "play
 
 export function suggestionsSubtitle(
   total: number,
-  positionLabel: string,
+  positionLabel: string | null,
   radius: SearchRadius,
   city: string | null,
 ): string {
   const teams = total === 1 ? "equipo busca" : "equipos buscan";
-  return `${formatInteger(total)} ${teams} tu posición (${positionLabel}) a menos de ${radius} km de ${city ?? "tu ubicación"}.`;
+  const position = positionLabel ? ` (${positionLabel})` : "";
+  return `${formatInteger(total)} ${teams} tu posición${position} a menos de ${radius} km de ${city ?? "tu ubicación"}.`;
 }
 
 export function radiusOptionLabel(radius: SearchRadius): string {

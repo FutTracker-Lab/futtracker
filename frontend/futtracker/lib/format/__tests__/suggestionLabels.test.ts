@@ -15,6 +15,12 @@ describe("suggestionsSubtitle", () => {
     );
   });
 
+  it("sin posición sale sin el paréntesis", () => {
+    expect(suggestionsSubtitle(2, null, 50, "San Isidro")).toBe(
+      "2 equipos buscan tu posición a menos de 50 km de San Isidro.",
+    );
+  });
+
   it("sin ciudad termina en 'de tu ubicación.'", () => {
     expect(suggestionsSubtitle(0, "Arquero", 200, null)).toBe(
       "0 equipos buscan tu posición (Arquero) a menos de 200 km de tu ubicación.",

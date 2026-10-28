@@ -11,17 +11,15 @@ import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import { getMyPlayer } from "@/lib/data/players";
 import { suggestTeams } from "@/lib/data/suggestions";
 import { getCrestSignedUrls } from "@/lib/data/teams";
-import { getPositionLabel } from "@/lib/format/playerLabels";
-import { PROFILE_FAILURE_MESSAGES, suggestionsSubtitle } from "@/lib/format/suggestionLabels";
 import { RouteConstants } from "@/lib/routes";
 import { MAX_SEARCH_RADIUS } from "@/lib/search/params";
 import {
   parseSuggestionParams,
   suggestionsHref,
-  suggestionsPageCount,
   toSuggestTeamsParams,
   type SuggestionCriteria,
 } from "@/lib/suggestions/params";
+import { suggestionsView } from "@/lib/suggestions/view";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SuggestionsPage({ searchParams }: PageProps<"/sugerencias">) {
@@ -54,15 +52,21 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
     getMyPlayer(supabase),
   ]);
 
-  if (!result.ok) {
-    if (result.reason === "playersOnly") {
-      notFound();
-    }
+  const view = suggestionsView(criteria, result, player);
 
+  if (view.kind === "notFound") {
+    notFound();
+  }
+
+  if (view.kind === "redirect") {
+    redirect(view.href);
+  }
+
+  if (view.kind === "profileIncomplete") {
     return (
       <SuggestionsFrame>
         <div className="flex flex-col items-start gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-zinc-700">{PROFILE_FAILURE_MESSAGES[result.reason]}</p>
+          <p className="text-zinc-700">{view.message}</p>
           <Link href={RouteConstants.profile.edit} className={PRIMARY_BUTTON_CLASS}>
             Completar perfil
           </Link>
@@ -71,52 +75,44 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
     );
   }
 
-  const { rows, total } = result;
-
-  if (rows.length === 0 && criteria.page > 1) {
-    redirect(suggestionsHref(criteria, 1));
-  }
-
-  const crestUrls = await getCrestSignedUrls(
-    supabase,
-    rows.flatMap((row) => (row.crest_path ? [row.crest_path] : [])),
-  );
-  const positionLabel = getPositionLabel(player?.position ?? null);
-
-  return (
-    <SuggestionsFrame
-      subtitle={
-        positionLabel
-          ? suggestionsSubtitle(total, positionLabel, criteria.radius, player?.city ?? null)
-          : undefined
-      }
-    >
-      <SuggestionFilters radius={criteria.radius} />
-
-      {rows.length === 0 ? (
+  if (view.kind === "empty") {
+    return (
+      <SuggestionsFrame subtitle={view.subtitle}>
+        <SuggestionFilters radius={criteria.radius} />
         <div className="flex flex-col items-start gap-3 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <p className="text-zinc-700">No hay equipos sugeridos con esos filtros.</p>
-          {criteria.radius < MAX_SEARCH_RADIUS ? (
-            <Link href={suggestionsHref({ radius: MAX_SEARCH_RADIUS })} className={LINK_CLASS}>
+          {view.maxRadiusHref ? (
+            <Link href={view.maxRadiusHref} className={LINK_CLASS}>
               Probar con {MAX_SEARCH_RADIUS} km
             </Link>
           ) : null}
         </div>
-      ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
-          {rows.map((row) => (
-            <SuggestedTeamCard
-              key={row.vacancy_id}
-              suggestion={row}
-              crestUrl={row.crest_path ? (crestUrls.get(row.crest_path) ?? null) : null}
-            />
-          ))}
-        </ul>
-      )}
+      </SuggestionsFrame>
+    );
+  }
+
+  const crestUrls = await getCrestSignedUrls(
+    supabase,
+    view.rows.flatMap((row) => (row.crest_path ? [row.crest_path] : [])),
+  );
+
+  return (
+    <SuggestionsFrame subtitle={view.subtitle}>
+      <SuggestionFilters radius={criteria.radius} />
+
+      <ul className="grid gap-4 lg:grid-cols-2">
+        {view.rows.map((row) => (
+          <SuggestedTeamCard
+            key={row.vacancy_id}
+            suggestion={row}
+            crestUrl={row.crest_path ? (crestUrls.get(row.crest_path) ?? null) : null}
+          />
+        ))}
+      </ul>
 
       <SearchPagination
         page={criteria.page}
-        totalPages={suggestionsPageCount(total)}
+        totalPages={view.totalPages}
         hrefFor={(page) => suggestionsHref(criteria, page)}
       />
     </SuggestionsFrame>
