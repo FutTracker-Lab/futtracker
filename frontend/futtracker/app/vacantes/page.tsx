@@ -2,7 +2,6 @@ import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import SearchPagination from "@/components/search/SearchPagination";
 import MyApplicationsList from "@/components/vacancies/MyApplicationsList";
 import VacancyApplyControl from "@/components/vacancies/VacancyApplyControl";
@@ -11,6 +10,7 @@ import VacancyCard from "@/components/vacancies/VacancyCard";
 import VacancyBoardSkeleton from "@/components/vacancies/VacancyBoardSkeleton";
 import VacancyFilters from "@/components/vacancies/VacancyFilters";
 import { LINK_CLASS } from "@/components/vacancies/styles";
+import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import { listMyApplications } from "@/lib/data/applications";
 import { getMyPlayer } from "@/lib/data/players";
 import { getCrestSignedUrls } from "@/lib/data/teams";

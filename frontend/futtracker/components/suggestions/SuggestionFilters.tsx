@@ -5,14 +5,14 @@ import SelectField from "@/components/ui/SelectField";
 import { LINK_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/vacancies/styles";
 import { radiusOptionLabel } from "@/lib/format/suggestionLabels";
 import { RouteConstants } from "@/lib/routes";
-import { SUGGESTION_RADII } from "@/lib/suggestions/params";
+import { SEARCH_RADII, type SearchRadius } from "@/lib/search/params";
 
-const RADIUS_OPTIONS = SUGGESTION_RADII.map((radius) => ({
+const RADIUS_OPTIONS = SEARCH_RADII.map((radius) => ({
   value: String(radius),
   label: radiusOptionLabel(radius),
 }));
 
-type Props = { radius: number };
+type Props = { radius: SearchRadius };
 
 // Select no controlado: al cambiar la URL lo remonta el `key` del Suspense de page.tsx.
 export default function SuggestionFilters({ radius }: Props) {

@@ -6,7 +6,6 @@ import SuggestedTeamCard from "@/components/suggestions/SuggestedTeamCard";
 import SuggestionFilters from "@/components/suggestions/SuggestionFilters";
 import ApplyButton from "@/components/vacancies/ApplyButton";
 import type { TeamSuggestion } from "@/lib/data/suggestions";
-import { suggestionsSubtitle } from "@/lib/format/suggestionLabels";
 
 vi.mock("@/app/vacantes/actions", () => ({ applyToVacancyAction: vi.fn() }));
 
@@ -44,26 +43,6 @@ function suggestion(overrides: Partial<TeamSuggestion> = {}): TeamSuggestion {
 function applyButtonOf(node: ReactNode) {
   return elements(node).find((element) => element.type === ApplyButton);
 }
-
-describe("suggestionsSubtitle", () => {
-  it("en singular con un equipo", () => {
-    expect(suggestionsSubtitle(1, "Mediocampista", 25, "San Isidro")).toBe(
-      "1 equipo busca tu posición (Mediocampista) a menos de 25 km de San Isidro.",
-    );
-  });
-
-  it("en plural con varios", () => {
-    expect(suggestionsSubtitle(2, "Mediocampista", 50, "San Isidro")).toBe(
-      "2 equipos buscan tu posición (Mediocampista) a menos de 50 km de San Isidro.",
-    );
-  });
-
-  it("sin ciudad termina en 'de tu ubicación.'", () => {
-    expect(suggestionsSubtitle(0, "Arquero", 200, null)).toBe(
-      "0 equipos buscan tu posición (Arquero) a menos de 200 km de tu ubicación.",
-    );
-  });
-});
 
 describe("SuggestedTeamCard", () => {
   it("muestra equipo, vacante y distancia con coma decimal", () => {

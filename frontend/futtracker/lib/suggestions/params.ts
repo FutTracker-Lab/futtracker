@@ -1,19 +1,14 @@
-import { z } from "zod";
-
 import { RouteConstants } from "@/lib/routes";
 import {
   first,
-  MAX_SEARCH_RADIUS,
   pageSchema,
-  SEARCH_RADII,
+  radiusSchema,
   valueOr,
   type RawSearchParams,
   type SearchRadius,
 } from "@/lib/search/params";
 
 export const SUGGESTIONS_PAGE_SIZE = 10;
-export const SUGGESTION_RADII = SEARCH_RADII;
-export const MAX_SUGGESTION_RADIUS = MAX_SEARCH_RADIUS;
 
 export type SuggestionCriteria = {
   radius: SearchRadius;
@@ -21,8 +16,6 @@ export type SuggestionCriteria = {
 };
 
 export const DEFAULT_SUGGESTION_CRITERIA: SuggestionCriteria = { radius: 25, page: 1 };
-
-const radiusSchema = z.coerce.number().pipe(z.literal(SUGGESTION_RADII));
 
 export function parseSuggestionParams(raw: RawSearchParams): SuggestionCriteria {
   return {

@@ -14,8 +14,8 @@ import { getCrestSignedUrls } from "@/lib/data/teams";
 import { getPositionLabel } from "@/lib/format/playerLabels";
 import { PROFILE_FAILURE_MESSAGES, suggestionsSubtitle } from "@/lib/format/suggestionLabels";
 import { RouteConstants } from "@/lib/routes";
+import { MAX_SEARCH_RADIUS } from "@/lib/search/params";
 import {
-  MAX_SUGGESTION_RADIUS,
   parseSuggestionParams,
   suggestionsHref,
   suggestionsPageCount,
@@ -60,14 +60,14 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
     }
 
     return (
-      <SuggestionsLayout>
+      <SuggestionsFrame>
         <div className="flex flex-col items-start gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <p className="text-zinc-700">{PROFILE_FAILURE_MESSAGES[result.reason]}</p>
           <Link href={RouteConstants.profile.edit} className={PRIMARY_BUTTON_CLASS}>
             Completar perfil
           </Link>
         </div>
-      </SuggestionsLayout>
+      </SuggestionsFrame>
     );
   }
 
@@ -81,20 +81,24 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
     supabase,
     rows.flatMap((row) => (row.crest_path ? [row.crest_path] : [])),
   );
-  const positionLabel = getPositionLabel(player?.position ?? null) ?? player?.position ?? "";
+  const positionLabel = getPositionLabel(player?.position ?? null);
 
   return (
-    <SuggestionsLayout
-      subtitle={suggestionsSubtitle(total, positionLabel, criteria.radius, player?.city ?? null)}
+    <SuggestionsFrame
+      subtitle={
+        positionLabel
+          ? suggestionsSubtitle(total, positionLabel, criteria.radius, player?.city ?? null)
+          : undefined
+      }
     >
       <SuggestionFilters radius={criteria.radius} />
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-3 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <p className="text-zinc-700">No hay equipos sugeridos con esos filtros.</p>
-          {criteria.radius < MAX_SUGGESTION_RADIUS ? (
-            <Link href={suggestionsHref({ radius: MAX_SUGGESTION_RADIUS })} className={LINK_CLASS}>
-              Probar con {MAX_SUGGESTION_RADIUS} km
+          {criteria.radius < MAX_SEARCH_RADIUS ? (
+            <Link href={suggestionsHref({ radius: MAX_SEARCH_RADIUS })} className={LINK_CLASS}>
+              Probar con {MAX_SEARCH_RADIUS} km
             </Link>
           ) : null}
         </div>
@@ -115,11 +119,11 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
         totalPages={suggestionsPageCount(total)}
         hrefFor={(page) => suggestionsHref(criteria, page)}
       />
-    </SuggestionsLayout>
+    </SuggestionsFrame>
   );
 }
 
-function SuggestionsLayout({ subtitle, children }: { subtitle?: string; children: ReactNode }) {
+function SuggestionsFrame({ subtitle, children }: { subtitle?: string; children: ReactNode }) {
   return (
     <div className="flex flex-1 flex-col bg-surface">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
