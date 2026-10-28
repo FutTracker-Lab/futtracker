@@ -5,15 +5,17 @@ import {
   totalApplications,
   type ApplicationCountsResult,
 } from "@/components/team/teamApplications";
+import type { TeamFollowersResult } from "@/components/team/teamFollowers";
 import { countOpen, type TeamVacanciesResult } from "@/components/team/teamVacancies";
 import { RouteConstants } from "@/lib/routes";
 
-export type TeamTab = "datos" | "vacantes" | "postulaciones";
+export type TeamTab = "datos" | "vacantes" | "postulaciones" | "seguidores";
 
 type Props = {
   active: TeamTab;
   vacancies: Promise<TeamVacanciesResult>;
   applicationCounts: Promise<ApplicationCountsResult>;
+  followers: Promise<TeamFollowersResult>;
 };
 
 const BADGE_CLASS = "rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700";
@@ -53,8 +55,24 @@ async function ApplicationsCount({ result }: { result: Promise<ApplicationCounts
   );
 }
 
+async function FollowersCount({ result }: { result: Promise<TeamFollowersResult> }) {
+  const loaded = await result;
+
+  if (!loaded.ok) {
+    return null;
+  }
+
+  return (
+    <span className={BADGE_CLASS}>
+      <span className="sr-only">(total: </span>
+      {loaded.followers.length}
+      <span className="sr-only">)</span>
+    </span>
+  );
+}
+
 // Links y no un tablist: cada pestaña es una URL que se puede compartir.
-export default function TeamTabs({ active, vacancies, applicationCounts }: Props) {
+export default function TeamTabs({ active, vacancies, applicationCounts, followers }: Props) {
   const tabs = [
     { id: "datos", label: "Datos del club", href: RouteConstants.team.mine, badge: null },
     {
@@ -68,6 +86,12 @@ export default function TeamTabs({ active, vacancies, applicationCounts }: Props
       label: "Postulaciones",
       href: RouteConstants.team.myApplications(),
       badge: <ApplicationsCount result={applicationCounts} />,
+    },
+    {
+      id: "seguidores",
+      label: "Seguidores",
+      href: RouteConstants.team.myFollowers,
+      badge: <FollowersCount result={followers} />,
     },
   ] as const;
 

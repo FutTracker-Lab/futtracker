@@ -4,12 +4,14 @@ import { Suspense } from "react";
 
 import ApplicationsSkeleton from "@/components/team/ApplicationsSkeleton";
 import ApplicationsTab from "@/components/team/ApplicationsTab";
+import FollowersTab from "@/components/team/FollowersTab";
 import OpenVacanciesChip from "@/components/team/OpenVacanciesChip";
 import TeamForm from "@/components/team/TeamForm";
 import TeamTabs, { type TeamTab } from "@/components/team/TeamTabs";
 import VacanciesSkeleton from "@/components/team/VacanciesSkeleton";
 import VacanciesTab from "@/components/team/VacanciesTab";
 import { loadApplicationCounts, loadTeamApplications } from "@/components/team/teamApplications";
+import { loadFollowerRows, loadTeamFollowers } from "@/components/team/teamFollowers";
 import { loadTeamVacancies } from "@/components/team/teamVacancies";
 import { getProfileById } from "@/lib/data/profiles";
 import { getMyTeam } from "@/lib/data/teams";
@@ -97,10 +99,13 @@ export default async function MyTeamPage({
 
   const { team, crestUrl } = data;
   const tab: TeamTab =
-    params.tab === "vacantes" || params.tab === "postulaciones" ? params.tab : "datos";
+    params.tab === "vacantes" || params.tab === "postulaciones" || params.tab === "seguidores"
+      ? params.tab
+      : "datos";
   // Sin `await`: la esperan el chip, el contador y la tabla, cada uno en su Suspense.
   const vacancies = loadTeamVacancies(supabase, team.id);
   const applicationCounts = loadApplicationCounts(supabase, team.id);
+  const followers = loadTeamFollowers(supabase, team.id);
 
   return (
     <div className="flex flex-1 flex-col bg-surface">
@@ -135,7 +140,12 @@ export default async function MyTeamPage({
           </div>
         </div>
 
-        <TeamTabs active={tab} vacancies={vacancies} applicationCounts={applicationCounts} />
+        <TeamTabs
+          active={tab}
+          vacancies={vacancies}
+          applicationCounts={applicationCounts}
+          followers={followers}
+        />
 
         {tab === "vacantes" ? (
           <Suspense fallback={<VacanciesSkeleton />}>
@@ -151,6 +161,10 @@ export default async function MyTeamPage({
                 typeof params.vacante === "string" ? params.vacante : undefined,
               )}
             />
+          </Suspense>
+        ) : tab === "seguidores" ? (
+          <Suspense fallback={<ApplicationsSkeleton />}>
+            <FollowersTab result={loadFollowerRows(supabase, followers)} />
           </Suspense>
         ) : (
           <TeamForm team={team} initialCrestUrl={crestUrl} zones={zones} />

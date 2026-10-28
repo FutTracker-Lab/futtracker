@@ -46,6 +46,7 @@ export const RouteConstants = {
       vacancyId
         ? `/equipos/mi-equipo?tab=postulaciones&vacante=${vacancyId}`
         : "/equipos/mi-equipo?tab=postulaciones",
+    myFollowers: "/equipos/mi-equipo?tab=seguidores",
     new: "/equipos/nuevo",
     edit: (id: string) => `/equipos/${id}/editar`,
   },
