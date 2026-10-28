@@ -95,9 +95,9 @@ export default function TeamTabs({ active, vacancies, applicationCounts, followe
     },
   ] as const;
 
-  // A 375 px no entran en una línea: se parte el label sin badge en vez de esconder un badge detrás de un scroll.
+  // A 375 px no entran en una línea: se parte el label sin badge y la última pestaña baja de fila, nunca detrás de un scroll.
   return (
-    <nav aria-label="Secciones del equipo" className="flex gap-3 shadow-[inset_0_-1px_0_var(--color-zinc-200)] sm:gap-6">
+    <nav aria-label="Secciones del equipo" className="flex flex-wrap gap-x-3 shadow-[inset_0_-1px_0_var(--color-zinc-200)] sm:flex-nowrap sm:gap-6">
       {tabs.map((tab) => {
         const isActive = tab.id === active;
 
