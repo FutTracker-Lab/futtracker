@@ -3,9 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
+import FollowerCount from "@/components/team/FollowerCount";
 import OpenVacanciesSection from "@/components/team/OpenVacanciesSection";
 import VacanciesSkeleton from "@/components/team/VacanciesSkeleton";
 import TeamProfileDetails from "@/components/team/TeamProfileDetails";
+import TeamFollowControl from "@/components/team/TeamFollowControl";
 import TeamProfileHeader from "@/components/team/TeamProfileHeader";
 import { getTeamProfileById } from "@/lib/data/teamProfiles";
 import { RouteConstants } from "@/lib/routes";
@@ -53,7 +55,19 @@ export default async function TeamProfilePage({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <TeamProfileHeader team={team} ownerName={ownerName} crestUrl={crestUrl} />
+        <TeamProfileHeader
+          team={team}
+          ownerName={ownerName}
+          crestUrl={crestUrl}
+          followersSlot={
+            <Suspense fallback={null}>
+              <FollowerCount teamId={team.id} />
+            </Suspense>
+          }
+        />
+        <Suspense fallback={null}>
+          <TeamFollowControl teamId={team.id} teamName={team.name} />
+        </Suspense>
         {isOwner ? (
           <Link
             href={RouteConstants.team.edit(team.id)}
