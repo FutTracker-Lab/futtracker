@@ -53,4 +53,5 @@ export const RouteConstants = {
     board: "/vacantes",
     myApplications: "/vacantes?tab=postulaciones",
   },
+  following: "/siguiendo",
 } as const;
