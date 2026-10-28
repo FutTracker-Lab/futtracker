@@ -9,7 +9,10 @@ export type NavItem = {
   // apunta a un índice que redirige a la etapa vigente, así que el pathname
   // final nunca coincide con el href y la entrada quedaba apagada.
   activeOn?: RegExp;
+  unreadBadge?: boolean;
 };
+
+export type UnreadCounts = { notifications: number; messages: number };
 
 // Data-driven a propósito (comentario del ticket, foto del kit de diseño):
 // la barra lateral del diseño trae bastante más ("Trayectoria", "Buscar
@@ -22,6 +25,7 @@ const MESSAGES_ITEM: NavItem = {
   href: RouteConstants.messages.inbox,
   label: "Mensajes",
   activeOn: /^\/mensajes\/[^/]+$/,
+  unreadBadge: true,
 };
 
 export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
