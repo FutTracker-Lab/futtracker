@@ -3,14 +3,14 @@ import Link from "next/link";
 import ApplyButton from "@/components/vacancies/ApplyButton";
 import TeamCrest from "@/components/vacancies/TeamCrest";
 import { LINK_CLASS, SUCCESS_CHIP_CLASS } from "@/components/vacancies/styles";
-import type { SuggestionRow } from "@/lib/data/suggestions";
+import type { TeamSuggestion } from "@/lib/data/suggestions";
 import { formatDistanceKm } from "@/lib/format/numbers";
 import { getPositionLabel } from "@/lib/format/playerLabels";
 import { seekingPositionLabel } from "@/lib/format/suggestionLabels";
 import { getLevelLabel, getModalityLabel } from "@/lib/format/vacancyLabels";
 import { RouteConstants } from "@/lib/routes";
 
-type Props = { suggestion: SuggestionRow; crestUrl: string | null };
+type Props = { suggestion: TeamSuggestion; crestUrl: string | null };
 
 export default function SuggestedTeamCard({ suggestion, crestUrl }: Props) {
   const positionLabel = getPositionLabel(suggestion.position) ?? suggestion.position;

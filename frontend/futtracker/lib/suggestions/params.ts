@@ -51,7 +51,7 @@ export function suggestionsPageCount(total: number): number {
 
 export function toSuggestTeamsParams({ radius, page }: SuggestionCriteria) {
   return {
-    radiusKm: radius,
+    radius,
     limit: SUGGESTIONS_PAGE_SIZE,
     offset: (page - 1) * SUGGESTIONS_PAGE_SIZE,
   };

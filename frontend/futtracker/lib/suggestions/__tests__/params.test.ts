@@ -49,7 +49,7 @@ describe("suggestionsHref", () => {
 describe("toSuggestTeamsParams", () => {
   it("pide 10 por página con el offset de la página", () => {
     expect(toSuggestTeamsParams({ radius: 50, page: 1 })).toEqual({
-      radiusKm: 50,
+      radius: 50,
       limit: 10,
       offset: 0,
     });

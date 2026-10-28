@@ -5,7 +5,7 @@ import { flatten } from "@/components/player/__tests__/reactTree";
 import SuggestedTeamCard from "@/components/suggestions/SuggestedTeamCard";
 import SuggestionFilters from "@/components/suggestions/SuggestionFilters";
 import ApplyButton from "@/components/vacancies/ApplyButton";
-import type { SuggestionRow } from "@/lib/data/suggestions";
+import type { TeamSuggestion } from "@/lib/data/suggestions";
 import { suggestionsSubtitle } from "@/lib/format/suggestionLabels";
 
 vi.mock("@/app/vacantes/actions", () => ({ applyToVacancyAction: vi.fn() }));
@@ -22,7 +22,7 @@ function text(node: ReactNode): string {
     .join(" ");
 }
 
-function suggestion(overrides: Partial<SuggestionRow> = {}): SuggestionRow {
+function suggestion(overrides: Partial<TeamSuggestion> = {}): TeamSuggestion {
   return {
     vacancy_id: "v-b1",
     team_id: "t-b",
