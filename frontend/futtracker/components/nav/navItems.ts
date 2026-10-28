@@ -38,6 +38,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       activeOn: /^\/jugadores\/mi-perfil\/trayectoria\/[^/]+\/partidos(\/|$)/,
     },
     { href: RouteConstants.vacancies.board, label: "Vacantes" },
+    { href: RouteConstants.following, label: "Siguiendo" },
   ],
   // El delegado no tiene "editar" fijo porque la ruta depende del id de su
   // equipo, y puede no tener ninguno todavía: "Mi equipo" resuelve los dos
