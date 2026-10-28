@@ -8,7 +8,6 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type FollowedTeamItem = FollowedTeam & {
   crestUrl: string | null;
-  // En el orden de `listOpenVacancies`.
   openPositions: string[];
 };
 

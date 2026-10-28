@@ -12,8 +12,7 @@ export type FollowActionResult = { ok: true } | { ok: false; error: FollowAction
 
 const idSchema = z.uuid();
 
-// Solo después de un cambio exitoso: con el equipo borrado, revalidar su página la
-// vuelve un 404 y tapa el toast.
+// Solo tras un cambio exitoso: con el equipo borrado, revalidar su página la vuelve un 404 y tapa el toast.
 function revalidateFollowPages(teamId: string) {
   revalidatePath(RouteConstants.team.view(teamId));
   revalidatePath(RouteConstants.following);

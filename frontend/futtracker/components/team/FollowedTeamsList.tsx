@@ -20,7 +20,6 @@ export default function FollowedTeamsList({ teams }: { teams: FollowedTeamItem[]
   const containerRef = useRef<HTMLDivElement>(null);
   const focusIndex = useRef<number | null>(null);
 
-  // El botón con el foco se fue con su fila: el foco pasa a la que quedó en su lugar.
   useEffect(() => {
     if (focusIndex.current === null) return;
 

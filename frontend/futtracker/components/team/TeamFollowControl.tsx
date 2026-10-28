@@ -3,7 +3,6 @@ import { isFollowing } from "@/lib/data/follows";
 import { getProfileById } from "@/lib/data/profiles";
 import { createClient } from "@/lib/supabase/server";
 
-// Solo los jugadores siguen equipos; al delegado (dueño o no) no se le muestra el botón.
 export default async function TeamFollowControl({
   teamId,
   teamName,
