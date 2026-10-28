@@ -53,4 +53,9 @@ export const RouteConstants = {
     board: "/vacantes",
     myApplications: "/vacantes?tab=postulaciones",
   },
+  // FUT-140: la bandeja y cada hilo.
+  messages: {
+    inbox: "/mensajes",
+    thread: (id: string) => `/mensajes/${id}`,
+  },
 } as const;
