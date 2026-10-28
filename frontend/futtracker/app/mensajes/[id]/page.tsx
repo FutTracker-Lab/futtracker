@@ -5,6 +5,7 @@ import { getMessagesAccess, getThread } from "@/app/mensajes/access";
 import MessageComposer from "@/components/messages/MessageComposer";
 import MessageThread from "@/components/messages/MessageThread";
 import ParticipantAvatar from "@/components/messages/ParticipantAvatar";
+import RefreshNavBadges from "@/components/messages/RefreshNavBadges";
 import { LINK_CLASS } from "@/components/vacancies/styles";
 import {
   MESSAGES_PAGE_SIZE,
@@ -103,6 +104,7 @@ export default async function ThreadPage({ params }: PageProps<"/mensajes/[id]">
       />
 
       <MessageComposer conversationId={id} />
+      {conversation.unread_count > 0 ? <RefreshNavBadges /> : null}
     </div>
   );
 }
