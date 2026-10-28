@@ -6,7 +6,8 @@ import { getCrestSignedUrls } from "@/lib/data/teams";
 import { listOpenVacancies } from "@/lib/data/vacancies";
 import type { Database } from "@/lib/supabase/database.types";
 
-export type FollowedTeamItem = FollowedTeam & {
+// Sin `crest_path`: al cliente viaja solo la URL firmada.
+export type FollowedTeamItem = Pick<FollowedTeam, "id" | "name" | "city" | "category"> & {
   crestUrl: string | null;
   openPositions: string[];
 };
@@ -41,7 +42,10 @@ export async function loadFollowedTeams(
   }
 
   return teams.map((team) => ({
-    ...team,
+    id: team.id,
+    name: team.name,
+    city: team.city,
+    category: team.category,
     crestUrl: team.crest_path ? (crestUrls.get(team.crest_path) ?? null) : null,
     openPositions: positionsByTeam.get(team.id) ?? [],
   }));

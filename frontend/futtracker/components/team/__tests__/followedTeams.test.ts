@@ -47,9 +47,9 @@ describe("loadFollowedTeams", () => {
 
     expect(listOpenVacancies).toHaveBeenCalledTimes(1);
     expect(listOpenVacancies).toHaveBeenCalledWith(client, { teamIds: [E2, E1], limit: 8, offset: 0 });
-    expect(items.map((item) => [item.id, item.openPositions, item.crestUrl])).toEqual([
-      [E2, ["delantero"], null],
-      [E1, ["arquero", "mediocampista"], "https://firmada"],
+    expect(items).toEqual([
+      { id: E2, name: E2, city: null, category: null, crestUrl: null, openPositions: ["delantero"] },
+      { id: E1, name: E1, city: null, category: null, crestUrl: "https://firmada", openPositions: ["arquero", "mediocampista"] },
     ]);
   });
 
