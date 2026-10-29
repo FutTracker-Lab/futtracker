@@ -70,6 +70,42 @@ describe("MessageComposer", () => {
     expect(sendButton().disabled).toBe(true);
   });
 
+  it("un mensaje de solo un caracter de ancho cero no se puede enviar", () => {
+    render(<MessageComposer conversationId={CONVERSATION} />);
+    type("\u200b");
+
+    expect(sendButton().disabled).toBe(true);
+  });
+
+  it("un emoji cuenta como un caracter, igual que la base", () => {
+    render(<MessageComposer conversationId={CONVERSATION} />);
+    type("\u{1f600}");
+
+    expect(counter()).toBe("1/2000");
+  });
+
+  it("2000 caracteres con un espacio al final: el contador marca 2000 y se puede enviar", () => {
+    render(<MessageComposer conversationId={CONVERSATION} />);
+    type(`${"a".repeat(2000)} `);
+
+    expect(counter()).toBe("2000/2000");
+    expect(sendButton().disabled).toBe(false);
+  });
+
+  it("la caja queda de solo lectura mientras envía, para no perder lo que se escriba", async () => {
+    let finish: (value: unknown) => void = () => {};
+    sendMessageActionMock.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    render(<MessageComposer conversationId={CONVERSATION} />);
+    type("Hola");
+
+    pressEnter();
+
+    expect(textarea().readOnly).toBe(true);
+    await act(async () => finish({ ok: true }));
+    expect(textarea().readOnly).toBe(false);
+    expect(textarea().value).toBe("");
+  });
+
   it("con 2001 caracteres el contador muestra 2001/2000", () => {
     render(<MessageComposer conversationId={CONVERSATION} />);
     type("a".repeat(2001));

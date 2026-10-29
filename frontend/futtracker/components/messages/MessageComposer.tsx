@@ -5,7 +5,7 @@ import { useId, useRef, useState, useTransition, type KeyboardEvent } from "reac
 import { sendMessageAction } from "@/app/mensajes/actions";
 import Toast from "@/components/ui/Toast";
 import { PRIMARY_BUTTON_CLASS } from "@/components/vacancies/styles";
-import { MESSAGE_MAX_LENGTH } from "@/lib/data/messages";
+import { MESSAGE_MAX_LENGTH, isSendableBody, messageLength } from "@/lib/data/messages";
 import { MESSAGE_ERROR_TEXT } from "@/lib/format/messageLabels";
 
 type Props = {
@@ -17,6 +17,11 @@ type Notice = { message: string; at: number };
 /**
  * La caja de texto (requisito 6): contador, Enter envía y Shift+Enter baja de
  * línea. Si el envío falla, el texto se queda en la caja.
+ *
+ * Valida con la misma regla que la base (`isSendableBody`): al menos un
+ * caracter visible, y hasta 2000 contados por caracter, no por unidad UTF-16.
+ * El contador muestra lo que se va a guardar, sin los espacios de las puntas,
+ * así que el rojo y el botón deshabilitado siempre coinciden.
  */
 export default function MessageComposer({ conversationId }: Props) {
   const [text, setText] = useState("");
@@ -27,9 +32,9 @@ export default function MessageComposer({ conversationId }: Props) {
   const counterId = useId();
   const errorId = useId();
 
-  const trimmedLength = text.trim().length;
-  const canSend = trimmedLength >= 1 && trimmedLength <= MESSAGE_MAX_LENGTH && !isPending;
-  const overLimit = text.length > MESSAGE_MAX_LENGTH;
+  const length = messageLength(text);
+  const canSend = isSendableBody(text) && !isPending;
+  const overLimit = length > MESSAGE_MAX_LENGTH;
 
   function send() {
     if (!canSend) return;
@@ -84,6 +89,9 @@ export default function MessageComposer({ conversationId }: Props) {
             setInlineError(null);
           }}
           onKeyDown={onKeyDown}
+          // De solo lectura mientras envía: al terminar se vacía, y lo que se
+          // escribiera en el medio se perdería.
+          readOnly={isPending}
           rows={2}
           aria-label="Escribí un mensaje"
           aria-describedby={inlineError ? `${counterId} ${errorId}` : counterId}
@@ -107,7 +115,7 @@ export default function MessageComposer({ conversationId }: Props) {
           id={counterId}
           className={`shrink-0 text-xs ${overLimit ? "text-red-700" : "text-zinc-500"}`}
         >
-          {text.length}/{MESSAGE_MAX_LENGTH}
+          {length}/{MESSAGE_MAX_LENGTH}
         </p>
       </div>
       {notice ? <Toast key={notice.at} message={notice.message} tone="error" /> : null}
