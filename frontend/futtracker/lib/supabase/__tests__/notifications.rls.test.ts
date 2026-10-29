@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { applyToVacancy } from "@/lib/data/applications";
@@ -8,6 +9,8 @@ import {
   markNotificationsRead,
   notificationErrorKey,
 } from "@/lib/data/notifications";
+import { publicEnv } from "@/lib/env/public";
+import type { Database } from "@/lib/supabase/database.types";
 import {
   IS_LOCAL,
   newClient,
@@ -28,6 +31,8 @@ const V2 = "0a000002-0000-4000-8000-000000000120";
 const PJ1_DE1 = "0e000001-0000-4000-8000-000000000134";
 const PJ2_DE1 = "0e000002-0000-4000-8000-000000000134";
 const DE1_UNREAD = "1a000002-0000-4000-8000-000000000142";
+// Solo para borrar cuentas: el criterio de la cascada no se alcanza con la publishable.
+const SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 
 async function signIn(email: string): Promise<Client> {
   const client = newClient();
@@ -221,16 +226,35 @@ describe.skipIf(!IS_LOCAL)("T15a · notificaciones", () => {
       expect(await countUnreadNotifications(player.client)).toBe(1);
       expect(await listNotifications(player.client)).toHaveLength(1);
 
-      await sendMessage(player.client, conversation, "¡Dale!");
-      expect(await listNotifications(player.client)).toHaveLength(1);
-      expect(await countUnreadNotifications(delegate.client)).toBe(1);
-
       await markNotificationsRead(player.client);
       await sendMessage(delegate.client, conversation, "Te esperamos");
 
       notifications = await listNotifications(player.client);
       expect(notifications).toHaveLength(2);
       expect(notifications.filter((n) => n.read_at === null)).toHaveLength(1);
+    });
+
+    // Sin avisos previos del remitente: si el trigger lo avisara, el índice único no lo taparía.
+    it("el remitente no recibe aviso", async () => {
+      const [sender, recipient] = await Promise.all([signUpUser("player"), signUpUser("delegate")]);
+      const fresh = await getOrCreateConversation(sender.client, recipient.id);
+
+      await sendMessage(sender.client, fresh, "Hola, vi la vacante");
+
+      expect(await listNotifications(sender.client)).toEqual([]);
+      expect(await countUnreadNotifications(recipient.client)).toBe(1);
+    });
+
+    it("un mensaje invisible rebota (23514) y no genera aviso", async () => {
+      const [sender, recipient] = await Promise.all([signUpUser("player"), signUpUser("delegate")]);
+      const fresh = await getOrCreateConversation(sender.client, recipient.id);
+
+      const { error } = await sender.client
+        .from("messages")
+        .insert({ conversation_id: fresh, sender_id: sender.id, body: "\n\t\u00a0\u3000\u200b" });
+
+      expect(error?.code).toBe("23514");
+      expect(await countUnreadNotifications(recipient.client)).toBe(0);
     });
   });
 
@@ -283,6 +307,29 @@ describe.skipIf(!IS_LOCAL)("T15a · notificaciones", () => {
       expect(await markNotificationsRead(reader.client)).toBe(1);
       expect(await countUnreadNotifications(reader.client)).toBe(0);
       expect(await markNotificationsRead(reader.client)).toBe(0);
+    });
+  });
+
+  // `service_role` no tiene grants en el repo: la cascada de `user_id` sobre los avisos
+  // del borrado no se ve por la API y se verifica en psql. Acá, lo que ve la otra cuenta.
+  describe.skipIf(!SECRET_KEY)("al borrar una cuenta", () => {
+    const admin = createClient<Database>(publicEnv.NEXT_PUBLIC_SUPABASE_URL, SECRET_KEY ?? "", {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    it("el aviso de su conversación se borra y el de su postulación queda sin actor", async () => {
+      const [player, { owner, vacancyId }] = await Promise.all([newPlayer(), newTeamWithVacancy()]);
+      await applyToVacancy(player.client, vacancyId);
+      const conversation = await getOrCreateConversation(player.client, owner.id);
+      await sendMessage(player.client, conversation, "Me postulé, ¿cuándo entrenan?");
+      expect(await listNotifications(owner.client)).toHaveLength(2);
+
+      const { error } = await admin.auth.admin.deleteUser(player.id);
+      expect(error).toBeNull();
+
+      expect(await listNotifications(owner.client)).toEqual([
+        expect.objectContaining({ type: "new_application", vacancy_id: vacancyId, actor: null }),
+      ]);
     });
   });
 });
