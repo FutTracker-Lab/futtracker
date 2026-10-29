@@ -1,0 +1,112 @@
+name: RLS y migraciones
+
+# FUT-137 (DT-07). El job "Typecheck, lint & tests" de vercel.yml no tiene base:
+# los tests de RLS se saltean solos y el check queda en verde sin haber probado
+# ni las políticas ni los grants. Este job levanta Supabase en el runner con las
+# migraciones y el seed, y corre:
+#
+#   1. `npm run test:rls`, y falla si alguno falla o queda salteado.
+#   2. `supabase db diff`: el esquema que dejan migraciones y seed tiene que ser
+#      exactamente el de las migraciones (un seed que cree o cambie objetos es
+#      deriva).
+#   3. `npm run db:types`: `database.types.ts` tiene que coincidir con el
+#      esquema (una migración sin los tipos regenerados es deriva).
+#
+# Corre en toda PR contra dev y main, no solo en las que tocan supabase/: un
+# cambio en lib/data o en un test también puede romper RLS, y un check que no
+# corre en todas las PRs no se puede marcar como obligatorio.
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rls-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rls:
+    name: RLS y deriva de esquema
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: frontend/futtracker
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/futtracker/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Fijada: con `latest`, una versión nueva del CLI puede cambiar el
+      # esquema generado o la salida del diff y romper el check sin que nadie
+      # haya tocado nada. Es la misma que se usa en local.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+
+      # Aplica las migraciones y el seed. Sin los servicios que los tests no
+      # usan (Studio, realtime, mails, logs, edge functions): tarda menos.
+      - name: Levantar Supabase
+        working-directory: .
+        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      # La URL tiene que ser 127.0.0.1: `IS_LOCAL` de rls-client.ts saltea los
+      # tests con cualquier otra.
+      - name: Variables del stack local
+        working-directory: .
+        run: |
+          key=$(supabase status -o env | grep '^PUBLISHABLE_KEY=' | cut -d= -f2- | tr -d '"')
+          if [ -z "$key" ]; then echo "::error::supabase status no devolvió PUBLISHABLE_KEY"; exit 1; fi
+          echo "::add-mask::$key"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$key"
+            echo "NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000"
+          } >> "$GITHUB_ENV"
+
+      - name: Tests de RLS
+        run: npx vitest run --config vitest.rls.config.mts --reporter=default --reporter=json --outputFile.json="$RUNNER_TEMP/rls-report.json"
+
+      # Si el paso anterior falló, este igual corre para que el resumen muestre
+      # cuántos fallaron.
+      - name: Ningún test salteado
+        if: success() || failure()
+        run: node scripts/ci/rls-report.mjs "$RUNNER_TEMP/rls-report.json"
+
+      - name: Deriva de esquema (supabase db diff)
+        if: success() || failure()
+        working-directory: .
+        run: |
+          supabase db diff -o json > "$RUNNER_TEMP/diff.json"
+          node -e '
+            const diff = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).diff ?? "";
+            if (diff.trim()) {
+              console.log(diff);
+              console.log("::error::El esquema de la base no coincide con las migraciones: hay cambios por fuera de supabase/migrations.");
+              process.exit(1);
+            }
+            console.log("Sin deriva: el esquema es exactamente el de las migraciones.");
+          ' "$RUNNER_TEMP/diff.json"
+
+      - name: Deriva de tipos (database.types.ts)
+        if: success() || failure()
+        run: |
+          npm run db:types
+          if ! git diff --exit-code -- lib/supabase/database.types.ts; then
+            echo "::error::database.types.ts no coincide con el esquema: falta correr npm run db:types después de la migración."
+            exit 1
+          fi
