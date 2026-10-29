@@ -53,16 +53,21 @@ jobs:
 
       # Fijada: con `latest`, una versión nueva del CLI puede cambiar el
       # esquema generado o la salida del diff y romper el check sin que nadie
-      # haya tocado nada. Es la misma que se usa en local.
+      # haya tocado nada. Pasó con la 2.122.0: genera database.types.ts sin
+      # formatear y el paso de tipos falla aunque el esquema no cambió. La
+      # 2.114.0 es la que generó el archivo commiteado. Subirla junto con un
+      # `npm run db:types`.
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.122.0
+          version: 2.114.0
 
       # Aplica las migraciones y el seed. Sin los servicios que los tests no
-      # usan (Studio, realtime, mails, logs, edge functions): tarda menos.
+      # usan (Studio, realtime, mails, logs): tarda menos. edge-runtime se
+      # queda: es el que crea la extensión pg_net, y sin ella `db diff` la ve
+      # como deriva (la base de comparación sí la tiene).
       - name: Levantar Supabase
         working-directory: .
-        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,logflare,vector,supavisor
 
       # La URL tiene que ser 127.0.0.1: `IS_LOCAL` de rls-client.ts saltea los
       # tests con cualquier otra.
@@ -92,8 +97,13 @@ jobs:
         working-directory: .
         run: |
           supabase db diff -o json > "$RUNNER_TEMP/diff.json"
+          # Sin cambios, algunas versiones del CLI no escriben nada en stdout
+          # (el "No schema changes found" va a stderr); otras escriben el JSON
+          # con `diff` vacío.
           node -e '
-            const diff = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).diff ?? "";
+            const out = require("fs").readFileSync(process.argv[1], "utf8").trim();
+            let diff = out;
+            try { diff = out ? JSON.parse(out).diff ?? "" : ""; } catch {}
             if (diff.trim()) {
               console.log(diff);
               console.log("::error::El esquema de la base no coincide con las migraciones: hay cambios por fuera de supabase/migrations.");
