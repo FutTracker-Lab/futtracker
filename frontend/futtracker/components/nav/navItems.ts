@@ -17,6 +17,13 @@ export type NavItem = {
 // acá solo las rutas que ya están construidas; cada feature nueva suma su
 // entrada a este array y aparece en las dos barras (la lateral de escritorio
 // y la superior de mobile) sin tocar ningún componente.
+// FUT-140: para los dos roles. Queda marcada también dentro de un hilo.
+const MESSAGES_ITEM: NavItem = {
+  href: RouteConstants.messages.inbox,
+  label: "Mensajes",
+  activeOn: /^\/mensajes\/[^/]+$/,
+};
+
 export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
   player: [
     { href: RouteConstants.profile.mine, label: "Mi perfil" },
@@ -38,6 +45,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
       activeOn: /^\/jugadores\/mi-perfil\/trayectoria\/[^/]+\/partidos(\/|$)/,
     },
     { href: RouteConstants.vacancies.board, label: "Vacantes" },
+    MESSAGES_ITEM,
   ],
   // El delegado no tiene "editar" fijo porque la ruta depende del id de su
   // equipo, y puede no tener ninguno todavía: "Mi equipo" resuelve los dos
@@ -45,6 +53,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
   delegate: [
     { href: RouteConstants.team.mine, label: "Mi equipo" },
     { href: RouteConstants.search, label: "Buscar jugadores" },
+    MESSAGES_ITEM,
   ],
 };
 

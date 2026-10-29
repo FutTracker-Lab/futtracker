@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
+  getConversationSummary,
   getOrCreateConversation,
   listConversations,
   listMessages,
@@ -379,6 +380,24 @@ describe.skipIf(!IS_LOCAL)("T14a · mensajería", () => {
 
     it("un ajeno lista 0 mensajes, sin error", async () => {
       expect(await listMessages(pj3, PJ1_DE1)).toEqual([]);
+    });
+  });
+
+  // FUT-140: lo que decide el 404 del hilo.
+  describe("getConversationSummary", () => {
+    it("un participante recibe la conversación, con el otro y sus no leídos", async () => {
+      const summary = await getConversationSummary(pj1, PJ1_DE1);
+
+      expect(summary).toMatchObject({
+        id: PJ1_DE1,
+        other: { id: DE1, role: "delegate" },
+        unread_count: 1,
+      });
+    });
+
+    it("un ajeno recibe null, igual que con una conversación que no existe", async () => {
+      expect(await getConversationSummary(pj2, PJ1_DE1)).toBeNull();
+      expect(await getConversationSummary(pj1, crypto.randomUUID())).toBeNull();
     });
   });
 

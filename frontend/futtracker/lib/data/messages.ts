@@ -248,7 +248,35 @@ export async function listConversations(client: Client): Promise<ConversationSum
     throw error;
   }
 
-  return data.map((row) => ({
+  return data.map(toSummary);
+}
+
+/**
+ * Una conversación del usuario con sesión, o `null` si no existe o no es
+ * participante: la vista solo le muestra las propias, así que las dos cosas se
+ * ven igual desde acá (FUT-140, el 404 del hilo).
+ */
+export async function getConversationSummary(
+  client: Client,
+  conversationId: string,
+): Promise<ConversationSummary | null> {
+  const { data, error } = await client
+    .from("conversation_summaries")
+    .select("*")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? toSummary(data) : null;
+}
+
+type SummaryRow = Database["public"]["Views"]["conversation_summaries"]["Row"];
+
+function toSummary(row: SummaryRow): ConversationSummary {
+  return {
     id: row.id!,
     created_at: row.created_at!,
     last_message_at: row.last_message_at,
@@ -267,7 +295,7 @@ export async function listConversations(client: Client): Promise<ConversationSum
             sender_id: row.last_message_sender_id!,
           },
     unread_count: row.unread_count ?? 0,
-  }));
+  };
 }
 
 /** El último mensaje de una página: desde dónde sigue la anterior. */
