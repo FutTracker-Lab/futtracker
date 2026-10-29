@@ -29,9 +29,10 @@ function isRelativePath(value: string): boolean {
  *
  * Inválido, todo lo demás: una URL con esquema (`https://…`, `javascript:…`),
  * una ruta de protocolo relativo (`//evil.com`), una barra invertida, espacios
- * o caracteres de control, y lo mismo escondido con codificación (`/%2F%2F…`):
- * se decodifica una vez más y se vuelve a chequear, porque quien arma el link
- * puede codificar dos veces.
+ * o caracteres de control, lo mismo escondido con codificación (`/%2F%2F…`),
+ * y rutas que el navegador resuelve a `//…` (`/..//evil.com`). Se decodifica
+ * una vez más y se vuelve a chequear, porque quien arma el link puede codificar
+ * dos veces.
  */
 export function safeRedirectPath(value: unknown): string | null {
   if (typeof value !== "string" || !isRelativePath(value) || UNSAFE_CHARACTERS.test(value)) {
@@ -54,8 +55,12 @@ export function safeRedirectPath(value: unknown): string | null {
   }
 
   // Última red: resuelto como lo resolvería el navegador, tiene que quedar en
-  // el mismo origen.
-  if (new URL(value, BASE).origin !== BASE) {
+  // el mismo origen y con una ruta que no arranque con `//`. `/..//evil.com`
+  // empieza con una sola barra, pero se resuelve a la ruta `//evil.com`: queda en
+  // el sitio, y cualquier cosa que después use esa ruta como URL saldría.
+  const resolved = new URL(value, BASE);
+
+  if (resolved.origin !== BASE || resolved.pathname.startsWith("//")) {
     return null;
   }
 

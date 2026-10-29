@@ -61,6 +61,74 @@ describe("safeRedirectPath", () => {
   );
 });
 
+// Los payloads que probó QA en la #47 por HTTP real, como tests de regresión.
+const HOSTILE = [
+  "//evil.com",
+  "///evil.com",
+  "////evil.com",
+  "/\\evil.com",
+  "/\\/evil.com",
+  "\\/evil.com",
+  "/%5Cevil.com",
+  "/%5C%5Cevil.com",
+  "/%2F%2Fevil.com",
+  "%2F%2Fevil.com",
+  "//user@evil.com",
+  "//evil.com@futtracker.vercel.app",
+  "/\r\n/evil.com",
+  "/%0D%0A/evil.com",
+  "/\u0000evil.com",
+  "/%00/evil.com",
+  "/\t/evil.com",
+  "javascript:alert(1)",
+  "JAVASCRIPT:alert(1)",
+  " javascript:alert(1)",
+  "data:text/html,hola",
+  "https:evil.com",
+  "https://evil.com",
+  "\uff0f\uff0fevil.com",
+  "/\uff0f\uff0fevil.com",
+  "/..//evil.com",
+  "/./..//evil.com",
+  "/a/../..//evil.com",
+  "/.%2e//evil.com",
+  "/%2e%2e//evil.com",
+  `//${"a".repeat(5000)}.com`,
+];
+
+describe("payloads hostiles", () => {
+  // La propiedad que importa: lo que pase la regla se queda en el sitio. Si un
+  // payload nuevo la rompe, este test lo marca aunque nadie lo haya listado.
+  it.each(HOSTILE)("%s: o se rechaza, o se queda en el sitio con una ruta de la app", (value) => {
+    const result = safeRedirectPath(value);
+
+    if (result !== null) {
+      const resolved = new URL(result, "http://futtracker.invalid");
+      expect(resolved.origin).toBe("http://futtracker.invalid");
+      expect(resolved.pathname.startsWith("//")).toBe(false);
+    }
+  });
+
+  it.each([
+    "/..//evil.com",
+    "/./..//evil.com",
+    "/a/../..//evil.com",
+    "/%2e%2e//evil.com",
+  ])("%s se rechaza: el navegador lo resuelve a la ruta //evil.com", (value) => {
+    expect(safeRedirectPath(value)).toBeNull();
+  });
+
+  it("una ruta con .. que sigue siendo de la app pasa", () => {
+    expect(safeRedirectPath("/jugadores/../equipos")).toBe("/jugadores/../equipos");
+  });
+
+  it("una ruta larga de la app pasa; una larga hacia otro sitio, no", () => {
+    const long = `/jugadores?q=${"a".repeat(5000)}`;
+    expect(safeRedirectPath(long)).toBe(long);
+    expect(safeRedirectPath(`//${"a".repeat(5000)}.com`)).toBeNull();
+  });
+});
+
 describe("homeForRole", () => {
   it("lleva a cada rol a su inicio", () => {
     expect(homeForRole("player")).toBe("/jugadores/mi-perfil");

@@ -70,12 +70,28 @@ describe("/auth/callback", () => {
     ["protocolo relativo", "//evil.com"],
     ["barra invertida", "/%5Cevil.com"],
     ["arroba, que pegado al origen lo volvía usuario de otro sitio", "@evil.com"],
-    ["barras codificadas dos veces", "%252F%252Fevil.com"],
+    ["barras codificadas dos veces, sin la primera barra", "%252F%252Fevil.com"],
+    // Llega como `/%2Fevil.com`: pasa el primer chequeo y lo frena la segunda
+    // decodificación (`//evil.com`).
+    ["una barra y la segunda codificada dos veces", "%2F%252Fevil.com"],
+    ["una ruta que se resuelve a //evil.com", "%2F..%2F%2Fevil.com"],
   ])("%s: termina en el inicio por rol", async (_caso, next) => {
     const location = await callback(`code=abc&next=${next}`);
 
     expect(location).toBe(`${ORIGIN}/jugadores/mi-perfil`);
     expect(new URL(location!).host).toBe("localhost:3000");
+  });
+
+  it("con next repetido, se usa el primero: válido, ahí", async () => {
+    expect(await callback("code=abc&next=%2Fjugadores&next=%2F%2Fevil.com")).toBe(
+      `${ORIGIN}/jugadores`,
+    );
+  });
+
+  it("con next repetido, se usa el primero: inválido, al inicio por rol", async () => {
+    expect(await callback("code=abc&next=%2F%2Fevil.com&next=%2Fjugadores")).toBe(
+      `${ORIGIN}/jugadores/mi-perfil`,
+    );
   });
 
   it("sin next (la confirmación del alta), al inicio por rol", async () => {
