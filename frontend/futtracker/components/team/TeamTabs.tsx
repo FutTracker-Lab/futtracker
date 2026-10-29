@@ -5,7 +5,7 @@ import {
   totalApplications,
   type ApplicationCountsResult,
 } from "@/components/team/teamApplications";
-import type { TeamFollowersResult } from "@/components/team/teamFollowers";
+import type { FollowerCountResult } from "@/components/team/teamFollowers";
 import { countOpen, type TeamVacanciesResult } from "@/components/team/teamVacancies";
 import { RouteConstants } from "@/lib/routes";
 
@@ -15,7 +15,7 @@ type Props = {
   active: TeamTab;
   vacancies: Promise<TeamVacanciesResult>;
   applicationCounts: Promise<ApplicationCountsResult>;
-  followers: Promise<TeamFollowersResult>;
+  followerCount: Promise<FollowerCountResult>;
 };
 
 const BADGE_CLASS = "rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700";
@@ -55,7 +55,7 @@ async function ApplicationsCount({ result }: { result: Promise<ApplicationCounts
   );
 }
 
-async function FollowersCount({ result }: { result: Promise<TeamFollowersResult> }) {
+async function FollowersCount({ result }: { result: Promise<FollowerCountResult> }) {
   const loaded = await result;
 
   if (!loaded.ok) {
@@ -65,14 +65,14 @@ async function FollowersCount({ result }: { result: Promise<TeamFollowersResult>
   return (
     <span className={BADGE_CLASS}>
       <span className="sr-only">(total: </span>
-      {loaded.followers.length}
+      {loaded.count}
       <span className="sr-only">)</span>
     </span>
   );
 }
 
 // Links y no un tablist: cada pestaña es una URL que se puede compartir.
-export default function TeamTabs({ active, vacancies, applicationCounts, followers }: Props) {
+export default function TeamTabs({ active, vacancies, applicationCounts, followerCount }: Props) {
   const tabs = [
     { id: "datos", label: "Datos del club", href: RouteConstants.team.mine, badge: null },
     {
@@ -91,7 +91,7 @@ export default function TeamTabs({ active, vacancies, applicationCounts, followe
       id: "seguidores",
       label: "Seguidores",
       href: RouteConstants.team.myFollowers,
-      badge: <FollowersCount result={followers} />,
+      badge: <FollowersCount result={followerCount} />,
     },
   ] as const;
 

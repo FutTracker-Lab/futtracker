@@ -5,11 +5,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FollowersTab from "@/components/team/FollowersTab";
-import { loadFollowerRows, loadTeamFollowers, type FollowerRowsResult } from "@/components/team/teamFollowers";
-import { listTeamFollowers, type TeamFollower } from "@/lib/data/follows";
+import { loadFollowerCount, loadFollowerRows, type FollowerRowsResult } from "@/components/team/teamFollowers";
+import { getFollowerCount, listTeamFollowers, type TeamFollower } from "@/lib/data/follows";
 import { getAvatarSignedUrls } from "@/lib/data/players";
 
-vi.mock("@/lib/data/follows", () => ({ listTeamFollowers: vi.fn() }));
+vi.mock("@/lib/data/follows", () => ({ listTeamFollowers: vi.fn(), getFollowerCount: vi.fn() }));
 vi.mock("@/lib/data/players", () => ({ getAvatarSignedUrls: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
@@ -62,7 +62,7 @@ describe("loadFollowerRows", () => {
     ]);
     vi.mocked(getAvatarSignedUrls).mockResolvedValue(new Map([[`${PJ1}/avatar.png`, "https://firmada"]]));
 
-    const loaded = await loadFollowerRows(client, loadTeamFollowers(client, TEAM_ID));
+    const loaded = await loadFollowerRows(client, TEAM_ID);
 
     expect(getAvatarSignedUrls).toHaveBeenCalledWith(client, [`${PJ1}/avatar.png`]);
     expect(loaded.ok && loaded.followers.map((row) => row.avatarUrl)).toEqual([null, "https://firmada"]);
@@ -71,7 +71,7 @@ describe("loadFollowerRows", () => {
   it("si falla la lista devuelve el error sin firmar nada", async () => {
     vi.mocked(listTeamFollowers).mockRejectedValue(new Error("boom"));
 
-    expect(await loadFollowerRows(client, loadTeamFollowers(client, TEAM_ID))).toEqual({ ok: false });
+    expect(await loadFollowerRows(client, TEAM_ID)).toEqual({ ok: false });
     expect(getAvatarSignedUrls).not.toHaveBeenCalled();
   });
 
@@ -79,9 +79,24 @@ describe("loadFollowerRows", () => {
     vi.mocked(listTeamFollowers).mockResolvedValue([follower({ avatar_path: "x.png" })]);
     vi.mocked(getAvatarSignedUrls).mockRejectedValue(new Error("storage"));
 
-    const loaded = await loadFollowerRows(client, loadTeamFollowers(client, TEAM_ID));
+    const loaded = await loadFollowerRows(client, TEAM_ID);
 
     expect(loaded.ok && loaded.followers[0].avatarUrl).toBeNull();
+  });
+});
+
+describe("loadFollowerCount", () => {
+  it("el badge usa el contador, no el largo de la lista", async () => {
+    vi.mocked(getFollowerCount).mockResolvedValue(1103);
+
+    expect(await loadFollowerCount(client, TEAM_ID)).toEqual({ ok: true, count: 1103 });
+    expect(listTeamFollowers).not.toHaveBeenCalled();
+  });
+
+  it("si falla, sin badge", async () => {
+    vi.mocked(getFollowerCount).mockRejectedValue(new Error("boom"));
+
+    expect(await loadFollowerCount(client, TEAM_ID)).toEqual({ ok: false });
   });
 });
 

@@ -6,7 +6,7 @@ import { afterEach, expect, test } from "vitest";
 
 import TeamTabs from "@/components/team/TeamTabs";
 import type { ApplicationCountsResult } from "@/components/team/teamApplications";
-import type { TeamFollowersResult } from "@/components/team/teamFollowers";
+import type { FollowerCountResult } from "@/components/team/teamFollowers";
 import type { TeamVacanciesResult } from "@/components/team/teamVacancies";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -21,7 +21,7 @@ afterEach(() => {
 
 async function renderTabs(
   applicationCounts: ApplicationCountsResult,
-  followers: TeamFollowersResult = { ok: true, followers: [] },
+  followerCount: FollowerCountResult = { ok: true, count: 0 },
 ) {
   const vacancies: TeamVacanciesResult = { ok: true, vacancies: [] };
 
@@ -34,7 +34,7 @@ async function renderTabs(
         active="postulaciones"
         vacancies={Promise.resolve(vacancies)}
         applicationCounts={Promise.resolve(applicationCounts)}
-        followers={Promise.resolve(followers)}
+        followerCount={Promise.resolve(followerCount)}
       />,
     ),
   );
@@ -61,18 +61,10 @@ test("si falla el conteo no muestra badge", async () => {
   expect(applicationsTab().textContent).toBe("Postulaciones");
 });
 
-test("el badge de Seguidores cuenta los seguidores y la pestaña lleva a ?tab=seguidores", async () => {
-  const follower = {
-    follower_id: "pj1",
-    full_name: "Lucía Fernández",
-    avatar_path: null,
-    position: null,
-    city: null,
-    created_at: "2026-10-01T12:00:00Z",
-  };
-  await renderTabs({ ok: true, counts: {} }, { ok: true, followers: [follower, { ...follower, follower_id: "pj2" }] });
+test("el badge de Seguidores usa el contador y la pestaña lleva a ?tab=seguidores", async () => {
+  await renderTabs({ ok: true, counts: {} }, { ok: true, count: 1103 });
 
-  expect(tabStartingWith("Seguidores").textContent).toBe("Seguidores(total: 2)");
+  expect(tabStartingWith("Seguidores").textContent).toBe("Seguidores(total: 1103)");
   expect(tabStartingWith("Seguidores").getAttribute("href")).toBe("/equipos/mi-equipo?tab=seguidores");
 });
 
