@@ -193,15 +193,61 @@ describe.skipIf(!IS_LOCAL)("T14a · mensajería", () => {
       expect(new Date(data!.last_message_at!).getTime()).toBe(new Date(message.created_at).getTime());
     });
 
-    it("no se puede insertar un mensaje ya leído: read_at no tiene grant (42501)", async () => {
+    it.each([
+      ["read_at: un mensaje ya leído", { read_at: new Date().toISOString() }],
+      ["created_at: una fecha inventada", { created_at: "2020-01-01T00:00:00Z" }],
+      ["id: un id elegido", { id: crypto.randomUUID() }],
+    ])("no se puede fijar %s (42501, sin grant)", async (_caso, extra) => {
       const { error } = await player.client.from("messages").insert({
         conversation_id: fresh,
         sender_id: player.id,
-        body: "leído de antemano",
-        read_at: new Date().toISOString(),
+        body: "con una columna que pone la base",
+        ...extra,
       });
 
       expect(error?.code).toBe("42501");
+    });
+
+    it.each([
+      ["last_message_at", { last_message_at: new Date().toISOString() }],
+      ["created_at", { created_at: "2020-01-01T00:00:00Z" }],
+      ["id", { id: crypto.randomUUID() }],
+    ])("en conversations tampoco se fija %s (42501, sin grant)", async (_caso, extra) => {
+      const other = await signUpUser("delegate");
+      const { error } = await player.client
+        .from("conversations")
+        .insert({ ...orderedPair(player.id, other.id), ...extra });
+
+      expect(error?.code).toBe("42501");
+    });
+
+    // Lo que `btrim` no recorta: sin la regex del `check`, se guardaban y la
+    // bandeja los mostraba como un último mensaje en blanco.
+    it.each([
+      ["un salto de línea", "\n"],
+      ["un tab", "\t"],
+      ["NBSP (U+00A0)", "\u00a0"],
+      ["espacio ideográfico (U+3000)", "\u3000"],
+      ["BOM (U+FEFF)", "\ufeff"],
+      ["ancho cero (U+200B)", "\u200b"],
+      ["una mezcla invisible", " \n\t\u00a0\u200b\ufeff"],
+    ])("un cuerpo de solo %s: 23514 (invalidBody)", async (_caso, body) => {
+      const { error } = await player.client
+        .from("messages")
+        .insert({ conversation_id: fresh, sender_id: player.id, body });
+
+      expect(error?.code).toBe("23514");
+      expect(messageErrorKey(error)).toBe("invalidBody");
+    });
+
+    it("un texto con espacios Unicode en el medio sí se guarda", async () => {
+      const { error } = await player.client.from("messages").insert({
+        conversation_id: fresh,
+        sender_id: player.id,
+        body: "hola\u00a0chau",
+      });
+
+      expect(error).toBeNull();
     });
 
     // El criterio dice "afecta 0 filas"; sin grant es 42501 (ver la PR).
@@ -296,10 +342,39 @@ describe.skipIf(!IS_LOCAL)("T14a · mensajería", () => {
 
     it("listMessages pagina con before", async () => {
       const [newest] = await listMessages(pj1, PJ1_DE1, { limit: 1 });
-      const older = await listMessages(pj1, PJ1_DE1, { before: newest.created_at });
+      const older = await listMessages(pj1, PJ1_DE1, { before: newest });
 
       expect(older).toHaveLength(2);
       expect(older.every((m) => m.created_at < newest.created_at)).toBe(true);
+    });
+
+    it("con mensajes del mismo instante, la paginación no pierde ninguno", async () => {
+      const reader = await signUpUser("player");
+      const writer = await signUpUser("delegate");
+      const conversation = await getOrCreateConversation(reader.client, writer.id);
+      // Un solo insert: `now()` es la hora de la transacción, así que los tres
+      // quedan con el mismo `created_at`.
+      const { error } = await writer.client.from("messages").insert(
+        ["uno", "dos", "tres"].map((body) => ({
+          conversation_id: conversation,
+          sender_id: writer.id,
+          body,
+        })),
+      );
+      expect(error).toBeNull();
+
+      // El caso existe: los tres comparten el instante.
+      const all = await listMessages(reader.client, conversation);
+      expect(new Set(all.map((m) => m.created_at)).size).toBe(1);
+
+      const seen: string[] = [];
+      let page = await listMessages(reader.client, conversation, { limit: 1 });
+      while (page.length > 0) {
+        seen.push(page[0].body);
+        page = await listMessages(reader.client, conversation, { limit: 1, before: page[0] });
+      }
+
+      expect([...seen].sort()).toEqual(["dos", "tres", "uno"]);
     });
 
     it("un ajeno lista 0 mensajes, sin error", async () => {

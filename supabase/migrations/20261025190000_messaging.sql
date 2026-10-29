@@ -29,7 +29,15 @@ create table public.messages (
   -- null = el destinatario todavía no lo leyó. Solo lo cambia
   -- `mark_conversation_read`.
   read_at timestamptz,
-  constraint messages_body_length check (char_length(btrim(body)) between 1 and 2000)
+  -- Entre 1 y 2000 caracteres y al menos uno visible. `btrim` sin argumento
+  -- solo saca espacios comunes: sin la regex pasaban mensajes "en blanco" de
+  -- solo saltos de línea, tabs, espacios Unicode (NBSP, U+3000) o caracteres
+  -- de ancho cero (U+200B, U+FEFF), que la bandeja mostraba vacíos y contaban
+  -- como no leídos. La misma lista está en `normalizeMessageBody`.
+  constraint messages_body_length check (
+    char_length(btrim(body)) between 1 and 2000
+    and body ~ '[^\s\u00a0\u1680\u180e\u2000-\u200f\u2028\u2029\u202f\u205f\u2060\u3000\ufeff]'
+  )
 );
 
 -- La bandeja de cada participante, de la conversación más reciente a la más
@@ -40,9 +48,10 @@ create index conversations_user_a_last_message_idx
 create index conversations_user_b_last_message_idx
   on public.conversations (user_b, last_message_at desc);
 
--- El hilo, paginado del más nuevo al más viejo.
+-- El hilo, paginado del más nuevo al más viejo. El `id` desempata: dos
+-- mensajes con el mismo `created_at` no se pierden entre una página y la otra.
 create index messages_conversation_created_idx
-  on public.messages (conversation_id, created_at desc);
+  on public.messages (conversation_id, created_at desc, id desc);
 
 -- Los no leídos de cada conversación: el índice solo guarda los que importan.
 create index messages_unread_idx

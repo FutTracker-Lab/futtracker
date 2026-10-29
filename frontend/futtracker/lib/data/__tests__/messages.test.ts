@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   MessageError,
   getOrCreateConversation,
+  isSendableBody,
   messageErrorKey,
+  messageLength,
   normalizeMessageBody,
   orderedPair,
   sendMessage,
@@ -95,6 +97,45 @@ describe("normalizeMessageBody", () => {
 
   it("mide después de recortar: 2000 caracteres con espacios alrededor pasan", () => {
     expect(normalizeMessageBody(`  ${"a".repeat(2000)}  `)).toHaveLength(2000);
+  });
+
+  // La misma lista que el `check` de la base: lo que `trim` no recorta (los de
+  // ancho cero) también cuenta como vacío.
+  it.each([
+    ["un tab", "\t"],
+    ["NBSP (U+00A0)", "\u00a0"],
+    ["espacio ideográfico (U+3000)", "\u3000"],
+    ["BOM (U+FEFF)", "\ufeff"],
+    ["ancho cero (U+200B)", "\u200b"],
+    ["unión de ancho cero (U+200D)", "\u200d"],
+    ["una mezcla invisible", " \n\t\u00a0\u200b\ufeff"],
+  ])("rechaza un texto de solo %s", (_caso, body) => {
+    expect(() => normalizeMessageBody(body)).toThrow(MessageError);
+  });
+
+  it("acepta espacios Unicode en el medio del texto", () => {
+    expect(normalizeMessageBody("hola\u00a0chau")).toBe("hola\u00a0chau");
+  });
+
+  it("un emoji cuenta como un caracter, igual que en la base", () => {
+    const emoji = "\u{1f600}";
+    expect(emoji.length).toBe(2);
+    expect(messageLength(emoji.repeat(2000))).toBe(2000);
+    expect(normalizeMessageBody(emoji.repeat(2000))).toBe(emoji.repeat(2000));
+    expect(() => normalizeMessageBody(emoji.repeat(2001))).toThrow(MessageError);
+  });
+});
+
+describe("isSendableBody y messageLength", () => {
+  it("coinciden con normalizeMessageBody", () => {
+    expect(isSendableBody("hola")).toBe(true);
+    expect(isSendableBody("\u200b")).toBe(false);
+    expect(isSendableBody("a".repeat(2001))).toBe(false);
+    expect(isSendableBody(`${"a".repeat(2000)} `)).toBe(true);
+  });
+
+  it("messageLength mide sin los espacios de las puntas", () => {
+    expect(messageLength("  hola  ")).toBe(4);
   });
 });
 
