@@ -145,18 +145,38 @@ export async function getOrCreateConversation(
   return existing.id;
 }
 
+// Lo que no se ve: espacios de cualquier tipo (NBSP, U+3000), saltos de línea,
+// tabs y caracteres de ancho cero (U+200B, U+FEFF). La misma lista que el
+// `check` `messages_body_length` de la migración: si cambia una, cambia la otra.
+const INVISIBLE_ONLY = /^[\s\u00a0\u1680\u180e\u2000-\u200f\u2028\u2029\u202f\u205f\u2060\u3000\ufeff]*$/u;
+
 /**
- * El texto que se guarda: sin espacios en las puntas y entre 1 y 2000
- * caracteres. Si no cumple, `MessageError("invalidBody")`.
+ * Cuántos caracteres cuenta la base: sin los espacios de las puntas y por
+ * caracter, no por unidad UTF-16 (`char_length` cuenta un emoji como 1;
+ * `.length` de JavaScript, como 2).
+ */
+export function messageLength(body: string): number {
+  return [...body.trim()].length;
+}
+
+/** Si el texto se puede enviar: entre 1 y 2000 caracteres y alguno visible. */
+export function isSendableBody(body: string): boolean {
+  const length = messageLength(body);
+
+  return length >= 1 && length <= MESSAGE_MAX_LENGTH && !INVISIBLE_ONLY.test(body);
+}
+
+/**
+ * El texto que se guarda: sin espacios en las puntas, entre 1 y 2000
+ * caracteres y con al menos uno visible. Si no cumple,
+ * `MessageError("invalidBody")`.
  */
 export function normalizeMessageBody(body: string): string {
-  const trimmed = body.trim();
-
-  if (trimmed.length < 1 || trimmed.length > MESSAGE_MAX_LENGTH) {
+  if (!isSendableBody(body)) {
     throw new MessageError("invalidBody");
   }
 
-  return trimmed;
+  return body.trim();
 }
 
 /**
@@ -278,26 +298,36 @@ function toSummary(row: SummaryRow): ConversationSummary {
   };
 }
 
+/** El último mensaje de una página: desde dónde sigue la anterior. */
+export type MessageCursor = { created_at: string; id: string };
+
 /**
  * Los mensajes de una conversación, del más nuevo al más viejo.
  *
- * Se pagina con `before`: el `created_at` del mensaje más viejo de la página
- * anterior. Un participante ajeno no rebota: la RLS le devuelve 0 filas.
+ * Se pagina con `before`: el `created_at` y el `id` del mensaje más viejo de la
+ * página anterior. Con el `created_at` solo, dos mensajes del mismo instante
+ * podían quedar uno en cada página y perderse; el `id` desempata, igual que en
+ * el orden. Un participante ajeno no rebota: la RLS le devuelve 0 filas.
  */
 export async function listMessages(
   client: Client,
   conversationId: string,
-  { before, limit = MESSAGES_PAGE_SIZE }: { before?: string; limit?: number } = {},
+  { before, limit = MESSAGES_PAGE_SIZE }: { before?: MessageCursor; limit?: number } = {},
 ): Promise<Message[]> {
   let query = client
     .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit);
 
   if (before) {
-    query = query.lt("created_at", before);
+    // Comillas porque el timestamp trae `:` y `+`, que PostgREST usa en la
+    // sintaxis de los filtros.
+    query = query.or(
+      `created_at.lt."${before.created_at}",and(created_at.eq."${before.created_at}",id.lt.${before.id})`,
+    );
   }
 
   const { data, error } = await query;
