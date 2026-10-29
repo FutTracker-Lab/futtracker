@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { z } from "zod";
 
 import {
   markAllNotificationsReadAction,
@@ -12,29 +11,27 @@ import { SECONDARY_BUTTON_CLASS } from "@/components/vacancies/styles";
 import { listNotifications } from "@/lib/data/notifications";
 import { getAvatarSignedUrls } from "@/lib/data/players";
 import { notificationTarget } from "@/lib/format/notificationTarget";
+import {
+  NOTIFICATIONS_PAGE_SIZE,
+  notificationsView,
+  parseBeforeParam,
+} from "@/lib/notifications/view";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
-const PAGE_SIZE = 20;
-
-const beforeSchema = z.iso.datetime({ offset: true });
-
 export default async function NotificationsPage({ searchParams }: PageProps<"/notificaciones">) {
   const { antes: beforeParam } = await searchParams;
-  const before = beforeSchema.safeParse(beforeParam);
 
   const supabase = await createClient();
-  // Uno de más para saber si hay otra página. "Marcar todas" usa el conteo de la campana: mira todas las páginas.
   const [rows, unread] = await Promise.all([
     listNotifications(supabase, {
-      limit: PAGE_SIZE + 1,
-      before: before.success ? before.data : undefined,
+      limit: NOTIFICATIONS_PAGE_SIZE + 1,
+      before: parseBeforeParam(beforeParam),
     }),
     getUnreadCounts(),
   ]);
 
-  const notifications = rows.slice(0, PAGE_SIZE);
-  const last = notifications[notifications.length - 1];
+  const { notifications, nextBefore, showMarkAll } = notificationsView(rows, unread.notifications);
 
   // Si fallan las fotos, quedan las iniciales.
   const paths = notifications.flatMap((n) => (n.actor?.avatar_path ? [n.actor.avatar_path] : []));
@@ -45,7 +42,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold text-zinc-900">Notificaciones</h1>
-          {unread.notifications > 0 ? (
+          {showMarkAll ? (
             <NotificationActionButton
               action={markAllNotificationsReadAction}
               className={SECONDARY_BUTTON_CLASS}
@@ -80,9 +77,9 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
           </ul>
         )}
 
-        {rows.length > PAGE_SIZE && last ? (
+        {nextBefore ? (
           <Link
-            href={RouteConstants.notifications.before(last.created_at)}
+            href={RouteConstants.notifications.before(nextBefore)}
             className={`${SECONDARY_BUTTON_CLASS} self-center`}
           >
             Ver anteriores
