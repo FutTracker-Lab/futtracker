@@ -98,6 +98,13 @@ export type OlderMessagesResult =
   | { ok: true; messages: ThreadMessage[]; hasMore: boolean }
   | { ok: false };
 
+// El mensaje más viejo que ya se ve: fecha **e id**, porque dos mensajes del
+// mismo instante se perdían paginando solo por fecha.
+const cursorSchema = z.object({
+  created_at: z.iso.datetime({ offset: true }),
+  id: z.uuid(),
+});
+
 /**
  * "Ver mensajes anteriores" (requisito 5): los 50 anteriores a `before`, del
  * más viejo al más nuevo, y si quedan más. Un ajeno recibe una lista vacía: la
@@ -108,7 +115,7 @@ export async function loadOlderMessagesAction(
   before: unknown,
 ): Promise<OlderMessagesResult> {
   const parsedId = idSchema.safeParse(conversationId);
-  const parsedBefore = z.iso.datetime({ offset: true }).safeParse(before);
+  const parsedBefore = cursorSchema.safeParse(before);
 
   if (!parsedId.success || !parsedBefore.success) {
     return { ok: false };
