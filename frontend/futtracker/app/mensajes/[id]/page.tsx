@@ -104,7 +104,7 @@ export default async function ThreadPage({ params }: PageProps<"/mensajes/[id]">
       />
 
       <MessageComposer conversationId={id} />
-      {conversation.unread_count > 0 ? <RefreshNavBadges /> : null}
+      <RefreshNavBadges unreadCount={conversation.unread_count} />
     </div>
   );
 }
