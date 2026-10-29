@@ -160,8 +160,31 @@ esos campos falla con un error de constraint. Hoy el único camino de alta es
 `signUp`, que los valida con Zod antes, pero un usuario creado a mano desde el
 dashboard de Supabase va a fallar.
 
-## Pendiente
+## Las rutas de los mails
 
-Las rutas `/auth/callback` y `/auth/actualizar-password` todavía no existen:
-las crea T03b. Hasta entonces los links de los mails caen en un 404. Los
-redirects ya apuntan ahí a propósito, para no tener que tocar la config después.
+Las dos existen desde T03b:
+
+- **`/auth/callback`** (`app/auth/callback/route.ts`): el destino del link de
+  confirmación del alta. Canjea el `code` del flujo PKCE por una sesión y
+  redirige. Si el código no sirve, al `/login`.
+- **`/auth/actualizar-password`**: el destino del link de recuperación.
+
+## Destinos después del login (FUT-136)
+
+Dos parámetros de la URL deciden adónde va el usuario después de entrar: `next`
+en `/auth/callback` y `redirectTo` en `/login` (lo arma `proxy.ts` al mandar al
+login a quien no tiene sesión). Como vienen en la URL, cualquiera puede armar un
+link con un destino propio, así que los dos pasan por **una sola regla**,
+`safeRedirectPath` en `lib/auth/redirect.ts`:
+
+- **Válido:** una ruta de la app, que empieza con una sola `/`
+  (`/jugadores?radio=50`). Se usa tal cual, con su query.
+- **Todo lo demás cae al inicio según el rol** (`homeForRole`: jugador a
+  `/jugadores/mi-perfil`, delegado a `/equipos/mi-equipo`): URLs con esquema,
+  `//otro-sitio`, barras invertidas, espacios o caracteres de control, lo mismo
+  escondido con codificación, y rutas que el navegador resolvería fuera del
+  sitio (`/..//otro-sitio`).
+
+El callback, sin `next` (la confirmación del alta), también va al inicio por
+rol. Si aparece otro lugar que redirige a un destino que viene de afuera, tiene
+que usar `safeRedirectPath`.
