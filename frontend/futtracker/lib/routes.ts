@@ -54,4 +54,14 @@ export const RouteConstants = {
     board: "/vacantes",
     myApplications: "/vacantes?tab=postulaciones",
   },
+  // FUT-140: la bandeja y cada hilo.
+  messages: {
+    inbox: "/mensajes",
+    thread: (id: string) => `/mensajes/${id}`,
+  },
+  // FUT-143: `antes` es el `created_at` del último aviso mostrado.
+  notifications: {
+    list: "/notificaciones",
+    before: (createdAt: string) => `/notificaciones?antes=${encodeURIComponent(createdAt)}`,
+  },
 } as const;

@@ -4,13 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import SignOutButton from "@/components/auth/SignOutButton";
-import { NAV_ITEMS_BY_ROLE, isNavItemActive } from "@/components/nav/navItems";
+import CountBadge from "@/components/nav/CountBadge";
+import {
+  NAV_ITEMS_BY_ROLE,
+  isNavItemActive,
+  type UnreadCounts,
+} from "@/components/nav/navItems";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { initialsOf } from "@/lib/format/initials";
+import { unreadLabel } from "@/lib/format/messageLabels";
+import { RouteConstants } from "@/lib/routes";
 import type { Role } from "@/lib/auth/schemas";
 
 type Props = {
   fullName: string;
   role: Role;
+  unread: UnreadCounts;
 };
 
 // Superficie oscura (`bg-panel`), igual que el panel de auth: en el diseño de
@@ -20,18 +29,24 @@ type Props = {
 //
 // Solo desde `md`: 256px fijos sobre una pantalla de 375px dejarían 119px de
 // contenido. En mobile navega AppMobileNav.
-export default function AppSidebar({ fullName, role }: Props) {
+export default function AppSidebar({ fullName, role, unread }: Props) {
   const pathname = usePathname();
   const items = NAV_ITEMS_BY_ROLE[role];
 
   return (
     <aside className="hidden h-full w-64 shrink-0 flex-col justify-between overflow-y-auto bg-panel p-4 text-panel-foreground md:flex">
       <div>
-        <div className="mb-8 flex items-center gap-2 px-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-sm font-bold text-brand-foreground">
-            FT
-          </span>
-          <span className="text-sm text-panel-muted">FutTracker · MVP</span>
+        <div className="mb-8 flex items-center justify-between gap-2 px-2">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-sm font-bold text-brand-foreground">
+              FT
+            </span>
+            <span className="text-sm text-panel-muted">FutTracker · MVP</span>
+          </div>
+          <NotificationBell
+            count={unread.notifications}
+            isActive={pathname === RouteConstants.notifications.list}
+          />
         </div>
 
         {items.length > 0 ? (
@@ -46,13 +61,16 @@ export default function AppSidebar({ fullName, role }: Props) {
                   key={item.href}
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
-                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-panel-active text-panel-foreground"
                       : "text-panel-muted hover:bg-panel-active/50 hover:text-panel-foreground"
                   }`}
                 >
                   {item.label}
+                  {item.unreadBadge ? (
+                    <CountBadge count={unread.messages} label={unreadLabel(unread.messages)} />
+                  ) : null}
                 </Link>
               );
             })}
