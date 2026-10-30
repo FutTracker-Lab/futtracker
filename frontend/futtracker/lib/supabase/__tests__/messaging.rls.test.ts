@@ -151,7 +151,7 @@ describe.skipIf(!IS_LOCAL)("T14a · mensajería", () => {
         .from("messages")
         .insert({ conversation_id: PJ1_DE1, sender_id: DE1, body: "suplantación" });
 
-      expect(error).toBeNull();
+      expect(error?.code).toBe("42501");
     });
 
     it("PJ2 no puede escribir en PJ1↔DE1: 42501", async () => {
