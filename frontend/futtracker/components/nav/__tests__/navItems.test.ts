@@ -97,3 +97,21 @@ describe("NAV_ITEMS_BY_ROLE", () => {
     expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain("Vacantes");
   });
 });
+
+describe("Mensajes", () => {
+  it("lleva el contador de mensajes sin leer en los dos roles", () => {
+    for (const items of Object.values(NAV_ITEMS_BY_ROLE)) {
+      const messages = items.find((item) => item.label === "Mensajes");
+      expect(messages?.unreadBadge).toBe(true);
+    }
+  });
+
+  it("ninguna otra entrada tiene contador", () => {
+    const withBadge = Object.values(NAV_ITEMS_BY_ROLE)
+      .flat()
+      .filter((item) => item.unreadBadge)
+      .map((item) => item.label);
+
+    expect(new Set(withBadge)).toEqual(new Set(["Mensajes"]));
+  });
+});
