@@ -92,6 +92,13 @@ describe("Buscar jugadores", () => {
 });
 
 describe("NAV_ITEMS_BY_ROLE", () => {
+  it("'Equipos sugeridos' es solo del jugador y lleva a /sugerencias", () => {
+    expect(byLabel("Equipos sugeridos").href).toBe("/sugerencias");
+    expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain(
+      "Equipos sugeridos",
+    );
+  });
+
   it("'Vacantes' es solo del jugador", () => {
     expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).toContain("Vacantes");
     expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain("Vacantes");
@@ -102,5 +109,23 @@ describe("NAV_ITEMS_BY_ROLE", () => {
 
     expect(item?.href).toBe("/siguiendo");
     expect(NAV_ITEMS_BY_ROLE.delegate.map((entry) => entry.label)).not.toContain("Siguiendo");
+  });
+});
+
+describe("Mensajes", () => {
+  it("lleva el contador de mensajes sin leer en los dos roles", () => {
+    for (const items of Object.values(NAV_ITEMS_BY_ROLE)) {
+      const messages = items.find((item) => item.label === "Mensajes");
+      expect(messages?.unreadBadge).toBe(true);
+    }
+  });
+
+  it("ninguna otra entrada tiene contador", () => {
+    const withBadge = Object.values(NAV_ITEMS_BY_ROLE)
+      .flat()
+      .filter((item) => item.unreadBadge)
+      .map((item) => item.label);
+
+    expect(new Set(withBadge)).toEqual(new Set(["Mensajes"]));
   });
 });

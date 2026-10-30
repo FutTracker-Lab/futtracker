@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FollowingLayout from "@/app/siguiendo/layout";
 import FollowingPage from "@/app/siguiendo/page";
-import { getVacanciesAccess, type VacanciesAccess } from "@/app/vacantes/access";
+import { getPlayerAccess, type PlayerAccess } from "@/lib/auth/playerAccess";
 import { loadFollowedTeams } from "@/components/team/followedTeams";
 
-vi.mock("@/app/vacantes/access", () => ({ getVacanciesAccess: vi.fn() }));
+vi.mock("@/lib/auth/playerAccess", () => ({ getPlayerAccess: vi.fn() }));
 vi.mock("@/components/team/followedTeams", () => ({ loadFollowedTeams: vi.fn() }));
 vi.mock("@/components/nav/AppShell", () => ({ default: () => null }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const layout = () => FollowingLayout({ children: null, params: Promise.resolve({}) } as never);
-const access = (value: VacanciesAccess) => vi.mocked(getVacanciesAccess).mockResolvedValue(value);
+const access = (value: PlayerAccess) => vi.mocked(getPlayerAccess).mockResolvedValue(value);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -40,7 +40,7 @@ describe("layout de /siguiendo", () => {
     await expect(layout()).rejects.toThrow("notFound");
   });
 
-  it.each<VacanciesAccess>(["player", "unavailable"])("con %s renderiza (el rol caído lo resuelve la página)", async (value) => {
+  it.each<PlayerAccess>(["player", "unavailable"])("con %s renderiza (el rol caído lo resuelve la página)", async (value) => {
     access(value);
 
     await expect(layout()).resolves.toBeTruthy();

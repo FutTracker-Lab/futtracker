@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { getVacanciesAccess } from "@/app/vacantes/access";
+import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import FollowedTeamsList from "@/components/team/FollowedTeamsList";
 import FollowingFrame from "@/components/team/FollowingFrame";
 import { loadFollowedTeams } from "@/components/team/followedTeams";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Siguiendo" };
 
 export default async function FollowingPage() {
   // El layout corre en paralelo: sin esto, el 404 del delegado igual trae los datos en el payload.
-  const access = await getVacanciesAccess();
+  const access = await getPlayerAccess();
 
   if (access === "unavailable") {
     throw new Error("No se pudo leer el rol");

@@ -50,9 +50,20 @@ export const RouteConstants = {
     new: "/equipos/nuevo",
     edit: (id: string) => `/equipos/${id}/editar`,
   },
+  suggestions: "/sugerencias",
   vacancies: {
     board: "/vacantes",
     myApplications: "/vacantes?tab=postulaciones",
   },
   following: "/siguiendo",
+  // FUT-140: la bandeja y cada hilo.
+  messages: {
+    inbox: "/mensajes",
+    thread: (id: string) => `/mensajes/${id}`,
+  },
+  // FUT-143: `antes` es el `created_at` del último aviso mostrado.
+  notifications: {
+    list: "/notificaciones",
+    before: (createdAt: string) => `/notificaciones?antes=${encodeURIComponent(createdAt)}`,
+  },
 } as const;

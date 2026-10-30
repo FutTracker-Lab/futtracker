@@ -60,6 +60,22 @@ async function errorsOn(reporter: Client, date: string): Promise<number> {
   return data[0].errors_5xx;
 }
 
+// Un delegado nuevo con su equipo, para seguir sin tocar los equipos del seed.
+async function createTeamOfNewDelegate(): Promise<string> {
+  const delegate = await signUpUser("delegate");
+  const { data, error } = await delegate.client
+    .from("teams")
+    .insert({ owner_id: delegate.id, name: `Equipo KPI ${delegate.id.slice(0, 8)}` })
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error(`No se pudo crear el equipo: ${error.message}`);
+  }
+
+  return data.id;
+}
+
 describe.skipIf(!IS_LOCAL)("T22 · reporter de KPIs", () => {
   let anon: Client;
   let player: TestUser;
@@ -296,10 +312,17 @@ describe.skipIf(!IS_LOCAL)("T22 · reporter de KPIs", () => {
       const before = (await reporter.rpc("kpi_daily_counts", { p_date: today })).data![0];
       expect(before.players_following).toBeGreaterThanOrEqual(2);
 
-      const follower = await signUpUser("player");
+      // Dos equipos nuevos y no E1 y E2 del seed: los seguimientos no se borran
+      // solos, y uno de más en E1 o E2 rompe los conteos exactos de
+      // `team_follows.rls.test.ts` si ese archivo corre después.
+      const [follower, teamA, teamB] = await Promise.all([
+        signUpUser("player"),
+        createTeamOfNewDelegate(),
+        createTeamOfNewDelegate(),
+      ]);
       const { error } = await follower.client.from("team_follows").insert([
-        { follower_id: follower.id, team_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
-        { follower_id: follower.id, team_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+        { follower_id: follower.id, team_id: teamA },
+        { follower_id: follower.id, team_id: teamB },
       ]);
       expect(error).toBeNull();
 
