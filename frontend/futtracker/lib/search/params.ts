@@ -31,7 +31,7 @@ export const DEFAULT_SEARCH_FILTERS: SearchCriteria = {
   page: 1,
 };
 
-const radiusSchema = z.coerce.number().pipe(z.literal(SEARCH_RADII));
+export const radiusSchema = z.coerce.number().pipe(z.literal(SEARCH_RADII));
 const statusSchema = z.enum(SEARCH_STATUSES);
 // Tope para que un `pagina` enorme no desborde el `int` del offset en la base.
 export const pageSchema = z.coerce.number().int().min(1).max(100_000);
