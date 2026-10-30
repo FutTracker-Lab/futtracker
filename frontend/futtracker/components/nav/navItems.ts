@@ -50,6 +50,7 @@ export const NAV_ITEMS_BY_ROLE: Record<Role, NavItem[]> = {
     },
     { href: RouteConstants.suggestions, label: "Equipos sugeridos" },
     { href: RouteConstants.vacancies.board, label: "Vacantes" },
+    { href: RouteConstants.following, label: "Siguiendo" },
     MESSAGES_ITEM,
   ],
   // El delegado no tiene "editar" fijo porque la ruta depende del id de su

@@ -103,6 +103,13 @@ describe("NAV_ITEMS_BY_ROLE", () => {
     expect(NAV_ITEMS_BY_ROLE.player.map((item) => item.label)).toContain("Vacantes");
     expect(NAV_ITEMS_BY_ROLE.delegate.map((item) => item.label)).not.toContain("Vacantes");
   });
+
+  it("'Siguiendo' es solo del jugador", () => {
+    const item = NAV_ITEMS_BY_ROLE.player.find((entry) => entry.label === "Siguiendo");
+
+    expect(item?.href).toBe("/siguiendo");
+    expect(NAV_ITEMS_BY_ROLE.delegate.map((entry) => entry.label)).not.toContain("Siguiendo");
+  });
 });
 
 describe("Mensajes", () => {

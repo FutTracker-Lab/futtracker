@@ -5,15 +5,17 @@ import {
   totalApplications,
   type ApplicationCountsResult,
 } from "@/components/team/teamApplications";
+import type { FollowerCountResult } from "@/components/team/teamFollowers";
 import { countOpen, type TeamVacanciesResult } from "@/components/team/teamVacancies";
 import { RouteConstants } from "@/lib/routes";
 
-export type TeamTab = "datos" | "vacantes" | "postulaciones";
+export type TeamTab = "datos" | "vacantes" | "postulaciones" | "seguidores";
 
 type Props = {
   active: TeamTab;
   vacancies: Promise<TeamVacanciesResult>;
   applicationCounts: Promise<ApplicationCountsResult>;
+  followerCount: Promise<FollowerCountResult>;
 };
 
 const BADGE_CLASS = "rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700";
@@ -53,8 +55,24 @@ async function ApplicationsCount({ result }: { result: Promise<ApplicationCounts
   );
 }
 
+async function FollowersCount({ result }: { result: Promise<FollowerCountResult> }) {
+  const loaded = await result;
+
+  if (!loaded.ok) {
+    return null;
+  }
+
+  return (
+    <span className={BADGE_CLASS}>
+      <span className="sr-only">(total: </span>
+      {loaded.count}
+      <span className="sr-only">)</span>
+    </span>
+  );
+}
+
 // Links y no un tablist: cada pestaña es una URL que se puede compartir.
-export default function TeamTabs({ active, vacancies, applicationCounts }: Props) {
+export default function TeamTabs({ active, vacancies, applicationCounts, followerCount }: Props) {
   const tabs = [
     { id: "datos", label: "Datos del club", href: RouteConstants.team.mine, badge: null },
     {
@@ -69,11 +87,17 @@ export default function TeamTabs({ active, vacancies, applicationCounts }: Props
       href: RouteConstants.team.myApplications(),
       badge: <ApplicationsCount result={applicationCounts} />,
     },
+    {
+      id: "seguidores",
+      label: "Seguidores",
+      href: RouteConstants.team.myFollowers,
+      badge: <FollowersCount result={followerCount} />,
+    },
   ] as const;
 
-  // A 375 px no entran en una línea: se parte el label sin badge en vez de esconder un badge detrás de un scroll.
+  // A 375 px no entran en una línea: se parte el label sin badge y la última pestaña baja de fila, nunca detrás de un scroll.
   return (
-    <nav aria-label="Secciones del equipo" className="flex gap-3 shadow-[inset_0_-1px_0_var(--color-zinc-200)] sm:gap-6">
+    <nav aria-label="Secciones del equipo" className="flex flex-wrap gap-x-3 shadow-[inset_0_-1px_0_var(--color-zinc-200)] sm:flex-nowrap sm:gap-6">
       {tabs.map((tab) => {
         const isActive = tab.id === active;
 
