@@ -62,12 +62,15 @@ jobs:
           version: 2.114.0
 
       # Aplica las migraciones y el seed. Sin los servicios que los tests no
-      # usan (Studio, realtime, mails, logs): tarda menos. edge-runtime se
-      # queda: es el que crea la extensión pg_net, y sin ella `db diff` la ve
-      # como deriva (la base de comparación sí la tiene).
+      # usan (Studio, realtime, mails, logs): tarda menos. Se quedan:
+      #   - edge-runtime: crea la extensión pg_net, y sin ella `db diff` la ve
+      #     como deriva (la base de comparación sí la tiene).
+      #   - postgres-meta: `gen types` lo usa. Excluido, igual se descarga
+      #     después, en el paso de tipos, y un límite de descargas del
+      #     registro ahí parece deriva de tipos.
       - name: Levantar Supabase
         working-directory: .
-        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,logflare,vector,supavisor
+        run: supabase start -x realtime,imgproxy,mailpit,studio,logflare,vector,supavisor
 
       # La URL tiene que ser 127.0.0.1: `IS_LOCAL` de rls-client.ts saltea los
       # tests con cualquier otra.
