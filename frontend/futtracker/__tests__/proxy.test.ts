@@ -39,6 +39,54 @@ describe("proxy", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("sin sesión deja pasar el POST de una Server Action: la action decide adónde va", async () => {
+    session(null);
+
+    const response = await proxy(
+      new NextRequest("http://localhost:3000/vacantes", {
+        method: "POST",
+        headers: { "next-action": "abc123" },
+      }),
+    );
+
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("sin sesión sigue redirigiendo un POST con el header vacío", async () => {
+    session(null);
+
+    const response = await proxy(
+      new NextRequest("http://localhost:3000/vacantes", {
+        method: "POST",
+        headers: { "next-action": "" },
+      }),
+    );
+
+    expect(response.status).toBe(307);
+  });
+
+  it("sin sesión sigue redirigiendo un POST que no es de una Server Action", async () => {
+    session(null);
+
+    const response = await proxy(
+      new NextRequest("http://localhost:3000/vacantes", { method: "POST" }),
+    );
+
+    expect(response.status).toBe(307);
+  });
+
+  it("sin sesión sigue redirigiendo un GET aunque traiga el header", async () => {
+    session(null);
+
+    const response = await proxy(
+      new NextRequest("http://localhost:3000/vacantes", {
+        headers: { "next-action": "abc123" },
+      }),
+    );
+
+    expect(response.status).toBe(307);
+  });
+
   it("una ruta que solo empieza igual no queda protegida", async () => {
     session(null);
 
