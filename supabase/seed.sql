@@ -609,3 +609,6 @@ values
   ('0f000002-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '11111111-1111-4111-8111-111111111111', '¡Hola! Sí, me interesa. ¿A qué hora entrenan?',                 now() - interval '1 day',   now() - interval '20 hours'),
   ('0f000003-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '66666666-6666-4666-8666-666666666666', 'A las 20 en la cancha del club. Te esperamos.',                 now() - interval '2 hours', null),
   ('0f000004-0000-4000-8000-000000000134', '0e000002-0000-4000-8000-000000000134', '22222222-2222-4222-8222-222222222222', 'Buenas, ¿siguen buscando arquero?',                              now() - interval '5 hours', null);
+
+-- PRUEBA FUT-137: deriva a propósito, se revierte.
+create table public.deriva_prueba_fut137 (id int primary key);
