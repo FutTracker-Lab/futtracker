@@ -609,3 +609,19 @@ values
   ('0f000002-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '11111111-1111-4111-8111-111111111111', '¡Hola! Sí, me interesa. ¿A qué hora entrenan?',                 now() - interval '1 day',   now() - interval '20 hours'),
   ('0f000003-0000-4000-8000-000000000134', '0e000001-0000-4000-8000-000000000134', '66666666-6666-4666-8666-666666666666', 'A las 20 en la cancha del club. Te esperamos.',                 now() - interval '2 hours', null),
   ('0f000004-0000-4000-8000-000000000134', '0e000002-0000-4000-8000-000000000134', '22222222-2222-4222-8222-222222222222', 'Buenas, ¿siguen buscando arquero?',                              now() - interval '5 hours', null);
+
+-- =====================================================================
+-- Notificaciones (T15a). UUID fijos que terminan en `0142`.
+--
+-- Va última y reemplaza los avisos que los triggers generaron con los mensajes
+-- y las postulaciones de arriba, para que los conteos sean los del ticket. La
+-- postulación de PJ3 a V2 no existe: se postuló y la retiró, y el aviso queda
+-- porque no se borran.
+-- =====================================================================
+delete from public.notifications;
+
+insert into public.notifications (id, user_id, type, actor_id, conversation_id, vacancy_id, created_at, read_at)
+values
+  ('1a000001-0000-4000-8000-000000000142', '11111111-1111-4111-8111-111111111111', 'new_message',     '66666666-6666-4666-8666-666666666666', '0e000001-0000-4000-8000-000000000134', null,                                   now() - interval '2 hours', null),                        -- PJ1 ← DE1
+  ('1a000002-0000-4000-8000-000000000142', '66666666-6666-4666-8666-666666666666', 'new_message',     '22222222-2222-4222-8222-222222222222', '0e000002-0000-4000-8000-000000000134', null,                                   now() - interval '5 hours', null),                        -- DE1 ← PJ2
+  ('1a000003-0000-4000-8000-000000000142', '66666666-6666-4666-8666-666666666666', 'new_application', '33333333-3333-4333-8333-333333333333', null,                                   '0a000002-0000-4000-8000-000000000120', now() - interval '1 day',   now() - interval '20 hours');  -- DE1 ← PJ3 (V2)

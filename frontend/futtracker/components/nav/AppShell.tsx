@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import AppMobileNav from "@/components/nav/AppMobileNav";
 import AppSidebar from "@/components/nav/AppSidebar";
+import { getUnreadCounts } from "@/components/nav/unreadCounts";
 import { roleSchema } from "@/lib/auth/schemas";
 import { getProfileById } from "@/lib/data/profiles";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +30,9 @@ export default async function AppShell({ children }: { children: ReactNode }) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const profile = user ? await getProfileById(user.id) : null;
+  const [profile, unread] = user
+    ? await Promise.all([getProfileById(user.id), getUnreadCounts()])
+    : [null, { notifications: 0, messages: 0 }];
   // `roleSchema.safeParse` en vez de castear: si el rol en `profiles` no es
   // uno de los dos válidos (dato corrupto, migración a medio camino), el
   // chrome no se renderiza en vez de reventar con un rol que no está en
@@ -40,8 +43,8 @@ export default async function AppShell({ children }: { children: ReactNode }) {
     <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       {profile && role.success ? (
         <>
-          <AppMobileNav role={role.data} />
-          <AppSidebar fullName={profile.full_name} role={role.data} />
+          <AppMobileNav role={role.data} unread={unread} />
+          <AppSidebar fullName={profile.full_name} role={role.data} unread={unread} />
         </>
       ) : null}
       <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>

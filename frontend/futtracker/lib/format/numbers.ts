@@ -43,3 +43,7 @@ export function formatCount(
   const value = count ?? 0;
   return `${formatInteger(value)} ${pluralize(value, singular, plural)}`;
 }
+
+export function formatBadgeCount(count: number): string {
+  return count >= 100 ? "99+" : String(count);
+}

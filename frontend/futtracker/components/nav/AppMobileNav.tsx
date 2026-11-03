@@ -4,18 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import SignOutButton from "@/components/auth/SignOutButton";
-import { NAV_ITEMS_BY_ROLE, isNavItemActive } from "@/components/nav/navItems";
+import CountBadge from "@/components/nav/CountBadge";
+import {
+  NAV_ITEMS_BY_ROLE,
+  isNavItemActive,
+  type UnreadCounts,
+} from "@/components/nav/navItems";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import { unreadLabel } from "@/lib/format/messageLabels";
+import { RouteConstants } from "@/lib/routes";
 import type { Role } from "@/lib/auth/schemas";
 
 type Props = {
   role: Role;
+  unread: UnreadCounts;
 };
 
 // La contraparte de AppSidebar para pantallas chicas (requisito 10: 375 px
 // sin scroll horizontal). Barra superior en vez de menú desplegable: con dos
 // ítems un toggle sería más clics y más estado para la misma navegación. Si
 // la lista crece, esto pasa a ser un menú.
-export default function AppMobileNav({ role }: Props) {
+export default function AppMobileNav({ role, unread }: Props) {
   const pathname = usePathname();
   const items = NAV_ITEMS_BY_ROLE[role];
 
@@ -28,7 +37,13 @@ export default function AppMobileNav({ role }: Props) {
           </span>
           <span className="text-sm text-panel-muted">FutTracker · MVP</span>
         </div>
-        <SignOutButton variant="sidebarCompact" />
+        <div className="flex items-center gap-2">
+          <NotificationBell
+            count={unread.notifications}
+            isActive={pathname === RouteConstants.notifications.list}
+          />
+          <SignOutButton variant="sidebarCompact" />
+        </div>
       </div>
 
       {items.length > 0 ? (
@@ -40,13 +55,16 @@ export default function AppMobileNav({ role }: Props) {
                 key={item.href}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-panel-active text-panel-foreground"
                     : "text-panel-muted"
                 }`}
               >
                 {item.label}
+                {item.unreadBadge ? (
+                  <CountBadge count={unread.messages} label={unreadLabel(unread.messages)} />
+                ) : null}
               </Link>
             );
           })}

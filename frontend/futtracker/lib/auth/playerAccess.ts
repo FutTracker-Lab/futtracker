@@ -2,10 +2,10 @@ import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 
-export type VacanciesAccess = "player" | "signedOut" | "notPlayer" | "unavailable";
+export type PlayerAccess = "player" | "signedOut" | "notPlayer" | "unavailable";
 
 // Sin getProfileById: devuelve null también si la consulta falla, y una caída no es un 404.
-export const getVacanciesAccess = cache(async (): Promise<VacanciesAccess> => {
+export const getPlayerAccess = cache(async (): Promise<PlayerAccess> => {
   const supabase = await createClient();
   const {
     data: { user },

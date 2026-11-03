@@ -28,11 +28,12 @@ export default function ParticipantAvatar({ fullName, avatarUrl, size = "md" }: 
   }
 
   return (
-    <div
+    // `span` y no `div`: también va dentro del botón de una notificación.
+    <span
       aria-hidden="true"
       className={`${box} flex shrink-0 items-center justify-center rounded-full bg-brand-tint font-semibold text-brand`}
     >
       {initialsOf(fullName)}
-    </div>
+    </span>
   );
 }

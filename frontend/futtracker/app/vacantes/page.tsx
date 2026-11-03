@@ -2,7 +2,6 @@ import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { getVacanciesAccess } from "@/app/vacantes/access";
 import SearchPagination from "@/components/search/SearchPagination";
 import MyApplicationsList from "@/components/vacancies/MyApplicationsList";
 import VacancyApplyControl from "@/components/vacancies/VacancyApplyControl";
@@ -11,6 +10,7 @@ import VacancyCard from "@/components/vacancies/VacancyCard";
 import VacancyBoardSkeleton from "@/components/vacancies/VacancyBoardSkeleton";
 import VacancyFilters from "@/components/vacancies/VacancyFilters";
 import { LINK_CLASS } from "@/components/vacancies/styles";
+import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import { listMyApplications } from "@/lib/data/applications";
 import { getMyPlayer } from "@/lib/data/players";
 import { getCrestSignedUrls } from "@/lib/data/teams";
@@ -30,7 +30,7 @@ import {
 
 export default async function VacanciesPage({ searchParams }: PageProps<"/vacantes">) {
   // El layout corre en paralelo: sin esto, el 404 del delegado igual trae las vacantes en el payload.
-  const access = await getVacanciesAccess();
+  const access = await getPlayerAccess();
 
   if (access === "unavailable") {
     throw new Error("No se pudo leer el rol");

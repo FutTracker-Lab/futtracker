@@ -326,6 +326,89 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          read_at: string | null
+          type: string
+          user_id: string
+          vacancy_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          type: string
+          user_id: string
+          vacancy_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          type?: string
+          user_id?: string
+          vacancy_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_summaries"
+            referencedColumns: ["other_id"]
+          },
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_summaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_summaries"
+            referencedColumns: ["other_id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_vacancy_id_fkey"
+            columns: ["vacancy_id"]
+            isOneToOne: false
+            referencedRelation: "vacancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_highlights: {
         Row: {
           created_at: string
@@ -818,6 +901,7 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: number
       }
+      mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
       safe_uuid: { Args: { value: string }; Returns: string }
       search_players: {
         Args: {
