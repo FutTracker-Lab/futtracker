@@ -20,6 +20,7 @@ import {
   type SignInInput,
   type SignUpInput,
 } from "@/lib/auth/schemas";
+import { requireSession } from "@/lib/auth/requireSession";
 import { createClient } from "@/lib/supabase/server";
 
 async function withMinimumDuration<T>(
@@ -169,4 +170,9 @@ export async function signOut(): Promise<ActionResult> {
   }
 
   return { ok: true };
+}
+
+// Las subidas van del navegador a Storage: sin sesión fallarían ahí, antes de llegar a una action.
+export async function ensureSessionAction(): Promise<void> {
+  await requireSession();
 }

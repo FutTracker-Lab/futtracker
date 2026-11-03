@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { createVacancyAction } from "@/app/equipos/vacancies-actions";
 import {
@@ -79,7 +80,8 @@ export default function VacancyForm({ onCancel, onPublished }: Props) {
         } else {
           setError(result.error);
         }
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         // Falla de red: la Server Action ni llegó a responder.
         setError(VACANCY_ERROR_MESSAGES.unexpected);
       }

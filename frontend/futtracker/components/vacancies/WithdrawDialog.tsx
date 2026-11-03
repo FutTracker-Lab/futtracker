@@ -1,5 +1,7 @@
 "use client";
 
+import { unstable_rethrow } from "next/navigation";
+
 import { withdrawApplicationAction } from "@/app/vacantes/actions";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { WITHDRAW_ERROR_MESSAGE } from "@/lib/format/applicationLabels";
@@ -18,7 +20,8 @@ export default function WithdrawDialog({ applicationId, teamName, onWithdrawn }:
       if (!result.ok) {
         return WITHDRAW_ERROR_MESSAGE;
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       return WITHDRAW_ERROR_MESSAGE;
     }
 

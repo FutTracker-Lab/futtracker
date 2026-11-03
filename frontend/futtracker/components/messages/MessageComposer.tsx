@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, useTransition, type KeyboardEvent } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { sendMessageAction } from "@/app/mensajes/actions";
 import Toast from "@/components/ui/Toast";
@@ -44,7 +45,8 @@ export default function MessageComposer({ conversationId }: Props) {
 
       try {
         result = await sendMessageAction(conversationId, text);
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         result = { ok: false, error: "unexpected" };
       }
 

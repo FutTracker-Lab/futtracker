@@ -1,5 +1,7 @@
 "use client";
 
+import { unstable_rethrow } from "next/navigation";
+
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { setVacancyStatusAction } from "@/app/equipos/vacancies-actions";
 import { VACANCY_ERROR_MESSAGES } from "@/lib/format/vacancyLabels";
@@ -18,7 +20,8 @@ export default function CloseVacancyDialog({ vacancyId, positionLabel, onClosed 
       if (!result.ok) {
         return result.error;
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       return VACANCY_ERROR_MESSAGES.unexpected;
     }
 

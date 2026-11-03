@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
+import { ensureSessionAction } from "@/app/(auth)/actions";
 import { addHighlight } from "@/app/jugadores/[id]/highlights-actions";
 import {
   runHighlightUpload,
@@ -93,6 +94,7 @@ function UploadForm({ onClose, playerId }: Omit<Props, "open">) {
 
     const storage = createClient().storage.from(HIGHLIGHTS_BUCKET);
     const port: HighlightUploadPort = {
+      ensureSession: ensureSessionAction,
       upload: (path, blob) => storage.upload(path, blob, { contentType: blob.type }),
       remove: (path) => storage.remove([path]),
       persist: addHighlight,

@@ -131,6 +131,19 @@ test("si la Server Action no responde muestra un error traducido", async () => {
   expect(container.textContent).not.toContain("Failed to fetch");
 });
 
+test("si la Server Action redirige al login no muestra un error", async () => {
+  // React lo manda al error boundary del router, que acá no está.
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  createVacancyAction.mockRejectedValue(
+    Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT;push;/login;307;" }),
+  );
+  fillValid();
+  await submit().catch(() => undefined);
+
+  expect(container.textContent).not.toContain("Ocurrió un error inesperado.");
+  expect(onPublished).not.toHaveBeenCalled();
+});
+
 test("Escape cierra el panel", () => {
   act(() => {
     field("vacancy-position").dispatchEvent(

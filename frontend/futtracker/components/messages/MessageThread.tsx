@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { loadOlderMessagesAction, type ThreadMessage } from "@/app/mensajes/actions";
 import MessageBubble from "@/components/messages/MessageBubble";
@@ -85,7 +86,8 @@ export default function MessageThread({
           created_at: oldest.created_at,
           id: oldest.id,
         });
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         result = { ok: false };
       }
 

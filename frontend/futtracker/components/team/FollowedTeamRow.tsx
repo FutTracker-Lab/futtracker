@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { unfollowTeamAction, type FollowActionResult } from "@/app/equipos/follow-actions";
 import type { FollowedTeamItem } from "@/components/team/followedTeams";
@@ -28,7 +29,8 @@ export default function FollowedTeamRow({ team, onUnfollowed }: Props) {
 
       try {
         result = await unfollowTeamAction(team.id);
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         result = { ok: false, error: "unexpected" };
       }
 

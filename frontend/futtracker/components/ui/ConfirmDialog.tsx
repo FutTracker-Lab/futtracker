@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 type Props = {
   // Texto del botón que abre el diálogo (ej. "Eliminar").
@@ -108,7 +109,8 @@ export default function ConfirmDialog({
       }
 
       setOpen(false);
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       setError("No pudimos completar la acción. Probá de nuevo.");
     } finally {
       setIsPending(false);

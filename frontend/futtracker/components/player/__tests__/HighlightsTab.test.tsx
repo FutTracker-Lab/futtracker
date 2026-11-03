@@ -12,6 +12,7 @@ import { RouteConstants } from "@/lib/routes";
 
 const getHighlightGalleryMock = vi.fn();
 
+vi.mock("@/app/(auth)/actions", () => ({ ensureSessionAction: vi.fn() }));
 vi.mock("@/lib/data/highlightGallery", () => ({
   getHighlightGallery: (...args: unknown[]) => getHighlightGalleryMock(...args),
 }));
