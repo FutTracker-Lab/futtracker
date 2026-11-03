@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import {
   createTeam,
   getMyTeam,
@@ -11,7 +12,6 @@ import {
 } from "@/lib/data/teams";
 import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 export type TeamActionResult =
   | { ok: true; teamId: string }
@@ -67,13 +67,12 @@ function duplicateFrom(error: unknown): { error: string; field?: string } | null
 }
 
 export async function createTeamAction(input: unknown): Promise<TeamActionResult> {
+  const { supabase } = await requireSession();
   const parsed = teamInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return { ok: false, error: "Revisá los datos ingresados." };
   }
-
-  const supabase = await createClient();
 
   try {
     const team = await createTeam(supabase, parsed.data);
@@ -91,13 +90,12 @@ export async function updateTeamAction(
   teamId: string,
   input: unknown,
 ): Promise<TeamActionResult> {
+  const { supabase } = await requireSession();
   const parsed = teamInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return { ok: false, error: "Revisá los datos ingresados." };
   }
-
-  const supabase = await createClient();
 
   // La autorización real la hace la RLS de `teams` (solo el dueño puede
   // escribir su fila), pero se chequea acá también: sin esto, un update de
@@ -137,7 +135,7 @@ export async function updateTeamCrestPath(
   teamId: string,
   path: string,
 ): Promise<CrestActionResult> {
-  const supabase = await createClient();
+  const { supabase } = await requireSession();
 
   try {
     // Mismo motivo que en updateTeamAction: `getMyTeam` tira si la consulta

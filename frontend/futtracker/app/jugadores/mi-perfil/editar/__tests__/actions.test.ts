@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // testear solo la lógica de esta función, no lo que hay del otro lado.
 const upsertPlayerMock = vi.fn();
 const revalidatePathMock = vi.fn();
-const getUserMock = vi.fn();
 const profilesUpdateMock = vi.fn();
 const profilesEqMock = vi.fn();
 
@@ -24,16 +23,20 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    auth: { getUser: getUserMock },
+const requireSessionMock = vi.fn(async () => ({
+  supabase: {
     from: () => ({
       update: (...args: unknown[]) => {
         profilesUpdateMock(...args);
         return { eq: profilesEqMock };
       },
     }),
-  }),
+  },
+  user: { id: "user-1" },
+}));
+
+vi.mock("@/lib/auth/requireSession", () => ({
+  requireSession: () => requireSessionMock(),
 }));
 
 const VALID_INPUT = {
@@ -52,7 +55,6 @@ const VALID_INPUT = {
 describe("updatePlayerProfile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getUserMock.mockResolvedValue({ data: { user: { id: "user-1" } } });
     profilesEqMock.mockResolvedValue({ error: null });
     upsertPlayerMock.mockResolvedValue(undefined);
   });
@@ -66,13 +68,12 @@ describe("updatePlayerProfile", () => {
     expect(upsertPlayerMock).not.toHaveBeenCalled();
   });
 
-  it("devuelve error si no hay usuario en sesión", async () => {
-    getUserMock.mockResolvedValue({ data: { user: null } });
+  it("sin sesión deja pasar el redirect y no escribe", async () => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    requireSessionMock.mockRejectedValueOnce(redirectError);
     const { updatePlayerProfile } = await import("@/app/jugadores/mi-perfil/editar/actions");
 
-    const result = await updatePlayerProfile(VALID_INPUT, "Juan Pérez");
-
-    expect(result.ok).toBe(false);
+    await expect(updatePlayerProfile(VALID_INPUT, "Juan Pérez")).rejects.toBe(redirectError);
     expect(upsertPlayerMock).not.toHaveBeenCalled();
   });
 
@@ -134,7 +135,6 @@ describe("updatePlayerProfile", () => {
 describe("updateAvatarPath", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getUserMock.mockResolvedValue({ data: { user: { id: "user-1" } } });
     profilesEqMock.mockResolvedValue({ error: null });
   });
 
@@ -171,13 +171,12 @@ describe("updateAvatarPath", () => {
     expect(profilesUpdateMock).not.toHaveBeenCalled();
   });
 
-  it("rechaza si no hay usuario en sesion", async () => {
-    getUserMock.mockResolvedValue({ data: { user: null } });
+  it("sin sesión deja pasar el redirect y no escribe", async () => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    requireSessionMock.mockRejectedValueOnce(redirectError);
     const { updateAvatarPath } = await import("@/app/jugadores/mi-perfil/editar/actions");
 
-    const result = await updateAvatarPath("user-1/avatar.png");
-
-    expect(result.ok).toBe(false);
+    await expect(updateAvatarPath("user-1/avatar.png")).rejects.toBe(redirectError);
     expect(profilesUpdateMock).not.toHaveBeenCalled();
   });
 });

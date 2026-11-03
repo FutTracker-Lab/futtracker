@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import {
   HIGHLIGHT_ERRORS,
   mapHighlightInsertError,
@@ -13,7 +14,6 @@ import {
   type HighlightActionResult,
 } from "@/lib/data/highlights";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 function revalidateHighlights(userId: string) {
   revalidatePath(RouteConstants.profile.mine);
@@ -21,18 +21,14 @@ function revalidateHighlights(userId: string) {
 }
 
 export async function addHighlight(input: unknown): Promise<HighlightActionResult> {
+  const { supabase, user } = await requireSession();
   const parsed = highlightInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return { ok: false, error: HIGHLIGHT_ERRORS.unexpected };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !new RegExp(`^${user.id}/[^/]+$`).test(parsed.data.storage_path)) {
+  if (!new RegExp(`^${user.id}/[^/]+$`).test(parsed.data.storage_path)) {
     return { ok: false, error: HIGHLIGHT_ERRORS.unexpected };
   }
 
@@ -48,14 +44,7 @@ export async function addHighlight(input: unknown): Promise<HighlightActionResul
 }
 
 export async function removeHighlight(id: string): Promise<HighlightActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, error: HIGHLIGHT_ERRORS.unexpected };
-  }
+  const { supabase, user } = await requireSession();
 
   try {
     if (!(await deleteHighlight(supabase, id))) {

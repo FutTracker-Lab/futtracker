@@ -26,8 +26,10 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({}),
+const requireSessionMock = vi.fn(async () => ({ supabase: {}, user: { id: "user-1" } }));
+
+vi.mock("@/lib/auth/requireSession", () => ({
+  requireSession: () => requireSessionMock(),
 }));
 
 const TEAM_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -251,6 +253,26 @@ describe("updateTeamCrestPath", () => {
     const result = await updateTeamCrestPath(TEAM_ID, `${TEAM_ID}/escudo.png`);
 
     expect(result.ok).toBe(false);
+    expect(updateCrestPathMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("sin sesión", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each([
+    ["createTeamAction", () => import("@/app/equipos/actions").then((a) => a.createTeamAction(VALID_INPUT))],
+    ["updateTeamAction", () => import("@/app/equipos/actions").then((a) => a.updateTeamAction(TEAM_ID, VALID_INPUT))],
+    ["updateTeamCrestPath", () => import("@/app/equipos/actions").then((a) => a.updateTeamCrestPath(TEAM_ID, `${TEAM_ID}/escudo.png`))],
+  ])("%s deja pasar el redirect y no escribe", async (_name, run) => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    requireSessionMock.mockRejectedValueOnce(redirectError);
+
+    await expect(run()).rejects.toBe(redirectError);
+    expect(createTeamMock).not.toHaveBeenCalled();
+    expect(updateTeamMock).not.toHaveBeenCalled();
     expect(updateCrestPathMock).not.toHaveBeenCalled();
   });
 });

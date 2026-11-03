@@ -5,7 +5,6 @@ import { HIGHLIGHT_ERRORS } from "@/lib/data/highlightErrors";
 const createHighlightMock = vi.fn();
 const deleteHighlightMock = vi.fn();
 const revalidatePathMock = vi.fn();
-const getUserMock = vi.fn();
 
 vi.mock("@/lib/data/highlights", async () => {
   const actual = await vi.importActual<typeof import("@/lib/data/highlights")>(
@@ -22,11 +21,14 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { getUser: getUserMock } }),
+const USER_ID = "11111111-1111-4111-8111-111111111111";
+
+const requireSessionMock = vi.fn(async () => ({ supabase: {}, user: { id: USER_ID } }));
+
+vi.mock("@/lib/auth/requireSession", () => ({
+  requireSession: () => requireSessionMock(),
 }));
 
-const USER_ID = "11111111-1111-4111-8111-111111111111";
 const VALID_INPUT = { title: "Gol vs Racing", storage_path: `${USER_ID}/abc.mp4` };
 
 async function actions() {
@@ -35,7 +37,6 @@ async function actions() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  getUserMock.mockResolvedValue({ data: { user: { id: USER_ID } } });
   createHighlightMock.mockResolvedValue(undefined);
   deleteHighlightMock.mockResolvedValue(true);
 });
@@ -69,14 +70,12 @@ describe("addHighlight", () => {
     expect(createHighlightMock).not.toHaveBeenCalled();
   });
 
-  it("rechaza sin sesión", async () => {
-    getUserMock.mockResolvedValue({ data: { user: null } });
+  it("sin sesión deja pasar el redirect y no inserta", async () => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    requireSessionMock.mockRejectedValueOnce(redirectError);
     const { addHighlight } = await actions();
 
-    await expect(addHighlight(VALID_INPUT)).resolves.toEqual({
-      ok: false,
-      error: HIGHLIGHT_ERRORS.unexpected,
-    });
+    await expect(addHighlight(VALID_INPUT)).rejects.toBe(redirectError);
     expect(createHighlightMock).not.toHaveBeenCalled();
   });
 
@@ -122,5 +121,16 @@ describe("removeHighlight", () => {
       ok: false,
       error: HIGHLIGHT_ERRORS.deleteFailed,
     });
+  });
+});
+
+describe("removeHighlight sin sesión", () => {
+  it("deja pasar el redirect y no borra", async () => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    requireSessionMock.mockRejectedValueOnce(redirectError);
+    const { removeHighlight } = await actions();
+
+    await expect(removeHighlight("id")).rejects.toBe(redirectError);
+    expect(deleteHighlightMock).not.toHaveBeenCalled();
   });
 });

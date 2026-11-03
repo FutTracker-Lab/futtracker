@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import {
   careerEntryInputSchema,
   createCareerEntry,
@@ -39,19 +40,11 @@ function revalidateMatches(playerId: string, entryId: string) {
 export async function createCareerEntryAction(
   input: unknown,
 ): Promise<EntryActionResult> {
+  const { supabase, user } = await requireSession();
   const parsed = careerEntryInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return VALIDATION_ERROR;
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, ...UNEXPECTED_STATS_ERROR };
   }
 
   try {
@@ -67,19 +60,11 @@ export async function updateCareerEntryAction(
   entryId: string,
   input: unknown,
 ): Promise<EntryActionResult> {
+  const { supabase, user } = await requireSession();
   const parsed = careerEntryInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return VALIDATION_ERROR;
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, ...UNEXPECTED_STATS_ERROR };
   }
 
   try {
@@ -106,14 +91,7 @@ export async function updateCareerEntryAction(
 export async function deleteCareerEntryAction(
   entryId: string,
 ): Promise<DeleteActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, error: UNEXPECTED_STATS_ERROR.error };
-  }
+  const { supabase, user } = await requireSession();
 
   try {
     const entry = await getCareerEntryById(supabase, entryId);
@@ -152,19 +130,11 @@ export async function createMatchStatAction(
   entryId: string,
   input: unknown,
 ): Promise<MatchActionResult> {
+  const { supabase, user } = await requireSession();
   const parsed = matchStatInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return VALIDATION_ERROR;
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, ...UNEXPECTED_STATS_ERROR };
   }
 
   const entry = await getCareerEntryById(supabase, entryId);
@@ -200,19 +170,11 @@ export async function updateMatchStatAction(
   matchId: string,
   input: unknown,
 ): Promise<MatchActionResult> {
+  const { supabase, user } = await requireSession();
   const parsed = matchStatInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return VALIDATION_ERROR;
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, ...UNEXPECTED_STATS_ERROR };
   }
 
   const existing = await findOwnedMatch(supabase, matchId, user.id);
@@ -247,14 +209,7 @@ export async function deleteMatchStatAction(
   entryId: string,
   matchId: string,
 ): Promise<DeleteActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, error: UNEXPECTED_STATS_ERROR.error };
-  }
+  const { supabase, user } = await requireSession();
 
   const existing = await findOwnedMatch(supabase, matchId, user.id);
 

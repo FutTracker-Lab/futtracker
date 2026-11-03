@@ -24,8 +24,10 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({}),
+const requireSessionMock = vi.fn(async () => ({ supabase: {}, user: { id: "user-1" } }));
+
+vi.mock("@/lib/auth/requireSession", () => ({
+  requireSession: () => requireSessionMock(),
 }));
 
 const NOTIFICATION = "1a000001-0000-4000-8000-000000000142";
@@ -100,5 +102,18 @@ describe("markAllNotificationsReadAction", () => {
 
     expect(await markAllNotificationsReadAction()).toEqual({ ok: false, error: "generic" });
     expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("sin sesión", () => {
+  it.each([
+    ["openNotificationAction", () => import("@/app/notificaciones/actions").then((a) => a.openNotificationAction(null))],
+    ["markAllNotificationsReadAction", () => import("@/app/notificaciones/actions").then((a) => a.markAllNotificationsReadAction())],
+  ])("%s deja pasar el redirect y no marca nada", async (_name, run) => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    requireSessionMock.mockRejectedValueOnce(redirectError);
+
+    await expect(run()).rejects.toBe(redirectError);
+    expect(markNotificationsReadMock).not.toHaveBeenCalled();
   });
 });
