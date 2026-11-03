@@ -73,17 +73,25 @@ jobs:
         run: supabase start -x realtime,imgproxy,mailpit,studio,logflare,vector,supavisor
 
       # La URL tiene que ser 127.0.0.1: `IS_LOCAL` de rls-client.ts saltea los
-      # tests con cualquier otra.
+      # tests con cualquier otra. La clave secreta es la del stack local (la
+      # misma en cualquier máquina, no la de un proyecto): sin ella se saltean
+      # los tests que borran cuentas con la API de admin.
       - name: Variables del stack local
         working-directory: .
         run: |
-          key=$(supabase status -o env | grep '^PUBLISHABLE_KEY=' | cut -d= -f2- | tr -d '"')
+          status=$(supabase status -o env)
+          get() { echo "$status" | grep "^$1=" | cut -d= -f2- | tr -d '"'; }
+          key=$(get PUBLISHABLE_KEY)
+          secret=$(get SECRET_KEY)
           if [ -z "$key" ]; then echo "::error::supabase status no devolvió PUBLISHABLE_KEY"; exit 1; fi
+          if [ -z "$secret" ]; then echo "::error::supabase status no devolvió SECRET_KEY"; exit 1; fi
           echo "::add-mask::$key"
+          echo "::add-mask::$secret"
           {
             echo "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321"
             echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$key"
             echo "NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000"
+            echo "SUPABASE_SECRET_KEY=$secret"
           } >> "$GITHUB_ENV"
 
       - name: Tests de RLS

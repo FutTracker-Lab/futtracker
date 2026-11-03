@@ -312,12 +312,13 @@ describe.skipIf(!IS_LOCAL)("T15a · notificaciones", () => {
 
   // `service_role` no tiene grants en el repo: la cascada de `user_id` sobre los avisos
   // del borrado no se ve por la API y se verifica en psql. Acá, lo que ve la otra cuenta.
+  // El cliente se crea adentro del test: el cuerpo de un `describe` corre aunque
+  // `skipIf` lo saltee, y `createClient` sin clave tira y voltea todo el archivo.
   describe.skipIf(!SECRET_KEY)("al borrar una cuenta", () => {
-    const admin = createClient<Database>(publicEnv.NEXT_PUBLIC_SUPABASE_URL, SECRET_KEY ?? "", {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
     it("el aviso de su conversación se borra y el de su postulación queda sin actor", async () => {
+      const admin = createClient<Database>(publicEnv.NEXT_PUBLIC_SUPABASE_URL, SECRET_KEY ?? "", {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
       const [player, { owner, vacancyId }] = await Promise.all([newPlayer(), newTeamWithVacancy()]);
       await applyToVacancy(player.client, vacancyId);
       const conversation = await getOrCreateConversation(player.client, owner.id);

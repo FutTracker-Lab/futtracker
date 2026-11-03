@@ -24,9 +24,16 @@ const passed = report.numPassedTests ?? 0;
 const failed = report.numFailedTests ?? 0;
 const skipped = (report.numPendingTests ?? 0) + (report.numTodoTests ?? 0);
 const files = report.testResults?.length ?? 0;
+// Un archivo que tira antes de correr sus tests (un import roto, un error en
+// el cuerpo de un `describe`) no suma tests fallados: falla el archivo entero.
+const brokenFiles = (report.testResults ?? []).filter(
+  (file) => file.status === "failed" && !file.assertionResults?.length,
+);
 
-const ok = total > 0 && skipped === 0 && failed === 0;
-const line = `${passed} de ${total} tests de RLS pasaron en ${files} archivos (${failed} fallaron, ${skipped} salteados).`;
+const ok = total > 0 && skipped === 0 && failed === 0 && brokenFiles.length === 0;
+const line =
+  `${passed} de ${total} tests de RLS pasaron en ${files} archivos ` +
+  `(${failed} fallaron, ${skipped} salteados, ${brokenFiles.length} archivos sin correr).`;
 
 console.log(line);
 
@@ -39,6 +46,10 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 
 if (total === 0) {
   console.error("No corrió ningún test de RLS: ¿la base local no levantó?");
+}
+
+for (const file of brokenFiles) {
+  console.error(`No corrió ningún test de ${file.name}: ${file.message ?? "falló al cargar"}`);
 }
 
 if (skipped > 0) {
