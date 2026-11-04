@@ -36,7 +36,7 @@ export default function PlayerPresentationCard({ player, isOwner }: Props) {
       </h2>
 
       {player.bio ? (
-        <p className="text-sm leading-relaxed text-zinc-700">{player.bio}</p>
+        <p className="text-sm leading-relaxed break-words text-zinc-700">{player.bio}</p>
       ) : (
         <p className="text-sm text-zinc-500">
           {isOwner
