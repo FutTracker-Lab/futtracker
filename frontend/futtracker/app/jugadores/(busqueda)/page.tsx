@@ -13,6 +13,7 @@ import {
   resultsSubtitle,
 } from "@/components/search/searchView";
 import { getAvatarSignedUrls, searchPlayers } from "@/lib/data/players";
+import { getProfileById } from "@/lib/data/profiles";
 import { getMyTeam } from "@/lib/data/teams";
 import { RouteConstants } from "@/lib/routes";
 import {
@@ -39,6 +40,13 @@ export default async function PlayerSearchPage({
 
 async function PlayerSearchResults({ filters }: { filters: SearchCriteria }) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user && (await getProfileById(user.id)).kind === "error") {
+    throw new Error("No se pudo leer el perfil");
+  }
 
   const [result, team] = await Promise.all([
     searchPlayers(supabase, toSearchPlayersParams(filters)),

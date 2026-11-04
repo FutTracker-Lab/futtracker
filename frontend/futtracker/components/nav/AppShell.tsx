@@ -30,9 +30,10 @@ export default async function AppShell({ children }: { children: ReactNode }) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [profile, unread] = user
+  const [result, unread] = user
     ? await Promise.all([getProfileById(user.id), getUnreadCounts()])
     : [null, { notifications: 0, messages: 0 }];
+  const profile = result?.kind === "found" ? result.profile : null;
   // `roleSchema.safeParse` en vez de castear: si el rol en `profiles` no es
   // uno de los dos válidos (dato corrupto, migración a medio camino), el
   // chrome no se renderiza en vez de reventar con un rol que no está en

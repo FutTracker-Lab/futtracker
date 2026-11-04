@@ -22,7 +22,7 @@ beforeEach(() => {
 
 describe("TeamFollowControl", () => {
   it("al jugador le da el botón con el estado de isFollowing", async () => {
-    vi.mocked(getProfileById).mockResolvedValue({ role: "player" } as never);
+    vi.mocked(getProfileById).mockResolvedValue({ kind: "found", profile: { role: "player" } } as never);
     vi.mocked(isFollowing).mockResolvedValue(true);
 
     const element = await control();
@@ -32,17 +32,24 @@ describe("TeamFollowControl", () => {
   });
 
   it("al delegado no le muestra el botón ni consulta el seguimiento", async () => {
-    vi.mocked(getProfileById).mockResolvedValue({ role: "delegate" } as never);
+    vi.mocked(getProfileById).mockResolvedValue({ kind: "found", profile: { role: "delegate" } } as never);
 
     expect(await control()).toBeNull();
     expect(isFollowing).not.toHaveBeenCalled();
   });
 
   it("si la consulta falla no rompe la página", async () => {
-    vi.mocked(getProfileById).mockResolvedValue({ role: "player" } as never);
+    vi.mocked(getProfileById).mockResolvedValue({ kind: "found", profile: { role: "player" } } as never);
     vi.mocked(isFollowing).mockRejectedValue(new Error("boom"));
 
     expect(await control()).toBeNull();
+  });
+
+  it("si falla la lectura del perfil no muestra el botón", async () => {
+    vi.mocked(getProfileById).mockResolvedValue({ kind: "error" });
+
+    expect(await control()).toBeNull();
+    expect(isFollowing).not.toHaveBeenCalled();
   });
 });
 

@@ -56,9 +56,13 @@ export default async function MyTeamPage({
   // vacío invitándolo a crear uno — y /equipos/nuevo después lo rebotaba con
   // el mensaje de permiso. Se va a su propia sección, igual que hace
   // /jugadores/mi-perfil con un delegado.
-  const profile = await getProfileById(user.id);
+  const result = await getProfileById(user.id);
 
-  if (profile?.role !== "delegate") {
+  if (result.kind === "error") {
+    throw new Error("No se pudo leer el perfil");
+  }
+
+  if (result.kind === "notFound" || result.profile.role !== "delegate") {
     redirect(RouteConstants.profile.mine);
   }
 
