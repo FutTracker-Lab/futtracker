@@ -52,4 +52,19 @@ describe("PlayerPresentationCard", () => {
       "text-zinc-700",
     ]);
   });
+
+  it.each([
+    ["derecha", "Pie derecho"],
+    ["izquierda", "Pie izquierdo"],
+    ["ambidiestro", "Pie ambidiestro"],
+  ])("con pierna hábil %s muestra la pastilla %s", (foot, text) => {
+    const nodes = flatten(
+      PlayerPresentationCard({
+        player: player({ preferred_foot: foot }),
+        isOwner: true,
+      }),
+    );
+
+    expect(nodes).toContain(text);
+  });
 });

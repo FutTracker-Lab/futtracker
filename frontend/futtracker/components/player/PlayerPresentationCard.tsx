@@ -1,5 +1,5 @@
 import type { Player } from "@/lib/data/players";
-import { getPreferredFootLabel } from "@/lib/format/playerLabels";
+import { getPreferredFootText } from "@/lib/format/playerLabels";
 
 type Props = {
   player: Player;
@@ -15,11 +15,9 @@ type Props = {
  * `players`. Se arman solo con lo que existe, en vez de inventar el dato.
  */
 export default function PlayerPresentationCard({ player, isOwner }: Props) {
-  const footLabel = getPreferredFootLabel(player.preferred_foot);
-
   const tags = [
     player.is_seeking_team ? "Busca equipo" : null,
-    footLabel ? `Pie ${footLabel.toLowerCase()}` : null,
+    getPreferredFootText(player.preferred_foot),
     player.weight_kg ? `${player.weight_kg} kg` : null,
   ].filter(Boolean) as string[];
 

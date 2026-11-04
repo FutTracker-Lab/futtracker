@@ -36,6 +36,18 @@ export function getPreferredFootLabel(foot: string | null): string | null {
   return PREFERRED_FOOT_LABELS[foot as keyof typeof PREFERRED_FOOT_LABELS];
 }
 
+// Concuerda con "pie"; PREFERRED_FOOT_LABELS concuerda con "pierna".
+const PREFERRED_FOOT_TEXTS: Record<(typeof PREFERRED_FEET)[number], string> = {
+  derecha: "Pie derecho",
+  izquierda: "Pie izquierdo",
+  ambidiestro: "Pie ambidiestro",
+};
+
+export function getPreferredFootText(foot: string | null): string | null {
+  if (!foot || !(foot in PREFERRED_FOOT_TEXTS)) return null;
+  return PREFERRED_FOOT_TEXTS[foot as keyof typeof PREFERRED_FOOT_TEXTS];
+}
+
 // Abreviaturas para el badge de posición del encabezado del perfil: el
 // diseño la muestra como una pastilla corta al lado del nombre, no como
 // palabra completa. El resto de la app sigue usando `getPositionLabel`.

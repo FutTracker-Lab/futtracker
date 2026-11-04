@@ -7,7 +7,7 @@ import { initialsOf } from "@/lib/format/initials";
 import {
   getPositionAbbreviation,
   getPositionLabel,
-  getPreferredFootLabel,
+  getPreferredFootText,
 } from "@/lib/format/playerLabels";
 import type { Tables } from "@/lib/supabase/database.types";
 
@@ -45,7 +45,6 @@ export default function PlayerProfileHeader({
 }: Props) {
   const age = player ? calculateAge(player.birth_date) : null;
   const abbreviation = player ? getPositionAbbreviation(player.position) : null;
-  const footLabel = player ? getPreferredFootLabel(player.preferred_foot) : null;
   const location = player
     ? [player.city, player.province].filter(Boolean).join(", ")
     : "";
@@ -53,7 +52,7 @@ export default function PlayerProfileHeader({
   const meta = [
     location || null,
     age !== null ? `${age} años` : null,
-    footLabel ? `Pie ${footLabel.toLowerCase()}` : null,
+    player ? getPreferredFootText(player.preferred_foot) : null,
     player?.height_cm ? `${(player.height_cm / 100).toFixed(2)} m` : null,
   ].filter(Boolean) as string[];
 
