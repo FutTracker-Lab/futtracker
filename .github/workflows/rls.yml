@@ -1,6 +1,6 @@
 name: RLS y migraciones
 
-# FUT-137 (DT-07). El job "Typecheck, lint & tests" de vercel.yml no tiene base:
+# FUT-137 (DT-12). El job "Typecheck, lint & tests" de vercel.yml no tiene base:
 # los tests de RLS se saltean solos y el check queda en verde sin haber probado
 # ni las políticas ni los grants. Este job levanta Supabase en el runner con las
 # migraciones y el seed, y corre:
@@ -25,9 +25,13 @@ on:
 permissions:
   contents: read
 
+# En una PR, un push nuevo cancela la corrida anterior: solo importa la última.
+# En dev y main cada commit tiene su propio grupo y su propia corrida: si se
+# mergean dos PRs seguidas, la primera no puede quedar sin check (y con un grupo
+# compartido, aun sin cancelar, una tercera corrida reemplaza a la que espera).
 concurrency:
-  group: rls-${{ github.ref }}
-  cancel-in-progress: true
+  group: rls-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   rls:

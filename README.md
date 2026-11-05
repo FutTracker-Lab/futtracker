@@ -117,7 +117,7 @@ de desplegar, y publica con `vercel deploy --prebuilt`.
 
 ### Tests de RLS
 
-Aparte, y a mano antes de abrir un PR que toque políticas:
+Contra el stack local:
 
 ```bash
 supabase start
@@ -127,8 +127,14 @@ cd frontend/futtracker && npm run test:rls
 Ejercitan las políticas contra el stack local, con sesiones reales y a través
 de PostgREST — el único camino que también pasa por los `grant`, que es donde
 una política correcta igual puede fallar. Van fuera de `npm run test` porque
-necesitan Docker, que el CI todavía no levanta. **Mientras eso siga así, correr
-este comando es responsabilidad de quien abre el PR.**
+necesitan Docker.
+
+En CI los corre el workflow "RLS y migraciones"
+(`.github/workflows/rls.yml`) en cada PR contra `dev` y `main`: levanta
+Supabase en el runner y falla si un test falla o queda salteado, si el esquema
+no coincide con las migraciones (`supabase db diff`) o si `database.types.ts`
+no está regenerado. Correrlos en local antes de abrir el PR ahorra esperar al
+CI.
 
 Solo corren si `NEXT_PUBLIC_SUPABASE_URL` apunta a localhost: dan de alta
 usuarios, y contra un proyecto de la nube ensuciarían `dev` o `prod`.

@@ -1,4 +1,4 @@
-// FUT-137 (DT-07): resumen del job de RLS en CI.
+// FUT-137 (DT-12): resumen del job de RLS en CI.
 //
 //   node scripts/ci/rls-report.mjs <reporte.json>
 //
