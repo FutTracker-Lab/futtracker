@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import {
   MESSAGES_PAGE_SIZE,
   getOrCreateConversation,
@@ -14,7 +15,6 @@ import {
   type MessageErrorKey,
 } from "@/lib/data/messages";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 // Cada Server Action es un POST público: los argumentos se validan acá aunque
 // el botón o la caja ya los hayan validado, y la autorización la hace la RLS.
@@ -49,6 +49,7 @@ function toActionError(error: unknown): MessageErrorKey {
 export async function startConversationAction(
   otherProfileId: unknown,
 ): Promise<MessageActionResult> {
+  const { supabase } = await requireSession();
   const parsed = idSchema.safeParse(otherProfileId);
 
   if (!parsed.success) {
@@ -58,7 +59,6 @@ export async function startConversationAction(
   let conversationId: string;
 
   try {
-    const supabase = await createClient();
     conversationId = await getOrCreateConversation(supabase, parsed.data);
   } catch (error) {
     return { ok: false, error: toActionError(error) };
@@ -73,6 +73,7 @@ export async function sendMessageAction(
   conversationId: unknown,
   body: unknown,
 ): Promise<MessageActionResult> {
+  const { supabase } = await requireSession();
   const parsedId = idSchema.safeParse(conversationId);
 
   if (!parsedId.success || typeof body !== "string") {
@@ -82,7 +83,6 @@ export async function sendMessageAction(
   try {
     // Recorta y valida antes de ir a la base: el mismo `check` que la tabla.
     normalizeMessageBody(body);
-    const supabase = await createClient();
     await sendMessage(supabase, parsedId.data, body);
   } catch (error) {
     return { ok: false, error: toActionError(error) };
@@ -114,6 +114,7 @@ export async function loadOlderMessagesAction(
   conversationId: unknown,
   before: unknown,
 ): Promise<OlderMessagesResult> {
+  const { supabase } = await requireSession();
   const parsedId = idSchema.safeParse(conversationId);
   const parsedBefore = cursorSchema.safeParse(before);
 
@@ -122,7 +123,6 @@ export async function loadOlderMessagesAction(
   }
 
   try {
-    const supabase = await createClient();
     // Uno de más para saber si hay otra página, sin contar aparte.
     const rows = await listMessages(supabase, parsedId.data, {
       before: parsedBefore.data,

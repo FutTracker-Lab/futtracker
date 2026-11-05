@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import { playerInputSchema, upsertPlayer } from "@/lib/data/players";
 import { isUnknownZoneError, UNKNOWN_ZONE_MESSAGE } from "@/lib/data/zones";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 export type UpdatePlayerResult =
   | { ok: true }
@@ -23,14 +23,7 @@ export type UpdatePlayerResult =
  * primera barrera, no la única.
  */
 export async function updateAvatarPath(path: string): Promise<UpdatePlayerResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
-  }
+  const { supabase, user } = await requireSession();
 
   if (!new RegExp(`^${user.id}/[^/]+$`).test(path)) {
     return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
@@ -56,19 +49,11 @@ export async function updatePlayerProfile(
   input: unknown,
   fullName: string,
 ): Promise<UpdatePlayerResult> {
+  const { supabase, user } = await requireSession();
   const parsed = playerInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return { ok: false, error: "Revisá los datos ingresados." };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, error: "Ocurrió un error inesperado. Probá de nuevo." };
   }
 
   // `full_name` vive en `profiles`, no en `players` — dos escrituras. El

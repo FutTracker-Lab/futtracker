@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import { followErrorKey, followTeam, unfollowTeam } from "@/lib/data/follows";
 import type { FollowActionErrorKey } from "@/lib/format/followLabels";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 export type FollowActionResult = { ok: true } | { ok: false; error: FollowActionErrorKey };
 
@@ -19,6 +19,7 @@ function revalidateFollowPages(teamId: string) {
 }
 
 export async function followTeamAction(teamId: unknown): Promise<FollowActionResult> {
+  const { supabase } = await requireSession();
   const parsed = idSchema.safeParse(teamId);
 
   if (!parsed.success) {
@@ -26,7 +27,6 @@ export async function followTeamAction(teamId: unknown): Promise<FollowActionRes
   }
 
   try {
-    const supabase = await createClient();
     await followTeam(supabase, parsed.data);
   } catch (error) {
     const key = followErrorKey(error);
@@ -47,6 +47,7 @@ export async function followTeamAction(teamId: unknown): Promise<FollowActionRes
 }
 
 export async function unfollowTeamAction(teamId: unknown): Promise<FollowActionResult> {
+  const { supabase } = await requireSession();
   const parsed = idSchema.safeParse(teamId);
 
   if (!parsed.success) {
@@ -54,7 +55,6 @@ export async function unfollowTeamAction(teamId: unknown): Promise<FollowActionR
   }
 
   try {
-    const supabase = await createClient();
     await unfollowTeam(supabase, parsed.data);
   } catch {
     return { ok: false, error: "unexpected" };

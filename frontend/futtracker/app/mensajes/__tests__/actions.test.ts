@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getOrCreateConversation: vi.fn(),
   sendMessage: vi.fn(),
   listMessages: vi.fn(),
+  requireSession: vi.fn(async () => ({ supabase: {}, user: { id: "user-1" } })),
   revalidatePath: vi.fn(),
   redirect: vi.fn((url: string) => {
     // Como el de Next: corta la ejecución.
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
+vi.mock("@/lib/auth/requireSession", () => ({ requireSession: mocks.requireSession }));
 
 vi.mock("@/lib/data/messages", async () => {
   const actual = await vi.importActual<typeof import("@/lib/data/messages")>("@/lib/data/messages");
@@ -161,5 +162,21 @@ describe("loadOlderMessagesAction", () => {
     mocks.listMessages.mockRejectedValue(new Error("caída"));
 
     expect(await loadOlderMessagesAction(CONVERSATION, CURSOR)).toEqual({ ok: false });
+  });
+});
+
+describe("sin sesión", () => {
+  it.each([
+    ["startConversationAction", () => startConversationAction(OTHER)],
+    ["sendMessageAction", () => sendMessageAction(CONVERSATION, "hola")],
+    ["loadOlderMessagesAction", () => loadOlderMessagesAction(CONVERSATION, { created_at: CREATED_AT, id: OTHER })],
+  ])("%s deja pasar el redirect y no toca la base", async (_name, run) => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    mocks.requireSession.mockRejectedValueOnce(redirectError);
+
+    await expect(run()).rejects.toBe(redirectError);
+    expect(mocks.getOrCreateConversation).not.toHaveBeenCalled();
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+    expect(mocks.listMessages).not.toHaveBeenCalled();
   });
 });

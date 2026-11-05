@@ -18,6 +18,7 @@ function fakeFile(type: string, size: number) {
 
 function fakePort(overrides: Partial<HighlightUploadPort> = {}) {
   return {
+    ensureSession: vi.fn(async () => undefined),
     upload: vi.fn(async () => ({ error: null })),
     remove: vi.fn(async () => undefined),
     persist: vi.fn(async () => ({ ok: true as const })),
@@ -87,6 +88,18 @@ describe("runHighlightUpload", () => {
     expect(port.upload).toHaveBeenCalledWith(PATH, file);
     expect(port.persist).toHaveBeenCalledWith({ title: "Gol vs Racing", storage_path: PATH });
     expect(port.remove).not.toHaveBeenCalled();
+  });
+
+  it("sin sesión deja pasar el redirect y no sube nada", async () => {
+    const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
+      digest: "NEXT_REDIRECT;push;/login;307;",
+    });
+    const port = fakePort({ ensureSession: vi.fn(async () => Promise.reject(redirectError)) });
+
+    await expect(
+      runHighlightUpload({ file: fakeFile("video/mp4", MB), title: "Gol", path: PATH, port }),
+    ).rejects.toBe(redirectError);
+    expect(port.upload).not.toHaveBeenCalled();
   });
 
   it("no persiste si la subida falla", async () => {

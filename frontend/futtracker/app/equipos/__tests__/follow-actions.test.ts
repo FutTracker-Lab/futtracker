@@ -19,8 +19,10 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({}),
+const requireSessionMock = vi.fn(async () => ({ supabase: {}, user: { id: "user-1" } }));
+
+vi.mock("@/lib/auth/requireSession", () => ({
+  requireSession: () => requireSessionMock(),
 }));
 
 const TEAM_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -107,4 +109,23 @@ describe("unfollowTeamAction", () => {
     expect(await unfollowTeamAction(42)).toEqual({ ok: false, error: "unexpected" });
     expect(unfollowTeamMock).not.toHaveBeenCalled();
   });
+});
+
+describe("sin sesión", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each(["followTeamAction", "unfollowTeamAction"] as const)(
+    "%s deja pasar el redirect y no escribe",
+    async (name) => {
+      const redirectError = new Error("NEXT_REDIRECT");
+      requireSessionMock.mockRejectedValueOnce(redirectError);
+      const actions = await import("@/app/equipos/follow-actions");
+
+      await expect(actions[name](TEAM_ID)).rejects.toBe(redirectError);
+      expect(followTeamMock).not.toHaveBeenCalled();
+      expect(unfollowTeamMock).not.toHaveBeenCalled();
+    },
+  );
 });

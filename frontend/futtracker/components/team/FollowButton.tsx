@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { followTeamAction, unfollowTeamAction, type FollowActionResult } from "@/app/equipos/follow-actions";
 import Toast from "@/components/ui/Toast";
@@ -34,7 +35,8 @@ export default function FollowButton({ teamId, teamName, following: initialFollo
 
       try {
         result = nextFollowing ? await followTeamAction(teamId) : await unfollowTeamAction(teamId);
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         result = { ok: false, error: "unexpected" };
       }
 

@@ -23,6 +23,8 @@ vi.mock("@/app/jugadores/[id]/highlights-actions", () => ({
   removeHighlight: vi.fn(),
 }));
 
+vi.mock("@/app/(auth)/actions", () => ({ ensureSessionAction: vi.fn(async () => undefined) }));
+
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     storage: { from: () => ({ upload: uploadMock, remove: removeMock }) },

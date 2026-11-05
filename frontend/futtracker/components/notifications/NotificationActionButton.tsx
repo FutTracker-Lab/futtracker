@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import type { NotificationActionResult } from "@/app/notificaciones/actions";
 import Toast from "@/components/ui/Toast";
@@ -22,7 +23,8 @@ export default function NotificationActionButton({ action, className, children }
 
       try {
         result = await action();
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         // La red o el servidor: sin esto, el error iría al error.tsx de toda la página.
         result = { ok: false, error: "generic" };
       }

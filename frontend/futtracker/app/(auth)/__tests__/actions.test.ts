@@ -5,6 +5,7 @@ import type { ActionResult } from "@/lib/auth/constants";
 const SITE_URL = "http://127.0.0.1:3000";
 
 const mocks = vi.hoisted(() => ({
+  requireSession: vi.fn(),
   signUp: vi.fn(),
   signInWithPassword: vi.fn(),
   resetPasswordForEmail: vi.fn(),
@@ -20,6 +21,8 @@ vi.mock("@/lib/env/public", () => ({
     NEXT_PUBLIC_SITE_URL: SITE_URL,
   },
 }));
+
+vi.mock("@/lib/auth/requireSession", () => ({ requireSession: mocks.requireSession }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -276,5 +279,22 @@ describe("actions de auth", () => {
         password: "password-nueva",
       });
     });
+  });
+});
+
+describe("ensureSessionAction", () => {
+  it("sin sesión deja pasar el redirect", async () => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    mocks.requireSession.mockRejectedValueOnce(redirectError);
+    const { ensureSessionAction } = await import("@/app/(auth)/actions");
+
+    await expect(ensureSessionAction()).rejects.toBe(redirectError);
+  });
+
+  it("con sesión no hace nada más", async () => {
+    mocks.requireSession.mockResolvedValueOnce({});
+    const { ensureSessionAction } = await import("@/app/(auth)/actions");
+
+    await expect(ensureSessionAction()).resolves.toBeUndefined();
   });
 });

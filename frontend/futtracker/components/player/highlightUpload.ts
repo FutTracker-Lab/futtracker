@@ -1,3 +1,5 @@
+import { unstable_rethrow } from "next/navigation";
+
 import {
   HIGHLIGHT_ERRORS,
   mapHighlightUploadError,
@@ -13,6 +15,7 @@ import {
 export const HIGHLIGHT_MAX_SECONDS = 120;
 
 export type HighlightUploadPort = {
+  ensureSession: () => Promise<void>;
   upload: (path: string, file: File) => Promise<{ error: unknown }>;
   remove: (path: string) => Promise<unknown>;
   persist: (input: HighlightInput) => Promise<HighlightActionResult>;
@@ -63,6 +66,8 @@ export async function runHighlightUpload({
   port: HighlightUploadPort;
 }): Promise<HighlightActionResult> {
   try {
+    await port.ensureSession();
+
     const { error } = await port.upload(path, file);
 
     if (error) {
@@ -71,7 +76,9 @@ export async function runHighlightUpload({
         error: mapHighlightUploadError(error as { statusCode?: string }),
       };
     }
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
     return { ok: false, error: HIGHLIGHT_ERRORS.network };
   }
 
@@ -79,7 +86,9 @@ export async function runHighlightUpload({
 
   try {
     persisted = await port.persist({ title: title.trim(), storage_path: path });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
     persisted = { ok: false, error: HIGHLIGHT_ERRORS.network };
   }
 

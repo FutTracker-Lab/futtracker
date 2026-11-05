@@ -1,11 +1,12 @@
 import { REDIRECT_BY_ROLE } from "@/lib/auth/constants";
 import { roleSchema } from "@/lib/auth/schemas";
+import { RouteConstants } from "@/lib/routes";
 
 /**
  * Destinos después del login (FUT-136). La única regla que decide si se puede
  * mandar al usuario a un destino que vino de afuera: el `next` de
- * `/auth/callback` y el `redirectTo` del login. Los dos llegan en la URL, así
- * que cualquiera puede armar un link que los traiga.
+ * `/auth/callback`, el `redirectTo` del login y el `Referer` de una Server
+ * Action. Cualquiera puede armar un link o un pedido que los traiga.
  */
 
 // Origen de mentira, solo para que `URL` resuelva el destino como lo haría el
@@ -65,6 +66,20 @@ export function safeRedirectPath(value: unknown): string | null {
   }
 
   return value;
+}
+
+// `Referer` es la pantalla desde la que se disparó la Server Action, que no recibe la ruta.
+export function loginPathFromReferer(referer: string | null): string {
+  if (!referer || !URL.canParse(referer)) {
+    return RouteConstants.signIn;
+  }
+
+  const { pathname, search } = new URL(referer);
+  const destination = safeRedirectPath(`${pathname}${search}`);
+
+  return destination
+    ? `${RouteConstants.signIn}?redirectTo=${encodeURIComponent(destination)}`
+    : RouteConstants.signIn;
 }
 
 /**

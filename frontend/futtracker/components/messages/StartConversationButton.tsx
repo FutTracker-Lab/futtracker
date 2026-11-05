@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { startConversationAction } from "@/app/mensajes/actions";
 import Toast from "@/components/ui/Toast";
@@ -29,7 +30,8 @@ export default function StartConversationButton({ otherProfileId }: Props) {
 
       try {
         result = await startConversationAction(otherProfileId);
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         // La red o el servidor: sin esto, el error iría al error.tsx de toda la página.
         result = { ok: false, error: "unexpected" };
       }

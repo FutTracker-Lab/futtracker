@@ -9,6 +9,7 @@ vi.mock("@/lib/auth/playerAccess", () => ({ getPlayerAccess: vi.fn() }));
 vi.mock("@/components/team/followedTeams", () => ({ loadFollowedTeams: vi.fn() }));
 vi.mock("@/components/nav/AppShell", () => ({ default: () => null }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
+vi.mock("@/lib/auth/requireSession", () => ({ requireSession: vi.fn() }));
 // Como en Next: redirect() y notFound() cortan con una excepción.
 vi.mock("next/navigation", () => ({
   redirect: vi.fn((url: string) => {

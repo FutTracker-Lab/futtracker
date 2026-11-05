@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { removeHighlight } from "@/app/jugadores/[id]/highlights-actions";
 import Dialog from "@/components/ui/Dialog";
@@ -33,10 +34,11 @@ export default function DeleteHighlightDialog({ id, title }: Props) {
     setIsPending(true);
     setError(null);
 
-    const result: HighlightActionResult = await removeHighlight(id).catch(() => ({
-      ok: false,
-      error: HIGHLIGHT_ERRORS.network,
-    }));
+    const result: HighlightActionResult = await removeHighlight(id).catch((error) => {
+      unstable_rethrow(error);
+
+      return { ok: false, error: HIGHLIGHT_ERRORS.network };
+    });
 
     setIsPending(false);
 

@@ -1,3 +1,5 @@
+import { unstable_rethrow } from "next/navigation";
+
 export type UploadResult = { ok: true } | { ok: false; error: string };
 
 export type ImageUploadOutcome =
@@ -21,6 +23,7 @@ export type ImageRules = {
  * que es lo que permite cubrir la limpieza de archivos sin un bucket real.
  */
 export type ImageUploadPort = {
+  ensureSession: () => Promise<void>;
   upload: (path: string, file: File) => Promise<{ error: unknown }>;
   remove: (path: string) => Promise<unknown>;
   persist: (path: string) => Promise<UploadResult>;
@@ -92,6 +95,8 @@ export async function runImageUpload(
   const path = buildObjectPath(folder, file.type, now);
 
   try {
+    await port.ensureSession();
+
     const { error: uploadError } = await port.upload(path, file);
 
     if (uploadError) {
@@ -114,7 +119,9 @@ export async function runImageUpload(
     }
 
     return { ok: true, path };
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
     // Quien llama descarta la promesa, así que una excepción acá (red caída,
     // Server Action rechazada) dejaría al usuario sin ningún mensaje.
     return { ok: false, error: GENERIC_ERROR };

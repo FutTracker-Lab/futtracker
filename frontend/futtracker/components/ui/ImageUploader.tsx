@@ -7,6 +7,7 @@ import {
   runImageUpload,
   type UploadResult,
 } from "@/components/ui/imageUpload";
+import { ensureSessionAction } from "@/app/(auth)/actions";
 import { createClient } from "@/lib/supabase/client";
 
 export type { UploadResult };
@@ -91,6 +92,7 @@ export default function ImageUploader({
       previousPath: currentPath,
       rules: { maxBytes, acceptedTypes },
       port: {
+        ensureSession: ensureSessionAction,
         upload: (path, blob) =>
           storage.upload(path, blob, { contentType: blob.type }),
         remove: (path) => storage.remove([path]),

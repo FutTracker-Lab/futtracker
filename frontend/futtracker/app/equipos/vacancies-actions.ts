@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import {
   VACANCY_STATUSES,
   createVacancy,
@@ -13,7 +14,6 @@ import {
 } from "@/lib/data/vacancies";
 import { REOPEN_DUPLICATE_MESSAGE, VACANCY_ERROR_MESSAGES } from "@/lib/format/vacancyLabels";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 export type VacancyActionResult = { ok: true } | { ok: false; error: string };
 
@@ -30,6 +30,7 @@ function revalidateTeamPages(vacancy: Vacancy) {
 export async function createVacancyAction(
   input: unknown,
 ): Promise<VacancyActionResult> {
+  const { supabase } = await requireSession();
   const parsed = vacancyInputSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -37,7 +38,6 @@ export async function createVacancyAction(
   }
 
   try {
-    const supabase = await createClient();
     const vacancy = await createVacancy(supabase, parsed.data);
 
     revalidateTeamPages(vacancy);
@@ -52,6 +52,7 @@ export async function setVacancyStatusAction(
   id: unknown,
   status: unknown,
 ): Promise<VacancyActionResult> {
+  const { supabase } = await requireSession();
   const parsed = statusChangeSchema.safeParse({ id, status });
 
   if (!parsed.success) {
@@ -59,7 +60,6 @@ export async function setVacancyStatusAction(
   }
 
   try {
-    const supabase = await createClient();
     const vacancy = await setVacancyStatus(
       supabase,
       parsed.data.id,

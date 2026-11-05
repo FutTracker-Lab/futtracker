@@ -21,10 +21,15 @@ function requiresSession(pathname: string): boolean {
   return isProtected || pathname.endsWith("/editar");
 }
 
+// Con un 307 el cliente repite el POST en el login y termina en un error genérico: redirige la action.
+function isServerAction(request: NextRequest): boolean {
+  return request.method === "POST" && Boolean(request.headers.get("next-action"));
+}
+
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
 
-  if (user || !requiresSession(request.nextUrl.pathname)) {
+  if (user || isServerAction(request) || !requiresSession(request.nextUrl.pathname)) {
     return response;
   }
 

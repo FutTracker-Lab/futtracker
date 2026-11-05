@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { Component, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { applyToVacancyAction } from "@/app/vacantes/actions";
@@ -16,6 +17,22 @@ function renderButton(applied = false) {
   render(
     <ApplyButton vacancyId="v2" positionLabel="Arquero" teamName="Los Pumas" applied={applied} />,
   );
+}
+
+class Boundary extends Component<{ onError: (error: Error) => void; children: ReactNode }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }
 
 const pageText = () => document.body.textContent ?? "";
@@ -46,6 +63,28 @@ describe("ApplyButton", () => {
 
     resolve({ ok: true });
     await flush();
+  });
+
+  it("si la action redirige al login, no muestra un error", async () => {
+    const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
+      digest: "NEXT_REDIRECT;push;/login;307;",
+    });
+    applyMock.mockImplementation(async () => {
+      throw redirectError;
+    });
+    // React lo manda al error boundary del router, que acá no está.
+    const onError = vi.fn();
+    render(
+      <Boundary onError={onError}>
+        <ApplyButton vacancyId="v2" positionLabel="Arquero" teamName="Los Pumas" applied={false} />
+      </Boundary>,
+    );
+
+    click(byLabel(LABEL)!);
+    await flush();
+
+    expect(onError).toHaveBeenCalledWith(redirectError);
+    expect(pageText()).not.toContain("No pudimos enviar tu postulación");
   });
 
   it("en éxito muestra 'Postulado' y el toast", async () => {
