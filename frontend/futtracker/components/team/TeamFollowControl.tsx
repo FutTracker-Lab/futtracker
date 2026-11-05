@@ -17,9 +17,9 @@ export default async function TeamFollowControl({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const profile = user ? await getProfileById(user.id) : null;
+    const result = user ? await getProfileById(user.id) : null;
 
-    if (profile?.role !== "player") {
+    if (result?.kind !== "found" || result.profile.role !== "player") {
       return null;
     }
 

@@ -12,6 +12,11 @@ export type PlayerProfile = {
   avatarUrl: string | null;
 };
 
+export type ProfileResult =
+  | { kind: "found"; profile: Profile }
+  | { kind: "notFound" }
+  | { kind: "error" };
+
 // `cache()` de React memoiza por argumentos dentro de un mismo render de
 // servidor — acá el argumento es el `id` (un primitivo), así que dos
 // llamadas con el mismo id en la misma request (ej. `generateMetadata` y la
@@ -19,15 +24,19 @@ export type PlayerProfile = {
 // se crea adentro a propósito: si se recibiera como parámetro, cada
 // `createClient()` sería una instancia distinta y rompería la memoización
 // por igualdad referencial.
-export const getProfileById = cache(async (id: string) => {
+export const getProfileById = cache(async (id: string): Promise<ProfileResult> => {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", id)
     .maybeSingle();
 
-  return data;
+  if (error) {
+    return { kind: "error" };
+  }
+
+  return data ? { kind: "found", profile: data } : { kind: "notFound" };
 });
 
 /**

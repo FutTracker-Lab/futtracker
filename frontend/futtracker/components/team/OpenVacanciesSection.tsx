@@ -19,9 +19,14 @@ async function loadApplicantState(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const profile = user ? await getProfileById(user.id) : null;
+  const result = user ? await getProfileById(user.id) : null;
 
-  if (profile?.role !== "player") {
+  // Sin el rol no se sabe si ofrecer postularse: mismo aviso que si fallan las postulaciones.
+  if (result?.kind === "error") {
+    throw new Error("No se pudo leer el perfil");
+  }
+
+  if (result?.kind !== "found" || result.profile.role !== "player") {
     return null;
   }
 

@@ -16,9 +16,14 @@ export default async function PlayerSearchLayout({ children }: { children: React
     redirect(`/login?redirectTo=${RouteConstants.search}`);
   }
 
-  const profile = await getProfileById(user.id);
+  const result = await getProfileById(user.id);
 
-  if (profile?.role !== "delegate") {
+  // error.tsx no atrapa el layout de su carpeta: la falla la tira la página.
+  if (result.kind === "error") {
+    return children;
+  }
+
+  if (result.kind === "notFound" || result.profile.role !== "delegate") {
     notFound();
   }
 
