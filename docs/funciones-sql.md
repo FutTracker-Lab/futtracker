@@ -42,7 +42,9 @@ solo desde la pantalla para la que se escribió.
 | La llama solo una función `security definer` | No. Adentro de la `definer` todo corre como su dueño (`postgres`). Sin `grant`, además, no queda expuesta por `/rpc`. |
 | Función de trigger (`returns trigger`) | No. No se puede llamar por `/rpc`, y al dispararse el trigger Postgres no chequea el `execute` del usuario. |
 
-El `revoke` va siempre, aunque no haya `grant`.
+El `revoke` va siempre, aunque no haya `grant`. La excepción son las funciones
+de trigger: como no se pueden llamar por `/rpc`, no cambia nada, y las del repo
+no lo llevan.
 
 ## `security definer`: con cuidado
 
@@ -55,11 +57,15 @@ o escribe lo que la función toque. Antes de darle el `grant`:
 - Que fije el `search_path` (`set search_path = ''`, o `public` si califica
   todo) y nombre las tablas con su schema (`public.players`). Sin eso, un objeto
   con el mismo nombre en otro schema puede cambiar qué ejecuta.
-- Si solo la usa otra función o una política, que no tenga `grant` (ver la
-  tabla de arriba).
+- Si solo la llama otra función `security definer`, que no tenga `grant`. Si
+  se usa en una política o la llama una función `security invoker`, sí lo
+  necesita: el `execute` se chequea con el usuario antes de entrar a la
+  función, aunque sea `definer` (ver la tabla de arriba).
 
-Ejemplos en el repo: `enforce_highlight_limit` y los triggers de
-`20261012190000_vacancy_applications.sql`.
+Ejemplos en el repo del `search_path` fijo y los nombres con schema:
+`enforce_highlight_limit` y los triggers de
+`20261012190000_vacancy_applications.sql`. Son funciones de trigger, así que no
+llevan `revoke` ni `grant`.
 
 ## Al recrear una función
 
@@ -69,7 +75,7 @@ migración recrea una función con `drop`, repite el `revoke` y el `grant`.
 
 ## Checklist para una función nueva
 
-- [ ] `revoke execute ... from public, anon`, con la firma completa (tipos de los parámetros).
+- [ ] `revoke execute ... from public, anon`, con la firma completa (tipos de los parámetros). No hace falta en las de trigger.
 - [ ] `grant execute ... to authenticated` solo si está en una fila "Sí" de la tabla.
 - [ ] Si es `security invoker`, cada función que llama tiene su propio `grant`.
 - [ ] Si es `security definer`: valida al usuario en el cuerpo y fija el `search_path`.

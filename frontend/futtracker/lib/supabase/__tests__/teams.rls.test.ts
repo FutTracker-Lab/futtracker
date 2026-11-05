@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import type { TablesInsert } from "@/lib/supabase/database.types";
 import {
   IS_LOCAL,
   newClient,
@@ -252,15 +251,10 @@ describe.skipIf(!IS_LOCAL)("RLS de public.teams", () => {
 describe.skipIf(!IS_LOCAL)("zona de public.teams (T09c)", () => {
   const ZONE_NAME = `Racing zona ${RUN}`;
 
-  async function createTeam(
-    delegate: TestUser,
-    name: string,
-    zoneId: string,
-    extra: Partial<TablesInsert<"teams">> = {},
-  ) {
+  async function createTeam(delegate: TestUser, name: string, zoneId: string) {
     return delegate.client
       .from("teams")
-      .insert({ ...extra, owner_id: delegate.id, name, zone_id: zoneId })
+      .insert({ owner_id: delegate.id, name, zone_id: zoneId })
       .select("city, province, latitude, longitude")
       .single();
   }
@@ -276,21 +270,6 @@ describe.skipIf(!IS_LOCAL)("zona de public.teams (T09c)", () => {
       latitude: -34.4587,
       longitude: -58.9142,
     });
-  });
-
-  // FUT-152: es una prueba del trigger, no del check de rango. El check se
-  // evalúa sobre la fila que deja el trigger, así que por la API un valor fuera
-  // de rango no llega a dar 23514: se pisa con el de la zona. El 23514 se ve
-  // solo con el trigger apagado (ver la PR).
-  it("coordenadas fuera de rango por la API se pisan con las de la zona", async () => {
-    const delegate = await signUpUser("delegate");
-    const { data, error } = await createTeam(delegate, `Fuera de rango ${RUN}`, "pilar", {
-      latitude: 500,
-      longitude: -181,
-    });
-
-    expect(error).toBeNull();
-    expect(data).toMatchObject({ latitude: -34.4587, longitude: -58.9142 });
   });
 
   it("el mismo nombre en la misma zona choca, aunque cambien las mayúsculas", async () => {

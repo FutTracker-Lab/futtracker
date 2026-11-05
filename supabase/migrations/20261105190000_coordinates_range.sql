@@ -10,6 +10,12 @@
 -- un check se evalúa sobre la fila que deja el trigger, por la API no se
 -- llega a ver un 23514: el valor fuera de rango ya fue reemplazado.
 --
+-- Un caso donde el trigger no pisa: con un `zone_id` que no existe deja pasar
+-- las coordenadas que mandó el cliente, para que la foránea rechace la zona
+-- con 23503. Si además la latitud está fuera de rango, ahora el error es 23514
+-- y no 23503, porque el check corre antes que la foránea. El formulario no
+-- manda coordenadas, así que solo cambia para una request armada a mano.
+--
 -- `null` pasa: un check con una comparación nula no falla, y sin zona las
 -- coordenadas son null.
 --
