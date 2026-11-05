@@ -8,7 +8,7 @@ Next.js (App Router) + TypeScript + Supabase, hosteada en Vercel.
 ```
 frontend/futtracker/    la app Next.js (es el root del proyecto de Vercel)
 supabase/               config, migraciones y edge functions
-docs/                   notas de deploy y de auth
+docs/                   notas de deploy, de auth y de funciones SQL
 .github/workflows/      CI y CD
 ```
 
@@ -43,6 +43,10 @@ cd frontend/futtracker && npm run db:types
 
 Toda tabla nueva sale con `alter table ... enable row level security` en la
 misma migración que la crea, y su política de `select` exige sesión iniciada.
+Toda función nueva sale con `revoke execute ... from public, anon`, y con
+`grant execute ... to authenticated` solo si un usuario la tiene que poder
+ejecutar: cuáles sí, cuáles no y los cuidados de `security definer` están en
+**[docs/funciones-sql.md](docs/funciones-sql.md)**.
 
 > **`supabase db diff --linked` nunca va a salir limpio, y está bien.**
 > El stack local y los proyectos de la nube no arrancan idénticos: la nube
