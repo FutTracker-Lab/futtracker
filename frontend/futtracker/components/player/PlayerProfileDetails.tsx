@@ -25,7 +25,9 @@ export default function PlayerProfileDetails({
         </span>
       ) : null}
 
-      {player.bio ? <p className="text-sm text-zinc-700">{player.bio}</p> : null}
+      {player.bio ? (
+        <p className="text-sm break-words text-zinc-700">{player.bio}</p>
+      ) : null}
 
       {careerSlot}
       {statsSlot}
