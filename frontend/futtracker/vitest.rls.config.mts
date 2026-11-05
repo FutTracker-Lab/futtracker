@@ -7,9 +7,10 @@ import { defineConfig } from "vitest/config";
  * único camino que también pasa por los grants, que es donde ya nos mordió una
  * vez.
  *
- * Van aparte de `npm run test` porque necesitan Docker corriendo. El CI todavía
- * no levanta Supabase, así que este comando se corre en local antes de abrir
- * el PR.
+ * Van aparte de `npm run test` porque necesitan Docker corriendo. En CI los
+ * corre el workflow "RLS y migraciones" (.github/workflows/rls.yml), que
+ * levanta Supabase en el runner y falla si alguno queda salteado. En local,
+ * correrlos antes de abrir el PR ahorra esperar al CI.
  */
 export default defineConfig(({ mode }) => ({
   resolve: {
