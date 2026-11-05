@@ -272,6 +272,50 @@ describe.skipIf(!IS_LOCAL)("zona de public.teams (T09c)", () => {
     });
   });
 
+  // FUT-154: el delegado no puede mandar coordenadas, ni al crear el equipo ni
+  // después. Sin el grant rebota con 42501 antes del trigger.
+  it("crear un equipo mandando coordenadas rebota con 42501", async () => {
+    const delegate = await signUpUser("delegate");
+    const { error } = await delegate.client
+      .from("teams")
+      .insert({
+        owner_id: delegate.id,
+        name: `Con coordenadas ${RUN}`,
+        zone_id: "pilar",
+        latitude: -34.5,
+        longitude: -58.9,
+      });
+
+    // Una violación de RLS también da 42501: el mensaje es el que dice que
+    // rebotó por el grant de la columna.
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toContain("permission denied");
+  });
+
+  it("el delegado no puede cambiar la latitud de su equipo: 42501", async () => {
+    const delegate = await signUpUser("delegate");
+    const { data: team, error: createError } = await createTeam(
+      delegate,
+      `Latitud ${RUN}`,
+      "pilar",
+    );
+    expect(createError).toBeNull();
+
+    const { error } = await delegate.client
+      .from("teams")
+      .update({ latitude: -34.5 })
+      .eq("owner_id", delegate.id);
+
+    expect(error?.code).toBe("42501");
+
+    const { data: after } = await delegate.client
+      .from("teams")
+      .select("latitude, longitude")
+      .eq("owner_id", delegate.id)
+      .single();
+    expect(after).toEqual({ latitude: team?.latitude, longitude: team?.longitude });
+  });
+
   it("el mismo nombre en la misma zona choca, aunque cambien las mayúsculas", async () => {
     const delegate = await signUpUser("delegate");
     const { error } = await createTeam(delegate, ZONE_NAME.toLowerCase(), "pilar");
