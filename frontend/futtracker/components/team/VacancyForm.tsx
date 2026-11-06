@@ -15,6 +15,7 @@ import {
   DESCRIPTION_MAX_LENGTH,
   LEVELS,
   MODALITIES,
+  descriptionLength,
 } from "@/lib/data/vacancies";
 import { POSITIONS } from "@/lib/data/players";
 import { POSITION_LABELS } from "@/lib/format/playerLabels";
@@ -56,6 +57,17 @@ export default function VacancyForm({ onCancel, onPublished }: Props) {
 
   function setField(field: keyof VacancyFormValues, value: string) {
     setValues((previous) => ({ ...previous, [field]: value }));
+    // El error de ese campo se va al editarlo, no recién al volver a enviar.
+    // Los de los otros campos siguen hasta que se los toque.
+    setFieldErrors((previous) => {
+      if (!previous[field]) {
+        return previous;
+      }
+
+      const next = { ...previous };
+      delete next[field];
+      return next;
+    });
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -88,8 +100,9 @@ export default function VacancyForm({ onCancel, onPublished }: Props) {
     });
   }
 
-  const descriptionLength = values.description.length;
-  const descriptionTooLong = descriptionLength > DESCRIPTION_MAX_LENGTH;
+  // Por caracteres, como la base: con `.length` un emoji contaba doble.
+  const descriptionCount = descriptionLength(values.description);
+  const descriptionTooLong = descriptionCount > DESCRIPTION_MAX_LENGTH;
 
   return (
     <section
@@ -187,7 +200,7 @@ export default function VacancyForm({ onCancel, onPublished }: Props) {
             id="vacancy-description-count"
             className={`self-end text-xs ${descriptionTooLong ? "font-medium text-red-700" : "text-zinc-500"}`}
           >
-            {descriptionLength} / {DESCRIPTION_MAX_LENGTH}
+            {descriptionCount} / {DESCRIPTION_MAX_LENGTH}
           </span>
           {fieldErrors.description ? (
             <span id="vacancy-description-help" role="alert" className="text-xs text-red-700">
