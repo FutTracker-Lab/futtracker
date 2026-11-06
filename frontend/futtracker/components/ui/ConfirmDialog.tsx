@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { unstable_rethrow } from "next/navigation";
+
+import AlertDialog from "@/components/ui/AlertDialog";
 
 type Props = {
   // Texto del botón que abre el diálogo (ej. "Eliminar").
@@ -24,10 +26,8 @@ const DEFAULT_TRIGGER_CLASS =
 
 /**
  * Confirmación de borrado genérica (requisito 6 de FUT-92: nombrar el
- * registro y, para una etapa, advertir el cascade). No usa `<dialog>` nativo
- * porque el repo no tiene un patrón de foco/`::backdrop` ya resuelto para eso
- * — un overlay fijo con `role="alertdialog"` es más simple de hacer accesible
- * a mano acá.
+ * registro y, para una etapa, advertir el cascade): un botón que abre un
+ * `AlertDialog`.
  */
 export default function ConfirmDialog({
   triggerLabel,
@@ -43,56 +43,13 @@ export default function ConfirmDialog({
   const [open, setOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Un id por instancia: hay un diálogo por fila y un `aria-labelledby` fijo
-  // los haría apuntar todos al mismo encabezado.
-  const titleId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    // El foco entra al diálogo por "Cancelar" y no por "Eliminar": si alguien
-    // llega acá y aprieta Enter de puro reflejo, la opción segura es la que
-    // está debajo del cursor de teclado.
-    cancelRef.current?.focus();
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isPending) {
-        setOpen(false);
-        // Mismo retorno de foco que el botón Cancelar: cerrar con teclado no
-        // puede dejar el foco tirado en el <body>.
-        triggerRef.current?.focus();
-        return;
-      }
-
-      // Foco atrapado: Tab desde el último botón vuelve al primero y al revés.
-      if (event.key === "Tab") {
-        const buttons = Array.from(
-          dialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
-        );
-        const first = buttons[0];
-        const last = buttons[buttons.length - 1];
-
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
-      }
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, isPending]);
 
   function close() {
     setOpen(false);
     // Devolver el foco al disparador: sin esto queda en el <body> y hay que
-    // tabular desde el principio de la página para volver a la fila.
+    // tabular desde el principio de la página para volver a la fila. Vale
+    // también para Escape, que cierra por acá.
     triggerRef.current?.focus();
   }
 
@@ -131,48 +88,16 @@ export default function ConfirmDialog({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 p-4">
-          <div
-            ref={dialogRef}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-white p-6 shadow-lg"
-          >
-            <div className="flex flex-col gap-1">
-              <h2 id={titleId} className="text-base font-semibold text-zinc-900">
-                {title}
-              </h2>
-              <div className="text-sm text-zinc-600">{description}</div>
-            </div>
-
-            {error ? (
-              <p role="alert" className="text-sm text-red-700">
-                {error}
-              </p>
-            ) : null}
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                ref={cancelRef}
-                onClick={close}
-                disabled={isPending}
-                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-60"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {isPending ? pendingLabel : confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AlertDialog
+          title={title}
+          description={description}
+          error={error}
+          confirmLabel={confirmLabel}
+          pendingLabel={pendingLabel}
+          isPending={isPending}
+          onCancel={close}
+          onConfirm={handleConfirm}
+        />
       ) : null}
     </>
   );

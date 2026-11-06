@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { positionSchema } from "@/lib/data/players";
 import { getMyTeam } from "@/lib/data/teams";
+import { stripBidiControls } from "@/lib/format/bidi";
 import type { Database, Tables } from "@/lib/supabase/database.types";
 
 // Contrato de T10a (FUT-120) escrito antes de la tabla: cuando entre, manda su versión.
@@ -41,7 +42,10 @@ export const vacancyInputSchema = z.object({
       (description) =>
         description === null || descriptionLength(description) <= DESCRIPTION_MAX_LENGTH,
     )
-    .transform((description) => description?.trim() || null),
+    // Sin los controles bidi (FUT-158), y si no queda nada, null.
+    .transform((description) =>
+      description === null ? null : stripBidiControls(description).trim() || null,
+    ),
 });
 
 export type VacancyInput = z.infer<typeof vacancyInputSchema>;
