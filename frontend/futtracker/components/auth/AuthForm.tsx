@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { signIn, signUp } from "@/app/(auth)/actions";
+import { createClient } from "@/lib/supabase/client";
 import {
   REDIRECT_BY_ROLE,
   type ActionResult,
@@ -108,6 +109,39 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
     return result;
   }
 
+  // A dónde va después de confirmar el mail.
+  const afterConfirmation = redirectTo ?? REDIRECT_BY_ROLE[role];
+
+  // El link del mail abre otra pestaña y crea la sesión ahí, con las cookies
+  // del mismo navegador. Al volver a esta, si la sesión ya existe, entra sola
+  // en vez de quedarse en el aviso. Si se confirmó en otro dispositivo no hay
+  // sesión acá y el aviso sigue.
+  useEffect(() => {
+    if (!confirmationSentTo) {
+      return;
+    }
+
+    async function enterIfConfirmed() {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      const { data } = await createClient().auth.getUser();
+
+      if (data.user) {
+        router.push(afterConfirmation);
+      }
+    }
+
+    window.addEventListener("focus", enterIfConfirmed);
+    document.addEventListener("visibilitychange", enterIfConfirmed);
+
+    return () => {
+      window.removeEventListener("focus", enterIfConfirmed);
+      document.removeEventListener("visibilitychange", enterIfConfirmed);
+    };
+  }, [confirmationSentTo, afterConfirmation, router]);
+
   const [signInState, signInAction] = useActionState(handleSignIn, INITIAL_STATE);
   const [signUpState, signUpAction] = useActionState(handleSignUp, INITIAL_STATE);
 
@@ -194,12 +228,14 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
                 la cuenta. Abrí el link para entrar; si no lo ves, revisá spam.
               </p>
             </div>
+            {/* Sin sesión en este navegador (confirmó en otro dispositivo), el
+                proxy lo manda al login y después sigue a este destino. */}
             <button
               type="button"
-              onClick={(event) => switchTab("sign-in", event)}
+              onClick={() => router.push(afterConfirmation)}
               className="text-sm text-brand hover:underline"
             >
-              Ya la confirmé, ir a Entrar
+              Ya la confirmé, entrar
             </button>
           </div>
         ) : (

@@ -7,6 +7,11 @@ import { cleanup, flush, render } from "@/components/player/__tests__/dialogTest
 const signInMock = vi.fn();
 const signUpMock = vi.fn();
 const pushMock = vi.fn();
+const getUserMock = vi.fn();
+
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ auth: { getUser: () => getUserMock() } }),
+}));
 
 vi.mock("@/app/(auth)/actions", () => ({
   signIn: (...args: unknown[]) => signInMock(...args),
@@ -81,7 +86,16 @@ afterEach(() => {
   signInMock.mockReset();
   signUpMock.mockReset();
   pushMock.mockReset();
+  getUserMock.mockReset();
 });
+
+// Volver a la pestaña del registro después de abrir el link en otra.
+async function focusTab() {
+  await act(async () => {
+    window.dispatchEvent(new Event("focus"));
+  });
+  await flush();
+}
 
 describe("AuthForm", () => {
   it("con demasiados intentos lo dice, en vez del error genérico", async () => {
@@ -119,19 +133,53 @@ describe("AuthForm", () => {
     expect(document.querySelector("form")).toBeNull();
   });
 
-  it("desde el aviso se vuelve a Entrar", async () => {
+  // El link del mail abre otra pestaña y crea la sesión ahí. Al volver a la
+  // del registro, si la sesión ya existe en este navegador, entra sola.
+  it("al volver a la pestaña con la cuenta ya confirmada, entra a la app", async () => {
+    signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
+    render(<AuthForm />);
+    await submitSignUp();
+
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1" } } });
+    await focusTab();
+
+    expect(pushMock).toHaveBeenCalledWith("/jugadores/mi-perfil");
+  });
+
+  it("al volver a la pestaña sin confirmar todavía, se queda en el aviso", async () => {
+    signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
+    render(<AuthForm />);
+    await submitSignUp();
+
+    getUserMock.mockResolvedValue({ data: { user: null } });
+    await focusTab();
+
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(statusText()).toContain("nuevo@example.com");
+  });
+
+  // Si se confirmó en otro dispositivo no hay sesión acá: el proxy lo manda al
+  // login y, después de entrar, sigue al perfil.
+  it("el botón del aviso lleva a la app", async () => {
     signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
     render(<AuthForm />);
     await submitSignUp();
 
     await act(async () => {
       [...document.querySelectorAll<HTMLButtonElement>("button")]
-        .find((button) => button.textContent === "Ya la confirmé, ir a Entrar")!
+        .find((button) => button.textContent === "Ya la confirmé, entrar")!
         .click();
     });
 
-    expect(document.getElementById("signin-email")).not.toBeNull();
-    expect(statusText()).toBeNull();
+    expect(pushMock).toHaveBeenCalledWith("/jugadores/mi-perfil");
+  });
+
+  it("sin el aviso, volver a la pestaña no consulta la sesión", async () => {
+    render(<AuthForm />);
+
+    await focusTab();
+
+    expect(getUserMock).not.toHaveBeenCalled();
   });
 
   it("si el alta arranca la sesión, navega al perfil", async () => {
