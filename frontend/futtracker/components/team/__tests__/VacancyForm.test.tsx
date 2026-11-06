@@ -92,6 +92,32 @@ test("con 281 caracteres marca el error y el contador sin cortar el texto", asyn
   expect(createVacancyAction).not.toHaveBeenCalled();
 });
 
+// FUT-157: el contador medía unidades UTF-16 y la base mide caracteres.
+test("con 150 emojis el contador muestra 150 y deja publicar", async () => {
+  createVacancyAction.mockResolvedValue({ ok: true });
+  fillValid();
+  change(field<HTMLTextAreaElement>("vacancy-description"), "🥅".repeat(150));
+
+  expect(container.textContent).toContain("150 / 280");
+
+  await submit();
+
+  expect(container.textContent).not.toContain("La descripción no puede superar");
+  expect(createVacancyAction).toHaveBeenCalledTimes(1);
+});
+
+// FUT-157: el error de un campo se iba recién al volver a enviar.
+test("el error de un campo desaparece al editarlo, sin enviar", async () => {
+  await submit();
+  expect(container.textContent).toContain("Elegí una posición.");
+
+  change(field<HTMLSelectElement>("vacancy-position"), "delantero");
+
+  expect(container.textContent).not.toContain("Elegí una posición.");
+  // Los de los otros campos siguen hasta que se los edite.
+  expect(container.textContent).toContain("Elegí una modalidad.");
+});
+
 test("publica con los valores elegidos y avisa al terminar", async () => {
   createVacancyAction.mockResolvedValue({ ok: true });
   fillValid();

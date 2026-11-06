@@ -19,13 +19,29 @@ export type VacancyStatus = (typeof VACANCY_STATUSES)[number];
 
 export const DESCRIPTION_MAX_LENGTH = 280;
 
-// Repite los `check` de la migración de T10a.
+// Caracteres como los cuenta `char_length` en la base (code points), no
+// unidades UTF-16 como `.length`: un emoji fuera del plano básico vale 1 acá y
+// 2 en `.length`. El contador del formulario usa esta misma función.
+export function descriptionLength(description: string): number {
+  return [...description].length;
+}
+
+// Repite los `check` de la base (T10a y FUT-157).
 export const vacancyInputSchema = z.object({
   position: positionSchema,
   modality: z.enum(MODALITIES),
   level: z.enum(LEVELS),
-  // `max` antes de `trim`: mide lo mismo que el contador del formulario.
-  description: z.string().max(DESCRIPTION_MAX_LENGTH).trim().nullable(),
+  // El largo se mide antes de recortar, igual que el contador del formulario.
+  // Vacía o solo con espacios queda en `null`: la base ya no acepta `''` (y la
+  // Server Action se puede llamar sin pasar por el formulario).
+  description: z
+    .string()
+    .nullable()
+    .refine(
+      (description) =>
+        description === null || descriptionLength(description) <= DESCRIPTION_MAX_LENGTH,
+    )
+    .transform((description) => description?.trim() || null),
 });
 
 export type VacancyInput = z.infer<typeof vacancyInputSchema>;
