@@ -7,6 +7,7 @@ import {
 } from "@/components/team/teamApplications";
 import type { FollowerCountResult } from "@/components/team/teamFollowers";
 import { countOpen, type TeamVacanciesResult } from "@/components/team/teamVacancies";
+import { UNSAVED_GUARD_ATTRIBUTE } from "@/components/ui/unsavedGuardAttribute";
 import { RouteConstants } from "@/lib/routes";
 
 export type TeamTab = "datos" | "vacantes" | "postulaciones" | "seguidores";
@@ -105,6 +106,9 @@ export default function TeamTabs({ active, vacancies, applicationCounts, followe
           <Link
             key={tab.id}
             href={tab.href}
+            // Si "Datos del club" tiene cambios sin guardar, TeamForm pregunta
+            // antes de dejar ir (FUT-158).
+            {...{ [UNSAVED_GUARD_ATTRIBUTE]: "" }}
             aria-current={isActive ? "page" : undefined}
             className={`${TAB_CLASS} ${tab.badge ? "shrink-0 whitespace-nowrap" : ""} ${
               isActive
