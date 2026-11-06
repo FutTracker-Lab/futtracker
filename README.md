@@ -8,7 +8,7 @@ Next.js (App Router) + TypeScript + Supabase, hosteada en Vercel.
 ```
 frontend/futtracker/    la app Next.js (es el root del proyecto de Vercel)
 supabase/               config, migraciones y edge functions
-docs/                   notas de deploy, de auth y de funciones SQL
+docs/                   notas de deploy, de auth, de funciones SQL y de video
 .github/workflows/      CI y CD
 ```
 
@@ -73,6 +73,13 @@ y los mails quedan en Mailpit (http://127.0.0.1:54324).
 allowlist de redirect URLs, confirmación de email y SMTP. Está toda en
 **[docs/auth.md](docs/auth.md)**, junto con las decisiones de diseño (por qué
 un email ya registrado responde igual que uno nuevo) y la deuda conocida.
+
+### Highlights
+
+Los clips se aceptan solo en formatos que se ven en cualquier celular (H.264 en
+MP4 o MOV, o WebM con VP8 o VP9): un iPhone graba en HEVC por defecto, y HEVC
+no se ve en muchos Android. El porqué, el costo de no recodificar y la tabla
+de pruebas están en **[docs/highlights-video.md](docs/highlights-video.md)**.
 
 ### Linkear el CLI
 
