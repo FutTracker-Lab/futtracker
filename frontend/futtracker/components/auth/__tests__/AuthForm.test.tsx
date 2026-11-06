@@ -115,6 +115,23 @@ describe("AuthForm", () => {
     expect(statusText()).toContain("confirmar");
     expect(alertText()).toBeNull();
     expect(pushMock).not.toHaveBeenCalled();
+    // El aviso reemplaza al formulario: no queda nada que invite a mandarlo de nuevo.
+    expect(document.querySelector("form")).toBeNull();
+  });
+
+  it("desde el aviso se vuelve a Entrar", async () => {
+    signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
+    render(<AuthForm />);
+    await submitSignUp();
+
+    await act(async () => {
+      [...document.querySelectorAll<HTMLButtonElement>("button")]
+        .find((button) => button.textContent === "Ya la confirmé, ir a Entrar")!
+        .click();
+    });
+
+    expect(document.getElementById("signin-email")).not.toBeNull();
+    expect(statusText()).toBeNull();
   });
 
   it("si el alta arranca la sesión, navega al perfil", async () => {

@@ -114,6 +114,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
   function switchTab(next: Tab, event: FormEvent<HTMLButtonElement>) {
     event.preventDefault();
     setClientError(null);
+    setConfirmationSentTo(null);
     setTab(next);
   }
 
@@ -155,16 +156,6 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
           </p>
         ) : null}
 
-        {tab === "sign-up" && confirmationSentTo && !errorMessage ? (
-          <p
-            role="status"
-            className="mb-4 rounded-md border border-brand-tint-border bg-brand-tint px-3 py-2 text-sm text-zinc-800"
-          >
-            Te mandamos un mail a <strong>{confirmationSentTo}</strong> para confirmar la
-            cuenta. Abrí el link para entrar; si no lo ves, revisá spam.
-          </p>
-        ) : null}
-
         {tab === "sign-in" ? (
           <form action={signInAction} className="flex flex-col gap-4">
             <TextField
@@ -192,6 +183,25 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
             </a>
             <SubmitButton label="Entrar" />
           </form>
+        ) : confirmationSentTo ? (
+          // Reemplaza al formulario: arriba de él quedaba fuera de la vista y
+          // lo de abajo invitaba a llenarlo de nuevo.
+          <div role="status" className="flex flex-col gap-4">
+            <div className="rounded-md border border-brand-tint-border bg-brand-tint px-4 py-3 text-sm text-zinc-800">
+              <p className="mb-1 font-medium text-zinc-900">Revisá tu mail</p>
+              <p>
+                Te mandamos un mail a <strong>{confirmationSentTo}</strong> para confirmar
+                la cuenta. Abrí el link para entrar; si no lo ves, revisá spam.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={(event) => switchTab("sign-in", event)}
+              className="text-sm text-brand hover:underline"
+            >
+              Ya la confirmé, ir a Entrar
+            </button>
+          </div>
         ) : (
           <form action={signUpAction} className="flex flex-col gap-4">
             <fieldset className="flex flex-col gap-2">
