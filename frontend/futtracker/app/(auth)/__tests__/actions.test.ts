@@ -61,6 +61,24 @@ const USER_ALREADY_EXISTS = {
   message: "User already registered",
 };
 
+// Lo que devuelve `auth.signUp` sin error, según el caso. Con la confirmación
+// de email prendida no hay sesión, y un email ya registrado vuelve igual pero
+// con `identities` vacío (Supabase no avisa que existe).
+const NEW_USER_WITH_SESSION = {
+  data: { user: { id: "u1", identities: [{ id: "i1" }] }, session: { access_token: "t" } },
+  error: null,
+};
+
+const NEW_USER_PENDING_CONFIRMATION = {
+  data: { user: { id: "u1", identities: [{ id: "i1" }] }, session: null },
+  error: null,
+};
+
+const EXISTING_USER_PENDING_CONFIRMATION = {
+  data: { user: { id: "u0", identities: [] }, session: null },
+  error: null,
+};
+
 // Lo que devuelve Supabase Auth con los límites de `Rate Limits` alcanzados
 // (copiado de los logs de dev).
 const EMAIL_RATE_LIMIT = {
@@ -90,7 +108,9 @@ describe("actions de auth", () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
 
-    mocks.signUp.mockResolvedValue({ data: { user: null }, error: null });
+    // Alta nueva con la confirmación de email apagada (local, dev): la sesión
+    // arranca en el momento.
+    mocks.signUp.mockResolvedValue(NEW_USER_WITH_SESSION);
     mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
     mocks.updateUser.mockResolvedValue({ error: null });
     mocks.signOut.mockResolvedValue({ error: null });
@@ -130,19 +150,31 @@ describe("actions de auth", () => {
       });
     });
 
+    // Con la confirmación de email prendida (prod) no hay sesión hasta abrir el
+    // link del mail: redirigir al perfil terminaba en /login sin ningún aviso.
+    it("con la confirmación de email prendida avisa que mandó el mail", async () => {
+      mocks.signUp.mockResolvedValue(NEW_USER_PENDING_CONFIRMATION);
+
+      const result = await run(signUp(PLAYER_SIGN_UP));
+
+      expect(result).toEqual({ ok: true, checkEmail: true });
+    });
+
     /**
      * Requisito 9d: un email ya registrado no se puede distinguir de un alta
-     * nueva. Si esta aserción cambia, se filtra qué emails existen en la base.
+     * nueva. Si estas aserciones cambian, se filtra qué emails existen en la
+     * base. Supabase lo reporta distinto según la confirmación de email
+     * (ver docs/auth.md), así que va un caso por cada modo.
      */
-    it("con un email ya registrado responde igual que con uno nuevo", async () => {
+    it("con la confirmación apagada, un email ya registrado responde igual que uno nuevo", async () => {
       mocks.signUp.mockResolvedValue({
-        data: { user: null },
+        data: { user: null, session: null },
         error: USER_ALREADY_EXISTS,
       });
 
       const alreadyRegistered = await run(signUp(PLAYER_SIGN_UP));
 
-      mocks.signUp.mockResolvedValue({ data: { user: null }, error: null });
+      mocks.signUp.mockResolvedValue(NEW_USER_WITH_SESSION);
 
       const brandNew = await run(signUp(PLAYER_SIGN_UP));
 
@@ -151,6 +183,19 @@ describe("actions de auth", () => {
         ok: true,
         redirectTo: "/jugadores/mi-perfil",
       });
+    });
+
+    it("con la confirmación prendida, un email ya registrado responde igual que uno nuevo", async () => {
+      mocks.signUp.mockResolvedValue(EXISTING_USER_PENDING_CONFIRMATION);
+
+      const alreadyRegistered = await run(signUp(PLAYER_SIGN_UP));
+
+      mocks.signUp.mockResolvedValue(NEW_USER_PENDING_CONFIRMATION);
+
+      const brandNew = await run(signUp(PLAYER_SIGN_UP));
+
+      expect(alreadyRegistered).toEqual(brandNew);
+      expect(alreadyRegistered).toEqual({ ok: true, checkEmail: true });
     });
 
     // Con la confirmación de email prendida, cada alta manda un mail, y el

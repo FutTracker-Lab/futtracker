@@ -57,6 +57,8 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<Role>("player");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // A qué email se mandó la confirmación, cuando el alta queda esperándola.
+  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
 
   async function handleSignIn(
     _prev: ActionResult,
@@ -96,7 +98,10 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
     const input: SignUpInput = { email: signUpEmail, password, fullName, role };
     const result = await signUp(input);
 
-    if (result.ok) {
+    // Sin sesión todavía: navegar al perfil terminaría en /login sin aviso.
+    if (result.ok && result.checkEmail) {
+      setConfirmationSentTo(signUpEmail);
+    } else if (result.ok) {
       router.push(redirectTo ?? REDIRECT_BY_ROLE[role]);
     }
 
@@ -147,6 +152,16 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
         {errorMessage ? (
           <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {errorMessage}
+          </p>
+        ) : null}
+
+        {tab === "sign-up" && confirmationSentTo && !errorMessage ? (
+          <p
+            role="status"
+            className="mb-4 rounded-md border border-brand-tint-border bg-brand-tint px-3 py-2 text-sm text-zinc-800"
+          >
+            Te mandamos un mail a <strong>{confirmationSentTo}</strong> para confirmar la
+            cuenta. Abrí el link para entrar; si no lo ves, revisá spam.
           </p>
         ) : null}
 

@@ -5,11 +5,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, flush, render } from "@/components/player/__tests__/dialogTestUtils";
 
 const signInMock = vi.fn();
+const signUpMock = vi.fn();
 const pushMock = vi.fn();
 
 vi.mock("@/app/(auth)/actions", () => ({
   signIn: (...args: unknown[]) => signInMock(...args),
-  signUp: vi.fn(),
+  signUp: (...args: unknown[]) => signUpMock(...args),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -46,13 +47,39 @@ async function submitSignIn() {
   await flush();
 }
 
+async function submitSignUp() {
+  await act(async () => {
+    [...document.querySelectorAll<HTMLButtonElement>("[role=tab]")]
+      .find((tab) => tab.textContent === "Crear cuenta")!
+      .click();
+  });
+
+  type("signup-fullname", "Jugador Nuevo");
+  type("signup-email", "nuevo@example.com");
+  type("signup-password", "Password123");
+  type("signup-confirm", "Password123");
+  await act(async () => {
+    document.querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
+  });
+
+  await act(async () => {
+    document.querySelector("form")!.requestSubmit();
+  });
+  await flush();
+}
+
 function alertText() {
   return document.querySelector("[role=alert]")?.textContent ?? null;
+}
+
+function statusText() {
+  return document.querySelector("[role=status]")?.textContent ?? null;
 }
 
 afterEach(() => {
   cleanup();
   signInMock.mockReset();
+  signUpMock.mockReset();
   pushMock.mockReset();
 });
 
@@ -74,5 +101,29 @@ describe("AuthForm", () => {
     await submitSignIn();
 
     expect(alertText()).toBe("Email o contraseña incorrectos.");
+  });
+
+  // Con la confirmación de email prendida (prod) no hay sesión: antes navegaba
+  // al perfil, el proxy lo devolvía a /login y no se veía ningún aviso.
+  it("si el alta queda esperando la confirmación, avisa que mandó el mail y no navega", async () => {
+    signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
+    render(<AuthForm />);
+
+    await submitSignUp();
+
+    expect(statusText()).toContain("nuevo@example.com");
+    expect(statusText()).toContain("confirmar");
+    expect(alertText()).toBeNull();
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("si el alta arranca la sesión, navega al perfil", async () => {
+    signUpMock.mockResolvedValue({ ok: true, redirectTo: "/jugadores/mi-perfil" });
+    render(<AuthForm />);
+
+    await submitSignUp();
+
+    expect(pushMock).toHaveBeenCalledWith("/jugadores/mi-perfil");
+    expect(statusText()).toBeNull();
   });
 });
