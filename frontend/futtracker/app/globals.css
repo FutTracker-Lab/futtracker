@@ -72,3 +72,23 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/*
+ * Safari de iPhone hace zoom al enfocar un campo con letra de menos de 16px, y
+ * después no vuelve solo. Los campos de la app usan `text-sm` (14px), así que
+ * el zoom saltaba al tocar cualquiera, o cuando la app les devuelve el foco
+ * (por ejemplo, el de mensajes después de enviar).
+ *
+ * En pantallas táctiles suben a 16px. Va sin capa a propósito, para ganarle a
+ * `text-sm` (ver arriba). En escritorio no cambia nada.
+ *
+ * No se usa `maximum-scale=1` en el viewport, que es el arreglo más común:
+ * en Android bloquea el zoom con dos dedos (docs/accesibilidad.md).
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
