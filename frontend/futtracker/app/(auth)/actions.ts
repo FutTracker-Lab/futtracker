@@ -59,7 +59,7 @@ function isRateLimited(error: { status?: number; code?: string } | null) {
 async function runSignUp(input: SignUpInput): Promise<ActionResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
     options: {
@@ -77,6 +77,14 @@ async function runSignUp(input: SignUpInput): Promise<ActionResult> {
   // docs/auth.md.
   if (error && error.code !== "user_already_exists") {
     return { ok: false, error: UNEXPECTED };
+  }
+
+  // Con la confirmación de email prendida (prod) no hay sesión hasta abrir el
+  // link: redirigir al perfil terminaba en /login sin ningún aviso. Un email
+  // ya registrado vuelve igual, sin error ni sesión, así que recibe el mismo
+  // aviso (9d).
+  if (!error && !data.session) {
+    return { ok: true, checkEmail: true };
   }
 
   return { ok: true, redirectTo: REDIRECT_BY_ROLE[input.role] };
