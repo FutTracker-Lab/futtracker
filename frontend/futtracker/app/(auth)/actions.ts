@@ -7,6 +7,7 @@ import {
   PASSWORD_RESET_REDIRECT,
   REDIRECT_BY_ROLE,
   SIGN_UP_REDIRECT,
+  TOO_MANY_REQUESTS,
   UNEXPECTED,
   type ActionResult,
 } from "@/lib/auth/constants";
@@ -44,6 +45,17 @@ async function withMinimumDuration<T>(
   return outcome.value;
 }
 
+// Un límite de `Authentication → Rate Limits` alcanzado: mails por hora del
+// proyecto (`over_email_send_rate_limit`) o pedidos por IP
+// (`over_request_rate_limit`). Los dos llegan con 429.
+function isRateLimited(error: { status?: number; code?: string } | null) {
+  return (
+    error?.status === 429 ||
+    error?.code === "over_email_send_rate_limit" ||
+    error?.code === "over_request_rate_limit"
+  );
+}
+
 async function runSignUp(input: SignUpInput): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -55,6 +67,10 @@ async function runSignUp(input: SignUpInput): Promise<ActionResult> {
       emailRedirectTo: SIGN_UP_REDIRECT,
     },
   });
+
+  if (isRateLimited(error)) {
+    return { ok: false, error: TOO_MANY_REQUESTS };
+  }
 
   // Requisito 9d: un email ya registrado tiene que responder igual que uno
   // nuevo, o el formulario dice quién tiene cuenta. No sacar sin leer
@@ -73,6 +89,12 @@ async function runSignIn(input: SignInInput): Promise<ActionResult> {
     email: input.email,
     password: input.password,
   });
+
+  // El límite de logins es por IP, no por email: decirlo no revela qué
+  // cuentas existen.
+  if (isRateLimited(error)) {
+    return { ok: false, error: TOO_MANY_REQUESTS };
+  }
 
   if (error || !data.user) {
     return { ok: false, error: INVALID_CREDENTIALS };
