@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { proxy } from "@/proxy";
-import { updateSession } from "@/lib/supabase/proxy";
+import { updateSession, type SessionCheck } from "@/lib/supabase/proxy";
 
 vi.mock("@/lib/supabase/proxy", () => ({ updateSession: vi.fn() }));
 
+function mockSession(session: SessionCheck, cookies: { name: string; value: string }[] = []) {
+  vi.mocked(updateSession).mockImplementation(async (request) => {
+    const response = NextResponse.next({ request });
+    for (const cookie of cookies) {
+      response.cookies.set(cookie);
+    }
+    return { response, session };
+  });
+}
+
 function session(user: { id: string } | null) {
-  vi.mocked(updateSession).mockImplementation(async (request) => ({
-    response: NextResponse.next({ request }),
-    user: user as never,
-  }));
+  mockSession(user ? { status: "signedIn", user: user as never } : { status: "signedOut" });
 }
 
 const request = (path: string) => proxy(new NextRequest(`http://localhost:3000${path}`));
@@ -91,6 +98,55 @@ describe("proxy", () => {
     session(null);
 
     const response = await request("/siguiendos");
+
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("con Auth sin responder, una ruta protegida va al login con el aviso y el destino", async () => {
+    mockSession({ status: "unavailable" });
+
+    const response = await request("/sugerencias?radio=50");
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location")!);
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("redirectTo")).toBe("/sugerencias?radio=50");
+    expect(location.searchParams.get("aviso")).toBe("servicio");
+  });
+
+  it("sin sesión, el login no lleva el aviso", async () => {
+    session(null);
+
+    const response = await request("/sugerencias");
+
+    expect(new URL(response.headers.get("location")!).searchParams.has("aviso")).toBe(false);
+  });
+
+  it("con Auth sin responder, el redirect conserva las cookies de la respuesta", async () => {
+    mockSession({ status: "unavailable" }, [{ name: "sb-test-auth-token", value: "rotado" }]);
+
+    const response = await request("/vacantes");
+
+    expect(response.cookies.get("sb-test-auth-token")?.value).toBe("rotado");
+  });
+
+  it("con Auth sin responder, una ruta pública pasa", async () => {
+    mockSession({ status: "unavailable" });
+
+    const response = await request("/");
+
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("con Auth sin responder, el POST de una Server Action pasa", async () => {
+    mockSession({ status: "unavailable" });
+
+    const response = await proxy(
+      new NextRequest("http://localhost:3000/vacantes", {
+        method: "POST",
+        headers: { "next-action": "abc123" },
+      }),
+    );
 
     expect(response.headers.get("location")).toBeNull();
   });
