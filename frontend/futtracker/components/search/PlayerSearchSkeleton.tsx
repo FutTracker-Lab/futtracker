@@ -7,7 +7,7 @@ export default function PlayerSearchSkeleton() {
           <div className="h-4 w-80 max-w-full rounded bg-zinc-200" />
         </div>
         <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-          <div className="h-72 rounded-xl bg-zinc-200" />
+          <div className="h-20 rounded-xl bg-zinc-200 lg:h-72" />
           <ul aria-label="Cargando resultados" className="flex flex-col gap-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <li key={i} className="flex items-center gap-3 rounded-xl bg-white p-4">

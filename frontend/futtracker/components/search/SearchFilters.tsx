@@ -1,6 +1,8 @@
 import Form from "next/form";
 import Link from "next/link";
 
+import SearchFiltersDisclosure from "@/components/search/SearchFiltersDisclosure";
+import { activeFilterChips } from "@/components/search/searchView";
 import SelectField from "@/components/ui/SelectField";
 import { POSITIONS } from "@/lib/data/players";
 import { POSITION_LABELS } from "@/lib/format/playerLabels";
@@ -19,22 +21,17 @@ type Props = { filters: SearchCriteria };
 // Inputs no controlados: cuando un chip o "Limpiar" cambian la URL, los remonta el `key` del Suspense de page.tsx.
 export default function SearchFilters({ filters }: Props) {
   return (
-    <section
-      aria-labelledby="search-filters-title"
-      className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 id="search-filters-title" className="text-lg font-semibold text-zinc-900">
-          Filtros
-        </h2>
+    <SearchFiltersDisclosure
+      appliedCount={activeFilterChips(filters).length}
+      clearLink={
         <Link
           href={RouteConstants.search}
           className="rounded text-sm font-medium text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           Limpiar
         </Link>
-      </div>
-
+      }
+    >
       <Form action={RouteConstants.search} className="flex flex-col gap-5">
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-2 text-sm font-medium text-zinc-900">Posición</legend>
@@ -96,6 +93,6 @@ export default function SearchFilters({ filters }: Props) {
           Buscar
         </button>
       </Form>
-    </section>
+    </SearchFiltersDisclosure>
   );
 }
