@@ -1,8 +1,12 @@
 -- FUT-158 (DT-20): saca los caracteres de control bidireccional de los textos
 -- libres que ya están guardados. Desde este ticket el schema de Zod los saca
--- antes de guardar (`stripBidiControls`); esto limpia lo anterior y deja lo
--- mismo que dejaría Zod: sin los caracteres, recortado, y los campos opcionales
--- que quedan vacíos en null.
+-- antes de guardar (`stripBidiControls`); esto limpia lo anterior: sin los
+-- caracteres, recortado, y los campos opcionales que quedan vacíos en null.
+--
+-- Casi lo mismo que Zod, salvo un detalle: `btrim` recorta solo espacios, y el
+-- `.trim()` de JS también tabs, saltos de línea y NBSP en los bordes. Se deja
+-- así porque en dev y prod no hay ninguna fila con controles bidi (se chequeó
+-- antes de desplegar), así que este update no toca nada hoy.
 --
 -- Son U+202A a U+202E (embedding y override) y U+2066 a U+2069 (isolates):
 -- cambian cómo se ve el texto que los sigue (con U+202E, "gpj.exe" se lee

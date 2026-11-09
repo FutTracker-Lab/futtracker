@@ -45,12 +45,18 @@ const TEAM: Team = {
 };
 
 const ZONES: Zone[] = [{ id: "pilar", name: "Pilar", province: "Buenos Aires" }];
+const DATA_TAB = "/equipos/mi-equipo";
 const VACANCIES_TAB = "/equipos/mi-equipo?tab=vacantes";
 
-// Lo que renderiza TeamTabs: un link marcado para el aviso.
+// Lo que renderiza TeamTabs: links marcados para el aviso, parados en "Datos
+// del club".
 function renderWithTabs() {
+  window.history.replaceState(null, "", DATA_TAB);
   render(
     <>
+      <a href={DATA_TAB} data-unsaved-guard="">
+        Datos del club
+      </a>
       <a href={VACANCIES_TAB} data-unsaved-guard="">
         Vacantes
       </a>
@@ -68,11 +74,15 @@ function type(id: string, value: string) {
   });
 }
 
+function tab(href: string) {
+  return document.querySelector<HTMLAnchorElement>(`a[href="${href}"]`)!;
+}
+
 // Devuelve si la navegación por defecto del link quedó frenada.
-function clickTab(): boolean {
+function clickTab(href = VACANCIES_TAB): boolean {
   const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
   act(() => {
-    document.querySelector(`a[href="${VACANCIES_TAB}"]`)!.dispatchEvent(event);
+    tab(href).dispatchEvent(event);
   });
   return event.defaultPrevented;
 }
@@ -126,14 +136,43 @@ describe("TeamForm: cambios sin guardar", () => {
     );
   });
 
-  it("al confirmar va a la pestaña elegida", () => {
+  it("al cancelar, el foco vuelve a la pestaña que tocó", () => {
+    renderWithTabs();
+    type("name", "Club Atlético Pilar Norte");
+    clickTab();
+
+    clickButton("Seguir editando");
+
+    expect(document.activeElement).toBe(tab(VACANCIES_TAB));
+  });
+
+  // Antes el diálogo quedaba abierto hasta que cargaba la ruta nueva, y un
+  // segundo clic hacía otro push.
+  it("al confirmar va a la pestaña elegida una sola vez y cierra el aviso", () => {
     renderWithTabs();
     type("name", "Club Atlético Pilar Norte");
     clickTab();
 
     clickButton("Salir sin guardar");
 
+    expect(pushMock).toHaveBeenCalledTimes(1);
     expect(pushMock).toHaveBeenCalledWith(VACANCIES_TAB);
+    expect(dialog()).toBeNull();
+  });
+
+  // Revisión de la #65: el aviso preguntaba, y "Salir sin guardar" iba a la
+  // misma URL, así que el formulario no se desmontaba y el diálogo quedaba
+  // abierto.
+  it("tocar la pestaña en la que ya está no pregunta ni pierde los cambios", () => {
+    renderWithTabs();
+    type("name", "Club Atlético Pilar Norte");
+
+    clickTab(DATA_TAB);
+
+    expect(dialog()).toBeNull();
+    expect((document.getElementById("name") as HTMLInputElement).value).toBe(
+      "Club Atlético Pilar Norte",
+    );
   });
 
   it("si vuelve al valor original, ya no pregunta", () => {

@@ -141,7 +141,7 @@ export default function TeamForm({ team, initialCrestUrl, zones }: Props) {
           cancelLabel="Seguir editando"
           confirmLabel="Salir sin guardar"
           onCancel={unsavedGuard.cancel}
-          onConfirm={() => router.push(unsavedGuard.pendingHref!)}
+          onConfirm={() => unsavedGuard.leave((href) => router.push(href))}
         />
       ) : null}
 
