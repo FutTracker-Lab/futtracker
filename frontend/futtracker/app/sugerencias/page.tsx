@@ -1,11 +1,10 @@
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import SearchPagination from "@/components/search/SearchPagination";
 import SuggestedTeamCard from "@/components/suggestions/SuggestedTeamCard";
 import SuggestionFilters from "@/components/suggestions/SuggestionFilters";
-import SuggestionsSkeleton from "@/components/suggestions/SuggestionsSkeleton";
 import { LINK_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/vacancies/styles";
 import { getPlayerAccess } from "@/lib/auth/playerAccess";
 import { getMyPlayer } from "@/lib/data/players";
@@ -17,11 +16,11 @@ import {
   parseSuggestionParams,
   suggestionsHref,
   toSuggestTeamsParams,
-  type SuggestionCriteria,
 } from "@/lib/suggestions/params";
 import { suggestionsView } from "@/lib/suggestions/view";
 import { createClient } from "@/lib/supabase/server";
 
+// Sin Suspense ni loading.tsx a propósito: con streaming, sin JavaScript solo se ve el skeleton (FUT-155).
 export default async function SuggestionsPage({ searchParams }: PageProps<"/sugerencias">) {
   // El layout corre en paralelo: sin esto, el 404 del delegado igual trae las sugerencias en el payload.
   const access = await getPlayerAccess();
@@ -35,16 +34,6 @@ export default async function SuggestionsPage({ searchParams }: PageProps<"/suge
   }
 
   const criteria = parseSuggestionParams(await searchParams);
-
-  // loading.tsx no aparece si solo cambian los parámetros; el `key` remonta el Suspense.
-  return (
-    <Suspense key={suggestionsHref(criteria, criteria.page)} fallback={<SuggestionsSkeleton />}>
-      <SuggestionsResults criteria={criteria} />
-    </Suspense>
-  );
-}
-
-async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }) {
   const supabase = await createClient();
 
   const [result, player] = await Promise.all([
@@ -78,7 +67,7 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
   if (view.kind === "empty") {
     return (
       <SuggestionsFrame subtitle={view.subtitle}>
-        <SuggestionFilters radius={criteria.radius} />
+        <SuggestionFilters key={suggestionsHref(criteria)} radius={criteria.radius} />
         <div className="flex flex-col items-start gap-3 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <p className="text-zinc-700">No hay equipos sugeridos con esos filtros.</p>
           {view.maxRadiusHref ? (
@@ -98,7 +87,7 @@ async function SuggestionsResults({ criteria }: { criteria: SuggestionCriteria }
 
   return (
     <SuggestionsFrame subtitle={view.subtitle}>
-      <SuggestionFilters radius={criteria.radius} />
+      <SuggestionFilters key={suggestionsHref(criteria)} radius={criteria.radius} />
 
       <ul className="grid gap-4 lg:grid-cols-2">
         {view.rows.map((row) => (
