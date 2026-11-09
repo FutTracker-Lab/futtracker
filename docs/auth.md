@@ -44,16 +44,21 @@ Van en Authentication → URL Configuration, en cada proyecto de Supabase.
   Es el destino cuando una redirección no está en la allowlist, y el valor
   que usan las plantillas de mail. Los dos proyectos lo tuvieron en
   `http://localhost:3000` hasta el 2026-11-06.
-- **Redirect URLs** (allowlist): las tres, en los dos proyectos.
+- **Redirect URLs** (allowlist): tres entradas en cada proyecto, todas con
+  `/**` al final. Las dos de local son iguales en los dos; la tercera es el
+  deploy de cada ambiente.
 
-```
-http://localhost:3000
-http://127.0.0.1:3000
-https://<deploy-de-dev>.vercel.app
-https://<dominio-de-prod>
-```
+| dev | prod |
+|---|---|
+| `http://localhost:3000/**` | `http://localhost:3000/**` |
+| `http://127.0.0.1:3000/**` | `http://127.0.0.1:3000/**` |
+| `https://futtracker-dev.vercel.app/**` | `https://futtracker.vercel.app/**` |
 
-> **La allowlist matchea exacto.** `localhost` y `127.0.0.1` son entradas
+Verificado en el dashboard el 2026-11-09.
+
+> **La allowlist matchea exacto, salvo los comodines.** Sin `/**`, la entrada
+> `https://sitio.com` no cubre `https://sitio.com/auth/callback`, que es a
+> donde vuelve el link del mail. `localhost` y `127.0.0.1` son entradas
 > distintas, y el esquema cuenta. Un valor que no matchea no da un error
 > visible: el link del mail rebota al Site URL y el usuario aterriza en el home
 > sin sesión, sin que nada quede logueado.

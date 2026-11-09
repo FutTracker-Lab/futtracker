@@ -121,15 +121,27 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
       return;
     }
 
+    // Al volver a la pestaña llegan `focus` y `visibilitychange` juntos: una
+    // sola consulta a la vez, y una sola navegación.
+    let checking = false;
+    let entered = false;
+
     async function enterIfConfirmed() {
-      if (document.visibilityState === "hidden") {
+      if (document.visibilityState === "hidden" || checking || entered) {
         return;
       }
 
-      const { data } = await createClient().auth.getUser();
+      checking = true;
 
-      if (data.user) {
-        router.push(afterConfirmation);
+      try {
+        const { data } = await createClient().auth.getUser();
+
+        if (data.user) {
+          entered = true;
+          router.push(afterConfirmation);
+        }
+      } finally {
+        checking = false;
       }
     }
 

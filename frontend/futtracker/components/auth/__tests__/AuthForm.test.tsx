@@ -146,6 +146,23 @@ describe("AuthForm", () => {
     expect(pushMock).toHaveBeenCalledWith("/jugadores/mi-perfil");
   });
 
+  // Al volver a la pestaña llegan `focus` y `visibilitychange` juntos.
+  it("al volver a la pestaña consulta la sesión una sola vez", async () => {
+    signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
+    render(<AuthForm />);
+    await submitSignUp();
+
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1" } } });
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await flush();
+
+    expect(getUserMock).toHaveBeenCalledTimes(1);
+    expect(pushMock).toHaveBeenCalledTimes(1);
+  });
+
   it("al volver a la pestaña sin confirmar todavía, se queda en el aviso", async () => {
     signUpMock.mockResolvedValue({ ok: true, checkEmail: true });
     render(<AuthForm />);
