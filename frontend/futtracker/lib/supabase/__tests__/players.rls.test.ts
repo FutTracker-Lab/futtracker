@@ -328,6 +328,22 @@ describe.skipIf(!IS_LOCAL)("zona de public.players (T09c)", () => {
     expect(await location()).toMatchObject({ latitude: -34.4708, longitude: -58.5286 });
   });
 
+  // FUT-154: tampoco al crear la ficha. Es el camino de `upsertPlayer`, con un
+  // jugador que todavía no tiene fila.
+  it("crear la ficha mandando coordenadas rebota con 42501 y no crea nada", async () => {
+    const fresh = await signUpUser("player");
+
+    const { error } = await fresh.client
+      .from("players")
+      .upsert({ id: fresh.id, position: "arquero", zone_id: "pilar", latitude: 0, longitude: 0 });
+
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toContain("permission denied");
+
+    const { data } = await fresh.client.from("players").select("id").eq("id", fresh.id);
+    expect(data).toEqual([]);
+  });
+
   // FUT-154: lo que ve otro jugador es el centro de la zona, el mismo dato que
   // ya da la ciudad. No hay coordenadas exactas que esconder.
   it("otro jugador ve las coordenadas del centro de la zona", async () => {

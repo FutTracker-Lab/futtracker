@@ -28,7 +28,10 @@ export const teamInputSchema = z.object({
   league: z.string().trim().min(1).max(120).nullable(),
   country: z.string().trim().length(2).nullable(),
   // `city`, `province` y las coordenadas las deriva de la zona un trigger de
-  // la base (T09c). Si llegan en el input, Zod las descarta.
+  // la base (T09c). Si llegan en el input, Zod las descarta. Ojo: los tipos
+  // generados (`database.types.ts`) siguen ofreciendo `latitude` y `longitude`
+  // en `Insert` y `Update`, pero la base ya no las acepta (FUT-154): un
+  // `.update({ latitude })` compila y falla con 42501.
   zone_id: z.string().trim().min(1),
   founded_year: z.number().int().min(1850).max(2100).nullable(),
   bio: z.string().trim().max(1000).nullable(),
