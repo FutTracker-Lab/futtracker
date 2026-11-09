@@ -16,7 +16,7 @@ const RADIO_CLASS = "h-4 w-4 accent-brand focus-visible:ring-2 focus-visible:rin
 
 type Props = { filters: SearchCriteria };
 
-// Inputs no controlados: cuando un chip o "Limpiar" cambian la URL, los remonta el `key` del Suspense de page.tsx.
+// Inputs no controlados: cuando un chip o "Limpiar" cambian la URL, los remonta el `key` que les pone page.tsx.
 export default function SearchFilters({ filters }: Props) {
   return (
     <section
