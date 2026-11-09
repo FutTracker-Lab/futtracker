@@ -16,6 +16,9 @@ const STATUS_OPTIONS = [
 
 const RADIO_CLASS = "h-4 w-4 accent-brand focus-visible:ring-2 focus-visible:ring-brand";
 
+// La fila entera es el target táctil de 44 px, no el círculo del radio.
+const RADIO_LABEL_CLASS = "flex min-h-11 items-center gap-2 text-sm text-zinc-700";
+
 type Props = { filters: SearchCriteria };
 
 // Inputs no controlados: cuando un chip o "Limpiar" cambian la URL, los remonta el `key` del Suspense de page.tsx.
@@ -26,16 +29,16 @@ export default function SearchFilters({ filters }: Props) {
       clearLink={
         <Link
           href={RouteConstants.search}
-          className="rounded text-sm font-medium text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="inline-flex min-h-11 items-center rounded px-2 text-sm font-medium text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           Limpiar
         </Link>
       }
     >
       <Form action={RouteConstants.search} className="flex flex-col gap-5">
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium text-zinc-900">Posición</legend>
-          <label className="flex items-center gap-2 text-sm text-zinc-700">
+        <fieldset className="flex flex-col">
+          <legend className="mb-1 text-sm font-medium text-zinc-900">Posición</legend>
+          <label className={RADIO_LABEL_CLASS}>
             <input
               type="radio"
               name="posicion"
@@ -46,7 +49,7 @@ export default function SearchFilters({ filters }: Props) {
             Todas
           </label>
           {POSITIONS.map((position) => (
-            <label key={position} className="flex items-center gap-2 text-sm text-zinc-700">
+            <label key={position} className={RADIO_LABEL_CLASS}>
               <input
                 type="radio"
                 name="posicion"
@@ -70,10 +73,10 @@ export default function SearchFilters({ filters }: Props) {
           }))}
         />
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium text-zinc-900">Estado</legend>
+        <fieldset className="flex flex-col">
+          <legend className="mb-1 text-sm font-medium text-zinc-900">Estado</legend>
           {STATUS_OPTIONS.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 text-sm text-zinc-700">
+            <label key={option.value} className={RADIO_LABEL_CLASS}>
               <input
                 type="radio"
                 name="estado"
@@ -88,7 +91,7 @@ export default function SearchFilters({ filters }: Props) {
 
         <button
           type="submit"
-          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          className="min-h-11 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
         >
           Buscar
         </button>
