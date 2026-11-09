@@ -20,7 +20,7 @@ import {
 import { suggestionsView } from "@/lib/suggestions/view";
 import { createClient } from "@/lib/supabase/server";
 
-// Sin Suspense ni loading.tsx a propósito: con streaming, sin JavaScript solo se ve el skeleton (FUT-155).
+// Sin Suspense ni loading.tsx a propósito (FUT-155).
 export default async function SuggestionsPage({ searchParams }: PageProps<"/sugerencias">) {
   // El layout corre en paralelo: sin esto, el 404 del delegado igual trae las sugerencias en el payload.
   const access = await getPlayerAccess();

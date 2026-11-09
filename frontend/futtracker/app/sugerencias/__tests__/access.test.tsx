@@ -81,7 +81,7 @@ describe("página de /sugerencias", () => {
     },
   );
 
-  it("un jugador recibe las sugerencias en el mismo render, sin streaming", async () => {
+  it("un jugador recibe las sugerencias en el mismo render", async () => {
     withAccess("player");
     vi.mocked(suggestTeams).mockResolvedValue({ ok: true, rows: [], total: 0 });
 

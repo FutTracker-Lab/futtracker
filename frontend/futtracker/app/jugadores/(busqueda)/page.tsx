@@ -23,7 +23,7 @@ import {
 } from "@/lib/search/params";
 import { createClient } from "@/lib/supabase/server";
 
-// Sin Suspense ni loading.tsx a propósito: con streaming, sin JavaScript solo se ve el skeleton (FUT-155).
+// Sin Suspense ni loading.tsx a propósito (FUT-155).
 export default async function PlayerSearchPage({
   searchParams,
 }: PageProps<"/jugadores">) {

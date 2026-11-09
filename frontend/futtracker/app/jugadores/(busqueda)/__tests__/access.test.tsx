@@ -88,7 +88,7 @@ describe("resultados de /jugadores", () => {
     expect(searchPlayers).not.toHaveBeenCalled();
   });
 
-  it("un delegado recibe los resultados en el mismo render, sin streaming", async () => {
+  it("un delegado recibe los resultados en el mismo render", async () => {
     signedInAs(found("delegate"));
 
     await expect(page()).resolves.toBeTruthy();
