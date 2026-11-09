@@ -82,6 +82,10 @@ body {
  * En pantallas táctiles suben a 16px. Va sin capa a propósito, para ganarle a
  * `text-sm` (ver arriba). En escritorio no cambia nada.
  *
+ * Ojo: por lo mismo, pisa cualquier tamaño, también uno más grande. Un campo
+ * que necesite más de 16px en táctil (un `text-lg`, por ejemplo) tiene que
+ * salir de esta regla con un selector propio: ninguna clase lo va a arreglar.
+ *
  * No se usa `maximum-scale=1` en el viewport, que es el arreglo más común:
  * en Android bloquea el zoom con dos dedos (docs/accesibilidad.md).
  */
