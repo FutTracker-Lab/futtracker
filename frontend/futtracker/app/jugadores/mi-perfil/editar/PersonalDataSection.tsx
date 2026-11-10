@@ -49,6 +49,7 @@ export default function PersonalDataSection({
         <TextField
           id="full_name"
           name="full_name"
+          autoComplete="name"
           type="text"
           label="Nombre y apellido"
           value={values.fullName}
@@ -61,6 +62,7 @@ export default function PersonalDataSection({
           <TextField
             id="birth_date"
             name="birth_date"
+            autoComplete="bday"
             type="date"
             label="Fecha de nacimiento"
             hint="No se muestra: se publica solo la edad."
@@ -72,6 +74,7 @@ export default function PersonalDataSection({
           <TextField
             id="phone"
             name="phone"
+            autoComplete="tel"
             type="tel"
             label="Teléfono"
             value={values.phone}
@@ -93,6 +96,7 @@ export default function PersonalDataSection({
           <SelectField
             id="country"
             name="country"
+            autoComplete="country"
             label="País"
             options={COUNTRIES}
             value={values.country}
