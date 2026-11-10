@@ -59,6 +59,12 @@ describe("MessageComposer", () => {
     expect(counter()).toBe("4/2000");
   });
 
+  it("la caja tiene name para que el navegador la identifique", () => {
+    render(<MessageComposer conversationId={CONVERSATION} />);
+
+    expect(textarea().name).toBe("body");
+  });
+
   it.each([
     ["vacía", ""],
     ["solo espacios", "     "],
