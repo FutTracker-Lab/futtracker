@@ -81,6 +81,17 @@ describe("con sesión", () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
+  // FUT-157: llamada directo, sin el formulario que antes hacía `|| null`.
+  it("llamada directo con descripción vacía guarda null", async () => {
+    mocks.createVacancy.mockResolvedValue({ team_id: TEAM });
+
+    expect(await createVacancyAction({ ...VALID_INPUT, description: "" })).toEqual({ ok: true });
+    expect(mocks.createVacancy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ description: null }),
+    );
+  });
+
   it("cierra como siempre, sin redirigir", async () => {
     mocks.setVacancyStatus.mockResolvedValue({ team_id: TEAM });
 
