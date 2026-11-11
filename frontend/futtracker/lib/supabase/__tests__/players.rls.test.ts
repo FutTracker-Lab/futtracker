@@ -314,12 +314,49 @@ describe.skipIf(!IS_LOCAL)("zona de public.players (T09c)", () => {
     });
   });
 
-  it("con zona, un update directo de coordenadas no las pisa", async () => {
+  // FUT-154: las coordenadas ya no se otorgan para insert ni update. Mandarlas
+  // rebota con 42501 antes de llegar al trigger, y la fila queda como estaba.
+  it("con zona, un update directo de coordenadas rebota con 42501", async () => {
     await update({ zone_id: "san-isidro" });
 
-    await update({ latitude: 0, longitude: 0 });
+    const { error } = await playerA.client
+      .from("players")
+      .update({ latitude: 0, longitude: 0 })
+      .eq("id", playerA.id);
 
+    expect(error?.code).toBe("42501");
     expect(await location()).toMatchObject({ latitude: -34.4708, longitude: -58.5286 });
+  });
+
+  // FUT-154: tampoco al crear la ficha. Es el camino de `upsertPlayer`, con un
+  // jugador que todavía no tiene fila.
+  it("crear la ficha mandando coordenadas rebota con 42501 y no crea nada", async () => {
+    const fresh = await signUpUser("player");
+
+    const { error } = await fresh.client
+      .from("players")
+      .upsert({ id: fresh.id, position: "arquero", zone_id: "pilar", latitude: 0, longitude: 0 });
+
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toContain("permission denied");
+
+    const { data } = await fresh.client.from("players").select("id").eq("id", fresh.id);
+    expect(data).toEqual([]);
+  });
+
+  // FUT-154: lo que ve otro jugador es el centro de la zona, el mismo dato que
+  // ya da la ciudad. No hay coordenadas exactas que esconder.
+  it("otro jugador ve las coordenadas del centro de la zona", async () => {
+    await update({ zone_id: "san-isidro" });
+
+    const { data, error } = await playerB.client
+      .from("players")
+      .select("latitude, longitude")
+      .eq("id", playerA.id)
+      .single();
+
+    expect(error).toBeNull();
+    expect(data).toEqual({ latitude: -34.4708, longitude: -58.5286 });
   });
 
   it("al quitar la zona no quedan coordenadas, pero la ciudad de texto se conserva", async () => {
@@ -336,13 +373,15 @@ describe.skipIf(!IS_LOCAL)("zona de public.players (T09c)", () => {
     });
   });
 
-  // El update de coordenadas tiene que funcionar (se chequea su error) y aun
-  // así dejarlas en null: sin el trigger, quedarían guardadas.
-  it("un perfil sin zona no puede poner coordenadas a mano", async () => {
+  it("un perfil sin zona no puede poner coordenadas a mano: 42501", async () => {
     await update({ zone_id: null, city: "Pilar" });
 
-    await update({ latitude: -34.5, longitude: -58.9 });
+    const { error } = await playerA.client
+      .from("players")
+      .update({ latitude: -34.5, longitude: -58.9 })
+      .eq("id", playerA.id);
 
+    expect(error?.code).toBe("42501");
     expect(await location()).toMatchObject({
       zone_id: null,
       city: "Pilar",

@@ -1,4 +1,3 @@
-import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import PlayerSearchLayout from "@/app/jugadores/(busqueda)/layout";
@@ -31,14 +30,6 @@ const CHILDREN = "contenido";
 
 const layout = () => PlayerSearchLayout({ children: CHILDREN });
 const page = () => PlayerSearchPage({ searchParams: Promise.resolve({}) } as never);
-
-// Lo que hay adentro del Suspense de la página.
-async function results() {
-  const suspense = (await page()) as ReactElement<{ children: ReactElement }>;
-  const { type, props } = suspense.props.children;
-
-  return (type as (props: unknown) => Promise<unknown>)(props);
-}
 
 function signedInAs(result: ProfileResult) {
   vi.mocked(createClient).mockResolvedValue({
@@ -90,24 +81,17 @@ describe("layout de /jugadores", () => {
 });
 
 describe("resultados de /jugadores", () => {
-  it("la página muestra el skeleton sin esperar la lectura del perfil", async () => {
-    signedInAs({ kind: "error" });
-
-    await expect(page()).resolves.toBeTruthy();
-    expect(getProfileById).not.toHaveBeenCalled();
-  });
-
   it("si falla la lectura tira para que error.tsx ofrezca Reintentar, sin buscar", async () => {
     signedInAs({ kind: "error" });
 
-    await expect(results()).rejects.toThrow("No se pudo leer el perfil");
+    await expect(page()).rejects.toThrow("No se pudo leer el perfil");
     expect(searchPlayers).not.toHaveBeenCalled();
   });
 
-  it("un delegado ve la búsqueda", async () => {
+  it("un delegado recibe los resultados en el mismo render", async () => {
     signedInAs(found("delegate"));
 
-    await expect(results()).resolves.toBeTruthy();
+    await expect(page()).resolves.toBeTruthy();
     expect(searchPlayers).toHaveBeenCalledTimes(1);
   });
 });

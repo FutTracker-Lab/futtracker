@@ -14,7 +14,7 @@ const RADIUS_OPTIONS = SEARCH_RADII.map((radius) => ({
 
 type Props = { radius: SearchRadius };
 
-// Select no controlado: al cambiar la URL lo remonta el `key` del Suspense de page.tsx.
+// Select no controlado: al cambiar la URL lo remonta el `key` que le pone page.tsx.
 export default function SuggestionFilters({ radius }: Props) {
   return (
     <Form

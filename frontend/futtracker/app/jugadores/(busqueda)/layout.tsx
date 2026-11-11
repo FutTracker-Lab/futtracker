@@ -5,7 +5,6 @@ import { getProfileById } from "@/lib/data/profiles";
 import { RouteConstants } from "@/lib/routes";
 import { createClient } from "@/lib/supabase/server";
 
-// Acá y no en page.tsx: dentro del Suspense de loading.tsx el notFound() sale con status 200.
 export default async function PlayerSearchLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
   const {

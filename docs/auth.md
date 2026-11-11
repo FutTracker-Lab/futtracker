@@ -62,6 +62,29 @@ Las credenciales de Resend se cargan como variables de entorno del proyecto de
 Supabase, desde el dashboard. **Nunca en el repo**, ni siquiera en un archivo
 gitignoreado: no hay ningún flujo del proyecto que las necesite en local.
 
+### Límites de Auth: el 429
+
+Supabase Auth corta con **429** al pasar alguno de los límites de
+Authentication → Rate Limits. Los dos que importan:
+
+| Límite | Valor por defecto | `error_code` |
+|---|---|---|
+| Mails por hora, para **todo el proyecto** | 2 con el SMTP default de Supabase | `over_email_send_rate_limit` |
+| Registros y logins cada 5 minutos, por IP | 30 | `over_request_rate_limit` |
+
+El de mails es el que se alcanza: con `Confirm email` prendido, **cada alta
+manda un mail**, y el cupo de 2 lo comparten también la recuperación de
+contraseña y el cambio de email. Pasó en dev el 2026-11-05: tenía `Confirm
+email` prendido (no `false` como dice la tabla de arriba) y desde el tercer
+registro de la hora todos daban 429. Para que no pase: o se apaga la
+confirmación, o el proyecto usa un SMTP propio, donde el límite se puede subir.
+
+El formulario muestra "Hubo demasiados intentos. Esperá unos minutos y probá de
+nuevo." (`auth.errors.tooManyRequests`) en el registro y en el login. La
+recuperación de contraseña no lo muestra: responde `ok` siempre, para no
+revelar qué emails existen. En local no se ve: el stack local no aplica estos
+límites.
+
 ## Decisiones
 
 ### `signUp` con un email ya registrado responde igual que con uno nuevo

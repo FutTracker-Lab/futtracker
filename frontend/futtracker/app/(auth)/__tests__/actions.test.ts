@@ -61,6 +61,20 @@ const USER_ALREADY_EXISTS = {
   message: "User already registered",
 };
 
+// Lo que devuelve Supabase Auth con los límites de `Rate Limits` alcanzados
+// (copiado de los logs de dev).
+const EMAIL_RATE_LIMIT = {
+  code: "over_email_send_rate_limit",
+  status: 429,
+  message: "email rate limit exceeded",
+};
+
+const REQUEST_RATE_LIMIT = {
+  code: "over_request_rate_limit",
+  status: 429,
+  message: "Request rate limit reached",
+};
+
 /**
  * Las actions tienen un piso de duración deliberado. Con timers reales cada
  * caso pagaría esa espera; se adelanta el reloj en su lugar.
@@ -138,6 +152,41 @@ describe("actions de auth", () => {
         redirectTo: "/jugadores/mi-perfil",
       });
     });
+
+    // Con la confirmación de email prendida, cada alta manda un mail, y el
+    // SMTP por defecto de Supabase deja 2 por hora para todo el proyecto.
+    it("con el límite de mails alcanzado devuelve demasiados intentos", async () => {
+      mocks.signUp.mockResolvedValue({
+        data: { user: null },
+        error: EMAIL_RATE_LIMIT,
+      });
+
+      const result = await run(signUp(PLAYER_SIGN_UP));
+
+      expect(result).toEqual({ ok: false, error: "auth.errors.tooManyRequests" });
+    });
+
+    it("con el límite de pedidos alcanzado devuelve demasiados intentos", async () => {
+      mocks.signUp.mockResolvedValue({
+        data: { user: null },
+        error: REQUEST_RATE_LIMIT,
+      });
+
+      const result = await run(signUp(PLAYER_SIGN_UP));
+
+      expect(result).toEqual({ ok: false, error: "auth.errors.tooManyRequests" });
+    });
+
+    it("otro error sigue siendo inesperado", async () => {
+      mocks.signUp.mockResolvedValue({
+        data: { user: null },
+        error: { code: "unexpected_failure", status: 500, message: "boom" },
+      });
+
+      const result = await run(signUp(PLAYER_SIGN_UP));
+
+      expect(result).toEqual({ ok: false, error: "auth.errors.unexpected" });
+    });
   });
 
   describe("signIn", () => {
@@ -175,6 +224,21 @@ describe("actions de auth", () => {
         ok: false,
         error: "auth.errors.invalidCredentials",
       });
+    });
+
+    // El límite de logins es por IP, no por email: decirlo no revela qué
+    // cuentas existen. "Email o contraseña incorrectos" acá sería mentira.
+    it("con el límite de pedidos alcanzado devuelve demasiados intentos", async () => {
+      mocks.signInWithPassword.mockResolvedValue({
+        data: { user: null, session: null },
+        error: REQUEST_RATE_LIMIT,
+      });
+
+      const result = await run(
+        signIn({ email: PLAYER_SIGN_UP.email, password: "cualquiera" }),
+      );
+
+      expect(result).toEqual({ ok: false, error: "auth.errors.tooManyRequests" });
     });
 
     it("con credenciales válidas redirige según el rol del perfil", async () => {
