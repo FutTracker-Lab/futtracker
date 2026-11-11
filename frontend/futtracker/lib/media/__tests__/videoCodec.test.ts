@@ -49,9 +49,12 @@ function isoFile(...topLevel: Bytes[]): Blob {
   return new Blob([box("ftyp", ascii("isom"), new Uint8Array(4)), ...topLevel]);
 }
 
-function webmFile(codecId: string): Blob {
+// El CodecID como elemento EBML: ID 0x86, el tamaño como vint de un byte
+// (0x80 | largo) y el texto. `after` son los bytes que siguen en el archivo.
+function webmFile(codecId: string, after: Bytes = new Uint8Array(40)): Blob {
   const ebmlMagic = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]);
-  return new Blob([ebmlMagic, new Uint8Array(40), ascii(codecId), new Uint8Array(40)]);
+  const element = concat([new Uint8Array([0x86, 0x80 | codecId.length]), ascii(codecId)]);
+  return new Blob([ebmlMagic, new Uint8Array(40), element, after]);
 }
 
 // Los datos de imagen: el detector tiene que saltearlos para llegar al `moov`.
@@ -145,6 +148,32 @@ describe("readVideoFormat: WebM", () => {
     ["V_THEORA", "other"],
   ] as const)("con %s es %s", async (codecId, codec) => {
     expect(await readVideoFormat(webmFile(codecId))).toEqual({ container: "webm", codec });
+  });
+
+  // Revisión de la #66: buscando el texto con una regex, el ID del elemento
+  // siguiente se pegaba al nombre. FlagForced (0x55AA) y Name (0x536E)
+  // empiezan con "U" y "S", así que "V_VP9" se leía "V_VP9U" y se rechazaba.
+  it.each([
+    ["FlagForced", [0x55, 0xaa, 0x81, 0x00]],
+    ["Name", [0x53, 0x6e, 0x82, 0x41, 0x42]],
+  ])("lee el códec aunque después venga %s", async (_, bytes) => {
+    const file = webmFile("V_VP9", Uint8Array.from(bytes));
+
+    expect(await readVideoFormat(file)).toEqual({ container: "webm", codec: "vp9" });
+  });
+
+  it("ignora el relleno con ceros al final del CodecID", async () => {
+    expect(await readVideoFormat(webmFile("V_VP9\0\0"))).toEqual({
+      container: "webm",
+      codec: "vp9",
+    });
+  });
+
+  it("un V_ suelto fuera de un CodecID no cuenta", async () => {
+    const ebmlMagic = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]);
+    const file = new Blob([ebmlMagic, ascii("V_VP9 en un título"), new Uint8Array(40)]);
+
+    expect(await readVideoFormat(file)).toBeNull();
   });
 
   it("sin CodecID de video no se puede leer", async () => {

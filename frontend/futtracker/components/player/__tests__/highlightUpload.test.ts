@@ -58,10 +58,13 @@ describe("validateHighlightFormat", () => {
     expect(validateHighlightFormat(null)).toBeNull();
   });
 
-  it("rechaza HEVC diciendo qué formatos sirven y cómo cambiar el iPhone", () => {
+  // Algunos Android (Samsung, por ejemplo) también graban en HEVC: el mensaje
+  // no puede servirle solo a un iPhone (revisión de la #66).
+  it("rechaza HEVC diciendo qué formatos sirven y cómo cambiar la cámara en cualquier celular", () => {
     expect(validateHighlightFormat({ container: "mp4", codec: "hevc" })).toBe(
       "Este video no se puede ver en todos los celulares. Subí un MP4 o MOV en H.264, o WebM. " +
-        "En iPhone: Ajustes > Cámara > Formatos > Más compatible.",
+        "Si lo grabaste con el celular, elegí el formato más compatible (H.264) en la configuración " +
+        "de la cámara. En iPhone: Ajustes > Cámara > Formatos > Más compatible.",
     );
   });
 });

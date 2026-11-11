@@ -39,11 +39,13 @@ export function validateHighlightFile(file: Pick<File, "type" | "size">): string
   return null;
 }
 
-// FUT-163: el caso típico es un iPhone en "Alta eficiencia" (HEVC), por eso el
-// mensaje dice cómo cambiarlo.
+// FUT-163: el caso típico es un video HEVC, que graban los iPhone en "Alta
+// eficiencia" y también algunos Android. El mensaje dice cómo cambiarlo en
+// cualquier celular, y el camino exacto en iPhone.
 export const HIGHLIGHT_CODEC_ERROR =
   `Este video no se puede ver en todos los celulares. Subí un ${HIGHLIGHT_FORMATS}. ` +
-  "En iPhone: Ajustes > Cámara > Formatos > Más compatible.";
+  "Si lo grabaste con el celular, elegí el formato más compatible (H.264) en la configuración " +
+  "de la cámara. En iPhone: Ajustes > Cámara > Formatos > Más compatible.";
 
 // `null` (no se pudo leer el encabezado) pasa, igual que la duración.
 export function validateHighlightFormat(format: VideoFormat | null): string | null {

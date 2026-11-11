@@ -65,7 +65,8 @@ hoy no hay dónde hacerlo sin agregar infraestructura:
   la fototeca, iOS lo entrega convertido a H.264 y en la misma resolución (ver
   las pruebas en dispositivos). El rechazo le llega a quien sube un HEVC desde
   una computadora, por ejemplo un video pasado del iPhone por AirDrop o cable.
-  El mensaje le dice cómo grabar en un formato compatible.
+  El mensaje le dice cómo grabar en un formato compatible, en cualquier
+  celular y con el camino exacto en iPhone.
 - **Grabar desde el diálogo de subida en un iPhone da un video de 480×360.**
   Es lo que hace Safari cuando graba directo desde un formulario, no algo que
   cambie este filtro. Para un highlight conviene grabar con la app Cámara y
@@ -118,9 +119,12 @@ formato se leyó del encabezado de cada archivo en Storage.
 | Grabado desde el diálogo, en "Alta eficiencia" | "Grabar video" del selector | MOV, H.264, **480×360** | sí | sí | sí | sin probar |
 | Cámara de Android | Chrome | sin probar | | | | |
 
-**Falta Android.** No hubo un Android a mano. Los tres clips llegaron en H.264,
-que Chrome de Android reproduce siempre, así que lo esperable es que se vean;
-falta confirmarlo, junto con qué formato manda la cámara de un Android.
+**Android quedó sin probar.** No hubo un Android a mano, y el equipo decidió
+mergear sin esa prueba (2026-11-11). Los tres clips llegaron en H.264, que
+Chrome de Android reproduce siempre, así que lo esperable es que se vean. Lo
+que no se sabe es qué formato manda la cámara de cada Android: algunos (Samsung,
+por ejemplo) graban en HEVC, y a esos el filtro los rechaza con el mensaje que
+dice cómo elegir H.264 en la cámara.
 
 La fila de "Alta eficiencia" es la que decidía cuánto molesta la restricción:
 como iOS convierte el video al elegirlo, el jugador de iPhone que sube desde

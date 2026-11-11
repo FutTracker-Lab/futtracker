@@ -50,10 +50,13 @@ function isEbml(magic: Uint8Array): boolean {
 }
 
 // La pista de video va en `Tracks`, al principio del archivo. En vez de
-// recorrer el EBML, busca el primer CodecID de video como texto: un clip de
-// cámara o de grabación de pantalla tiene una sola pista de video.
+// recorrer todo el árbol EBML, busca el elemento CodecID (ID 0x86) y lee su
+// texto con el tamaño que declara: así el elemento siguiente no se pega al
+// nombre. Un clip de cámara o de grabación de pantalla tiene una sola pista de
+// video, así que alcanza con el primer CodecID que empiece con "V_".
 const WEBM_SCAN_BYTES = 1024 * 1024;
-const WEBM_VIDEO_CODEC_ID = /V_[A-Z0-9_/.]+/;
+const WEBM_CODEC_ID_ELEMENT = 0x86;
+const WEBM_MAX_CODEC_ID_LENGTH = 64;
 const WEBM_CODECS: Record<string, VideoCodec> = {
   V_VP8: "vp8",
   V_VP9: "vp9",
@@ -62,11 +65,64 @@ const WEBM_CODECS: Record<string, VideoCodec> = {
   "V_MPEGH/ISO/HEVC": "hevc",
 };
 
-async function readWebm(file: Blob): Promise<VideoFormat | null> {
-  const head = await readBytes(file, 0, WEBM_SCAN_BYTES);
-  const match = WEBM_VIDEO_CODEC_ID.exec(new TextDecoder("latin1").decode(head));
+// Un entero de largo variable de EBML: la cantidad de ceros a la izquierda del
+// primer byte dice cuántos bytes ocupa, y ese bit marcador no es parte del
+// valor.
+function readVint(data: Uint8Array, offset: number): { value: number; length: number } | null {
+  const first = data[offset];
 
-  return match ? { container: "webm", codec: WEBM_CODECS[match[0]] ?? "other" } : null;
+  if (first === undefined || first === 0) {
+    return null;
+  }
+
+  const length = Math.clz32(first) - 23;
+
+  if (offset + length > data.length) {
+    return null;
+  }
+
+  let value = first & (0xff >> length);
+  for (let i = 1; i < length; i++) {
+    value = value * 256 + data[offset + i];
+  }
+
+  return { value, length };
+}
+
+function videoCodecIdIn(data: Uint8Array): string | null {
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] !== WEBM_CODEC_ID_ELEMENT) {
+      continue;
+    }
+
+    const size = readVint(data, i + 1);
+
+    if (!size || size.value < 2 || size.value > WEBM_MAX_CODEC_ID_LENGTH) {
+      continue;
+    }
+
+    const start = i + 1 + size.length;
+    const end = start + size.value;
+
+    if (end > data.length) {
+      continue;
+    }
+
+    // Los textos de EBML pueden venir rellenos con ceros al final.
+    const codecId = String.fromCharCode(...data.subarray(start, end)).replace(/\0+$/, "");
+
+    if (/^V_[\x20-\x7e]+$/.test(codecId)) {
+      return codecId;
+    }
+  }
+
+  return null;
+}
+
+async function readWebm(file: Blob): Promise<VideoFormat | null> {
+  const codecId = videoCodecIdIn(await readBytes(file, 0, WEBM_SCAN_BYTES));
+
+  return codecId ? { container: "webm", codec: WEBM_CODECS[codecId] ?? "other" } : null;
 }
 
 // --- MP4 / MOV ---------------------------------------------------------------
