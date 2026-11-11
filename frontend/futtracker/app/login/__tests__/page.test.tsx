@@ -28,35 +28,50 @@ const { default: AuthForm } = await import("@/components/auth/AuthForm");
 
 type Props = { redirectTo?: string; initialTab?: string };
 
-function findAuthFormProps(node: ReactNode): Props | null {
+function findElement(
+  node: ReactNode,
+  matches: (element: ReactElement<Record<string, unknown>>) => boolean,
+): ReactElement<Record<string, unknown>> | null {
   if (!node || typeof node !== "object") {
     return null;
   }
 
   if (Array.isArray(node)) {
     for (const child of node) {
-      const found = findAuthFormProps(child);
+      const found = findElement(child, matches);
       if (found) return found;
     }
     return null;
   }
 
-  const element = node as ReactElement<{ children?: ReactNode } & Props>;
+  const element = node as ReactElement<Record<string, unknown>>;
 
-  if (element.type === AuthForm) {
-    return element.props;
+  if (matches(element)) {
+    return element;
   }
 
-  return findAuthFormProps(element.props?.children);
+  return findElement(element.props?.children as ReactNode, matches);
+}
+
+function textOf(node: ReactNode): string {
+  if (typeof node === "string") return node;
+  if (!node || typeof node !== "object") return "";
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  return textOf((node as ReactElement<{ children?: ReactNode }>).props?.children);
+}
+
+async function renderWith(searchParams: Record<string, string | string[]>) {
+  return LoginPage({
+    searchParams: Promise.resolve(searchParams),
+    params: Promise.resolve({}),
+  } as Parameters<typeof LoginPage>[0]);
 }
 
 async function redirectToFor(redirectTo?: string | string[]) {
-  const page = await LoginPage({
-    searchParams: Promise.resolve(redirectTo === undefined ? {} : { redirectTo }),
-    params: Promise.resolve({}),
-  } as Parameters<typeof LoginPage>[0]);
+  const page = await renderWith(redirectTo === undefined ? {} : { redirectTo });
 
-  return findAuthFormProps(page)?.redirectTo;
+  return (findElement(page, (element) => element.type === AuthForm)?.props as Props | undefined)
+    ?.redirectTo;
 }
 
 describe("LoginPage y redirectTo", () => {
@@ -77,5 +92,30 @@ describe("LoginPage y redirectTo", () => {
 
   it("sin redirectTo, nada", async () => {
     expect(await redirectToFor()).toBeUndefined();
+  });
+});
+
+const findNotice = (page: ReactNode) => findElement(page, (element) => element.props?.role === "status");
+
+describe("LoginPage y el aviso de servicio no disponible", () => {
+  it("con aviso=servicio muestra el aviso con Reintentar hacia el destino", async () => {
+    const page = await renderWith({ aviso: "servicio", redirectTo: "/sugerencias?radio=50" });
+
+    const notice = findNotice(page);
+    expect(textOf(notice)).toContain("El servicio no está disponible en este momento.");
+    const retry = findElement(notice, (element) => textOf(element) === "Reintentar" && "href" in element.props);
+    expect(retry?.props.href).toBe("/sugerencias?radio=50");
+  });
+
+  it("sin un destino válido, el aviso sale sin Reintentar", async () => {
+    const page = await renderWith({ aviso: "servicio", redirectTo: "//evil.com" });
+
+    const notice = findNotice(page);
+    expect(notice).not.toBeNull();
+    expect(textOf(notice)).not.toContain("Reintentar");
+  });
+
+  it.each<Record<string, string>>([{}, { aviso: "otra-cosa" }])("con %o no hay aviso", async (searchParams) => {
+    expect(findNotice(await renderWith(searchParams))).toBeNull();
   });
 });

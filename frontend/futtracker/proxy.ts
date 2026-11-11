@@ -27,9 +27,13 @@ function isServerAction(request: NextRequest): boolean {
 }
 
 export async function proxy(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+  const { response, session } = await updateSession(request);
 
-  if (user || isServerAction(request) || !requiresSession(request.nextUrl.pathname)) {
+  if (
+    session.status === "signedIn" ||
+    isServerAction(request) ||
+    !requiresSession(request.nextUrl.pathname)
+  ) {
     return response;
   }
 
@@ -39,6 +43,10 @@ export async function proxy(request: NextRequest) {
     "redirectTo",
     `${request.nextUrl.pathname}${request.nextUrl.search}`,
   );
+
+  if (session.status === "unavailable") {
+    login.searchParams.set("aviso", "servicio");
+  }
 
   const redirect = NextResponse.redirect(login);
 
