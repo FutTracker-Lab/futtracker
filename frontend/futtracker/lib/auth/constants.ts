@@ -12,6 +12,7 @@ import { publicEnv } from "@/lib/env/public";
 export type AuthErrorKey =
   | "auth.errors.invalidInput"
   | "auth.errors.invalidCredentials"
+  | "auth.errors.tooManyRequests"
   | "auth.errors.unexpected";
 
 export type ActionResult =
@@ -21,6 +22,7 @@ export type ActionResult =
 export const INVALID_INPUT: AuthErrorKey = "auth.errors.invalidInput";
 export const INVALID_CREDENTIALS: AuthErrorKey =
   "auth.errors.invalidCredentials";
+export const TOO_MANY_REQUESTS: AuthErrorKey = "auth.errors.tooManyRequests";
 export const UNEXPECTED: AuthErrorKey = "auth.errors.unexpected";
 
 // Piso de duración para que un email registrado y uno nuevo tarden lo mismo.

@@ -4,7 +4,11 @@ import { useActionState, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { signIn, signUp } from "@/app/(auth)/actions";
-import { REDIRECT_BY_ROLE, type ActionResult } from "@/lib/auth/constants";
+import {
+  REDIRECT_BY_ROLE,
+  type ActionResult,
+  type AuthErrorKey,
+} from "@/lib/auth/constants";
 import type { Role, SignInInput, SignUpInput } from "@/lib/auth/schemas";
 import SubmitButton from "@/components/ui/SubmitButton";
 import TextField from "@/components/ui/TextField";
@@ -24,9 +28,13 @@ const INITIAL_STATE: ActionResult = { ok: true };
 // su reemplazo, hasta que T03a la sume al backend.
 const STRONG_PASSWORD_RE = /^(?=.*[A-Z])(?=.*\d).+$/;
 
-const ERROR_MESSAGES: Record<string, string> = {
+// Una entrada por cada `AuthErrorKey`: signIn y signUp pueden devolver
+// cualquiera, y una clave sin mensaje dejaría el error en blanco.
+const ERROR_MESSAGES: Record<AuthErrorKey, string> = {
   "auth.errors.invalidInput": "Revisá los datos ingresados.",
   "auth.errors.invalidCredentials": "Email o contraseña incorrectos.",
+  "auth.errors.tooManyRequests":
+    "Hubo demasiados intentos. Esperá unos minutos y probá de nuevo.",
   "auth.errors.unexpected": "Ocurrió un error inesperado. Probá de nuevo.",
 };
 
