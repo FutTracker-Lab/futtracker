@@ -85,6 +85,7 @@ export default function MessageComposer({ conversationId }: Props) {
       <div className="flex items-end gap-3">
         <textarea
           ref={textareaRef}
+          name="body"
           value={text}
           onChange={(event) => {
             setText(event.target.value);
