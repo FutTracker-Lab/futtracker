@@ -7,6 +7,10 @@ import { suggestTeams } from "@/lib/data/suggestions";
 
 vi.mock("@/lib/auth/playerAccess", () => ({ getPlayerAccess: vi.fn() }));
 vi.mock("@/lib/data/suggestions", () => ({ suggestTeams: vi.fn() }));
+vi.mock("@/lib/data/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/data/players")>()),
+  getMyPlayer: vi.fn(),
+}));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/app/vacantes/actions", () => ({ applyToVacancyAction: vi.fn() }));
 vi.mock("@/components/nav/AppShell", () => ({ default: () => null }));
@@ -77,9 +81,11 @@ describe("página de /sugerencias", () => {
     },
   );
 
-  it("un jugador recibe la página", async () => {
+  it("un jugador recibe las sugerencias en el mismo render", async () => {
     withAccess("player");
+    vi.mocked(suggestTeams).mockResolvedValue({ ok: true, rows: [], total: 0 });
 
     await expect(page()).resolves.toBeTruthy();
+    expect(suggestTeams).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import type { User } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type User } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { publicEnv } from "@/lib/env/public";
@@ -14,14 +14,19 @@ import type { Database } from "@/lib/supabase/database.types";
  * refresh token siga siendo válido.
  *
  * Ojo con el alcance: los docs de Next 16 dicen que Proxy sirve para chequeos
- * optimistas y no como solución de sesión ni de autorización. Devuelve el
- * `user` para que `proxy.ts` decida el redirect, pero eso es solo UX: la
+ * optimistas y no como solución de sesión ni de autorización. Devuelve la
+ * sesión para que `proxy.ts` decida el redirect, pero eso es solo UX: la
  * autorización de verdad la hacen RLS y los chequeos dentro de cada Server
  * Action, que es donde no se puede saltear.
  */
+export type SessionCheck =
+  | { status: "signedIn"; user: User }
+  | { status: "signedOut" }
+  | { status: "unavailable" };
+
 export async function updateSession(request: NextRequest): Promise<{
   response: NextResponse;
-  user: User | null;
+  session: SessionCheck;
 }> {
   let response = NextResponse.next({ request });
 
@@ -54,7 +59,17 @@ export async function updateSession(request: NextRequest): Promise<{
   // deslogueado de forma intermitente, que es un bug carísimo de encontrar.
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
 
-  return { response, user };
+  if (user) {
+    return { response, session: { status: "signedIn", user } };
+  }
+
+  // Red caída o 5xx: auth-js no borra la sesión, así que no es lo mismo que no tenerla.
+  if (isAuthRetryableFetchError(error)) {
+    return { response, session: { status: "unavailable" } };
+  }
+
+  return { response, session: { status: "signedOut" } };
 }

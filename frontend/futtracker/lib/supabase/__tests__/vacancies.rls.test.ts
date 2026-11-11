@@ -191,6 +191,9 @@ describe.skipIf(!IS_LOCAL)("RLS y reglas de vacancies", () => {
       ["modalidad futbol_9", { modality: "futbol_9" }],
       ["nivel pro", { level: "pro" }],
       ["descripción de 281 caracteres", { description: "x".repeat(281) }],
+      // FUT-157: por la API directa, sin el schema que la pasa a null.
+      ["descripción vacía", { description: "" }],
+      ["descripción solo con espacios", { description: "   " }],
     ])("rechaza %s", async (_caso, invalido) => {
       const { error } = await delegate.client.from("vacancies").insert({
         team_id: teamId,
@@ -201,6 +204,20 @@ describe.skipIf(!IS_LOCAL)("RLS y reglas de vacancies", () => {
       });
 
       expect(error?.code).toBe("23514");
+    });
+
+    // FUT-157: la base cuenta caracteres (`char_length`), igual que el
+    // formulario desde este ticket. 280 emojis son 560 unidades UTF-16.
+    it("acepta 280 emojis", async () => {
+      const { error } = await delegate.client.from("vacancies").insert({
+        team_id: teamId,
+        position: "delantero",
+        modality: "futbol_11",
+        level: "competitivo",
+        description: "🥅".repeat(280),
+      });
+
+      expect(error).toBeNull();
     });
   });
 

@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import ActiveFilterChips from "@/components/search/ActiveFilterChips";
 import PlayerResultRow from "@/components/search/PlayerResultRow";
+import SearchFilters from "@/components/search/SearchFilters";
+import SearchFiltersDisclosure from "@/components/search/SearchFiltersDisclosure";
 import SearchPagination from "@/components/search/SearchPagination";
 import { flatten } from "@/components/player/__tests__/reactTree";
 import type { PlayerSearchRow } from "@/lib/data/players";
@@ -108,6 +110,17 @@ describe("ActiveFilterChips", () => {
 
   it("sin chips no renderiza nada", () => {
     expect(ActiveFilterChips({ chips: [] })).toBeNull();
+  });
+});
+
+describe("SearchFilters", () => {
+  it("el botón 'Filtros' cuenta los mismos filtros que los chips", () => {
+    const filters = { ...DEFAULT_SEARCH_FILTERS, position: "arquero" as const };
+    const disclosure = elements(SearchFilters({ filters })).find(
+      (element) => element.type === SearchFiltersDisclosure,
+    );
+
+    expect(disclosure?.props.appliedCount).toBe(2);
   });
 });
 
