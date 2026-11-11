@@ -21,7 +21,7 @@ const RADIO_LABEL_CLASS = "flex min-h-11 items-center gap-2 text-sm text-zinc-70
 
 type Props = { filters: SearchCriteria };
 
-// Inputs no controlados: cuando un chip o "Limpiar" cambian la URL, los remonta el `key` del Suspense de page.tsx.
+// Inputs no controlados: cuando un chip o "Limpiar" cambian la URL, los remonta el `key` que les pone page.tsx.
 export default function SearchFilters({ filters }: Props) {
   return (
     <SearchFiltersDisclosure
