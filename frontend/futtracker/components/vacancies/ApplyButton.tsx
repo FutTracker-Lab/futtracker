@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { applyToVacancyAction } from "@/app/vacantes/actions";
 import CompleteProfileNotice from "@/components/vacancies/CompleteProfileNotice";
@@ -48,7 +49,8 @@ export default function ApplyButton({ vacancyId, positionLabel, teamName, applie
 
       try {
         result = await applyToVacancyAction(vacancyId);
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         result = { ok: false, error: "unexpected" };
       }
 

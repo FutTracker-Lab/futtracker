@@ -93,6 +93,20 @@ describe("teamInputSchema", () => {
     expect(teamInputSchema.parse(INPUT)).toEqual(INPUT);
   });
 
+  // FUT-158: un U+202E en el nombre invierte cómo se ve el texto que sigue.
+  it.each(["name", "club_name", "category", "league", "bio"] as const)(
+    "saca los controles bidi de %s antes de guardar",
+    (field) => {
+      const parsed = teamInputSchema.parse({ ...INPUT, [field]: `Club\u202E Pilar\u2066` });
+
+      expect(parsed[field]).toBe("Club Pilar");
+    },
+  );
+
+  it("mide el largo del nombre sin los controles bidi", () => {
+    expect(teamInputSchema.safeParse({ ...INPUT, name: "\u202EA" }).success).toBe(false);
+  });
+
   // Los rangos duplican los `check` de la migración. Si alguien afloja uno de
   // los dos lados, estos casos lo marcan.
   it.each([

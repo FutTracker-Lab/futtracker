@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { requireSession } from "@/lib/auth/requireSession";
 import {
   applicationErrorKey,
   applyToVacancy,
@@ -10,7 +11,6 @@ import {
 } from "@/lib/data/applications";
 import type { ApplyErrorKey } from "@/lib/format/applicationLabels";
 import { RouteConstants } from "@/lib/routes";
-import { createClient } from "@/lib/supabase/server";
 
 export type ApplyActionResult = { ok: true } | { ok: false; error: ApplyErrorKey };
 export type WithdrawActionResult = { ok: boolean };
@@ -19,10 +19,12 @@ const idSchema = z.uuid();
 
 function revalidateApplicationPages() {
   revalidatePath(RouteConstants.vacancies.board);
+  revalidatePath(RouteConstants.suggestions);
   revalidatePath("/equipos/[id]", "page");
 }
 
 export async function applyToVacancyAction(vacancyId: unknown): Promise<ApplyActionResult> {
+  const { supabase } = await requireSession();
   const parsed = idSchema.safeParse(vacancyId);
 
   if (!parsed.success) {
@@ -30,7 +32,6 @@ export async function applyToVacancyAction(vacancyId: unknown): Promise<ApplyAct
   }
 
   try {
-    const supabase = await createClient();
     await applyToVacancy(supabase, parsed.data);
     revalidateApplicationPages();
 
@@ -49,6 +50,7 @@ export async function applyToVacancyAction(vacancyId: unknown): Promise<ApplyAct
 export async function withdrawApplicationAction(
   applicationId: unknown,
 ): Promise<WithdrawActionResult> {
+  const { supabase } = await requireSession();
   const parsed = idSchema.safeParse(applicationId);
 
   if (!parsed.success) {
@@ -56,7 +58,6 @@ export async function withdrawApplicationAction(
   }
 
   try {
-    const supabase = await createClient();
     await withdrawApplication(supabase, parsed.data);
   } catch (error) {
     // Ya no existía (retirada en otra pestaña): lo que el jugador quería ya pasó.

@@ -8,7 +8,7 @@ Next.js (App Router) + TypeScript + Supabase, hosteada en Vercel.
 ```
 frontend/futtracker/    la app Next.js (es el root del proyecto de Vercel)
 supabase/               config, migraciones y edge functions
-docs/                   notas de deploy y de auth
+docs/                   notas de deploy, de auth, de funciones SQL y de video
 .github/workflows/      CI y CD
 ```
 
@@ -43,6 +43,10 @@ cd frontend/futtracker && npm run db:types
 
 Toda tabla nueva sale con `alter table ... enable row level security` en la
 misma migración que la crea, y su política de `select` exige sesión iniciada.
+Toda función nueva sale con `revoke execute ... from public, anon`, y con
+`grant execute ... to authenticated` solo si un usuario la tiene que poder
+ejecutar: cuáles sí, cuáles no y los cuidados de `security definer` están en
+**[docs/funciones-sql.md](docs/funciones-sql.md)**.
 
 > **`supabase db diff --linked` nunca va a salir limpio, y está bien.**
 > El stack local y los proyectos de la nube no arrancan idénticos: la nube
@@ -69,6 +73,13 @@ y los mails quedan en Mailpit (http://127.0.0.1:54324).
 allowlist de redirect URLs, confirmación de email y SMTP. Está toda en
 **[docs/auth.md](docs/auth.md)**, junto con las decisiones de diseño (por qué
 un email ya registrado responde igual que uno nuevo) y la deuda conocida.
+
+### Highlights
+
+Los clips se aceptan solo en formatos que se ven en cualquier celular (H.264 en
+MP4 o MOV, o WebM con VP8 o VP9): un iPhone graba en HEVC por defecto, y HEVC
+no se ve en muchos Android. El porqué, el costo de no recodificar y la tabla
+de pruebas están en **[docs/highlights-video.md](docs/highlights-video.md)**.
 
 ### Linkear el CLI
 
@@ -117,7 +128,7 @@ de desplegar, y publica con `vercel deploy --prebuilt`.
 
 ### Tests de RLS
 
-Aparte, y a mano antes de abrir un PR que toque políticas:
+Contra el stack local:
 
 ```bash
 supabase start
@@ -127,8 +138,14 @@ cd frontend/futtracker && npm run test:rls
 Ejercitan las políticas contra el stack local, con sesiones reales y a través
 de PostgREST — el único camino que también pasa por los `grant`, que es donde
 una política correcta igual puede fallar. Van fuera de `npm run test` porque
-necesitan Docker, que el CI todavía no levanta. **Mientras eso siga así, correr
-este comando es responsabilidad de quien abre el PR.**
+necesitan Docker.
+
+En CI los corre el workflow "RLS y migraciones"
+(`.github/workflows/rls.yml`) en cada PR contra `dev` y `main`: levanta
+Supabase en el runner y falla si un test falla o queda salteado, si el esquema
+no coincide con las migraciones (`supabase db diff`) o si `database.types.ts`
+no está regenerado. Correrlos en local antes de abrir el PR ahorra esperar al
+CI.
 
 Solo corren si `NEXT_PUBLIC_SUPABASE_URL` apunta a localhost: dan de alta
 usuarios, y contra un proyecto de la nube ensuciarían `dev` o `prod`.

@@ -17,12 +17,16 @@ export default async function NewTeamPage() {
     redirect(`/login?redirectTo=${RouteConstants.team.new}`);
   }
 
-  const profile = await getProfileById(user.id);
+  const result = await getProfileById(user.id);
+
+  if (result.kind === "error") {
+    throw new Error("No se pudo leer el perfil");
+  }
 
   // Requisito 10: una cuenta de jugador ve el mensaje de permiso, no el
   // formulario. No es un 404 — la ruta existe, es esta cuenta la que no puede
   // usarla.
-  if (profile?.role !== "delegate") {
+  if (result.kind === "notFound" || result.profile.role !== "delegate") {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 p-6">
         <h1 className="text-xl font-semibold text-zinc-900">

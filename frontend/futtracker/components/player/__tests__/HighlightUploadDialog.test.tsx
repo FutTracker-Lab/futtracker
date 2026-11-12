@@ -3,6 +3,7 @@ import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HighlightUploadDialog from "@/components/player/HighlightUploadDialog";
+import { HIGHLIGHT_CODEC_ERROR } from "@/components/player/highlightUpload";
 import {
   byText,
   cleanup,
@@ -16,6 +17,7 @@ const addHighlightMock = vi.fn();
 const uploadMock = vi.fn();
 const removeMock = vi.fn();
 const readVideoDurationMock = vi.fn();
+const readVideoFormatMock = vi.fn();
 const onClose = vi.fn();
 
 vi.mock("@/app/jugadores/[id]/highlights-actions", () => ({
@@ -23,14 +25,21 @@ vi.mock("@/app/jugadores/[id]/highlights-actions", () => ({
   removeHighlight: vi.fn(),
 }));
 
+vi.mock("@/app/(auth)/actions", () => ({ ensureSessionAction: vi.fn(async () => undefined) }));
+
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     storage: { from: () => ({ upload: uploadMock, remove: removeMock }) },
   }),
 }));
 
-vi.mock("@/components/player/videoDuration", () => ({
+vi.mock("@/lib/media/videoDuration", () => ({
   readVideoDuration: (...args: unknown[]) => readVideoDurationMock(...args),
+}));
+
+vi.mock("@/lib/media/videoCodec", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/media/videoCodec")>()),
+  readVideoFormat: (...args: unknown[]) => readVideoFormatMock(...args),
 }));
 
 const PLAYER_ID = "11111111-1111-4111-8111-111111111111";
@@ -71,6 +80,7 @@ function alerts() {
 
 beforeEach(() => {
   readVideoDurationMock.mockResolvedValue(90);
+  readVideoFormatMock.mockResolvedValue({ container: "mp4", codec: "h264" });
   uploadMock.mockResolvedValue({ error: null });
   removeMock.mockResolvedValue({ error: null });
   addHighlightMock.mockResolvedValue({ ok: true });
@@ -98,7 +108,7 @@ describe("HighlightUploadDialog", () => {
   it.each([
     ["un MP4 de 60 MB", videoFile("video/mp4", 60), 90, "Gol", "El video pesa más de 50 MB. Comprimilo e intentá de nuevo."],
     ["un video de 130 segundos", videoFile("video/mp4", 30), 130, "Gol", "El video dura más de 2 minutos."],
-    ["un PDF", videoFile("application/pdf", 1, "cv.pdf"), 90, "Gol", "Formato no permitido. Subí un video MP4, WebM o MOV."],
+    ["un PDF", videoFile("application/pdf", 1, "cv.pdf"), 90, "Gol", "Formato no permitido. Subí un video MP4 o MOV en H.264, o WebM."],
     ["un título vacío", videoFile("video/mp4", 30), 90, "", "Ingresá un título."],
     ["un título de 81 caracteres", videoFile("video/mp4", 30), 90, "x".repeat(81), "El título no puede superar los 80 caracteres."],
     ["ningún video elegido", null, 90, "Gol", "Elegí un video."],
@@ -111,6 +121,27 @@ describe("HighlightUploadDialog", () => {
 
     expect(alerts()).toContain(message);
     expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("rechaza un MOV en HEVC sin pedir nada al storage y dice qué formatos sirven", async () => {
+    readVideoFormatMock.mockResolvedValue({ container: "mp4", codec: "hevc" });
+
+    await pickFile(videoFile("video/quicktime", 30, "IMG_0001.MOV"));
+    typeTitle("Gol");
+    await submit();
+
+    expect(alerts()).toContain(HIGHLIGHT_CODEC_ERROR);
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("deja subir si no pudo leer el formato", async () => {
+    readVideoFormatMock.mockResolvedValue(null);
+
+    await pickFile(videoFile("video/quicktime", 30, "clip.MOV"));
+    typeTitle("Gol");
+    await submit();
+
+    expect(uploadMock).toHaveBeenCalled();
   });
 
   it("deja subir si el navegador no pudo leer la duración", async () => {

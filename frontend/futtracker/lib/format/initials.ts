@@ -2,8 +2,10 @@
 // review en PR #9: la lógica no trivial necesita vivir en un archivo propio
 // para poder testearse sin renderizar un componente).
 export function initialsOf(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-  return (first + last).toUpperCase();
+  const words = fullName.trim().split(/\s+/).slice(0, 2);
+  // `Array.from` recorre por code points: `word[0]` parte los emojis a la mitad.
+  return words
+    .map((word) => Array.from(word)[0] ?? "")
+    .join("")
+    .toUpperCase();
 }

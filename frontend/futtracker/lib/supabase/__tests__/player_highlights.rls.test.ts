@@ -34,6 +34,50 @@ function upload(client: Client, path: string, contentType = "video/mp4") {
     .upload(path, CLIP, { contentType, upsert: true });
 }
 
+// El máximo de clips por jugador que aplica el trigger `enforce_highlight_limit`.
+const HIGHLIGHT_LIMIT = 4;
+
+function insertClip(player: TestUser, name: string) {
+  return player.client.from("player_highlights").insert({
+    player_id: player.id,
+    title: name,
+    storage_path: `${player.id}/${name}.mp4`,
+  });
+}
+
+async function countClips(player: TestUser) {
+  const { count, error } = await player.client
+    .from("player_highlights")
+    .select("id", { count: "exact", head: true })
+    .eq("player_id", player.id);
+
+  if (error) {
+    throw new Error(`No se pudieron contar los clips: ${error.message}`);
+  }
+
+  return count;
+}
+
+async function newPlayerWithClips(clips: number) {
+  const player = await signUpUser("player");
+  await ensurePlayerRow(player);
+
+  for (let i = 1; i <= clips; i += 1) {
+    const { error } = await insertClip(player, `previo-${i}`);
+
+    if (error) {
+      throw new Error(`No se pudo sembrar el clip ${i}: ${error.message}`);
+    }
+  }
+
+  return player;
+}
+
+function expectLimitReached(error: { code?: string; message?: string } | null) {
+  expect(error?.code).toBe("23514");
+  expect(error?.message).toContain("highlight_limit_reached");
+}
+
 describe.skipIf(!IS_LOCAL)("RLS de player_highlights", () => {
   let anon: Client;
   let playerA: TestUser;
@@ -131,30 +175,6 @@ describe.skipIf(!IS_LOCAL)("RLS de player_highlights", () => {
       expect(error?.code).toBe("23503");
     });
 
-    it("el quinto highlight lo rechaza el trigger", async () => {
-      const player = await signUpUser("player");
-      await ensurePlayerRow(player);
-
-      for (let i = 1; i <= 4; i += 1) {
-        const { error } = await player.client.from("player_highlights").insert({
-          player_id: player.id,
-          title: `Clip ${i}`,
-          storage_path: `${player.id}/c${i}.mp4`,
-        });
-
-        expect(error).toBeNull();
-      }
-
-      const { error } = await player.client.from("player_highlights").insert({
-        player_id: player.id,
-        title: "Quinto",
-        storage_path: `${player.id}/c5.mp4`,
-      });
-
-      expect(error?.code).toBe("23514");
-      expect(error?.message).toContain("highlight_limit_reached");
-    });
-
     // Sin policy NI grant de update, el título no se edita: se borra el clip y
     // se sube de nuevo. Rebota el grant antes que la RLS, así que es 42501 y
     // no un update de 0 filas. El criterio del ticket dice 0 filas: está
@@ -187,6 +207,84 @@ describe.skipIf(!IS_LOCAL)("RLS de player_highlights", () => {
         .select("id");
 
       expect(data).toEqual([]);
+    });
+  });
+
+  // FUT-148: el trigger contaba sin lock, y con 8 inserts en paralelo entraban
+  // 5. Cada insert es un request aparte y una transacción aparte en la base,
+  // como un doble submit o llamadas directas a la API.
+  describe("límite de 4 clips", () => {
+    it("con 3 clips, el cuarto entra", async () => {
+      const player = await newPlayerWithClips(HIGHLIGHT_LIMIT - 1);
+
+      const { error } = await insertClip(player, "cuarto");
+
+      expect(error).toBeNull();
+      expect(await countClips(player)).toBe(HIGHLIGHT_LIMIT);
+    });
+
+    it("con 4 clips, el quinto lo rechaza el trigger", async () => {
+      const player = await newPlayerWithClips(HIGHLIGHT_LIMIT);
+
+      const { error } = await insertClip(player, "quinto");
+
+      expectLimitReached(error);
+      expect(await countClips(player)).toBe(HIGHLIGHT_LIMIT);
+    });
+
+    // Sin el lock, una sola tanda de 8 a veces sale bien por azar (de tres
+    // corridas, una pasó; las otras dejaron 7 y 8 clips). Con tres jugadores a
+    // la vez, la carrera aparece en cada corrida.
+    it("con 8 inserts en paralelo entran exactamente 4", async () => {
+      const players = await Promise.all(
+        Array.from({ length: 3 }, () => newPlayerWithClips(0)),
+      );
+
+      const resultsByPlayer = await Promise.all(
+        players.map((player) =>
+          Promise.all(
+            Array.from({ length: 2 * HIGHLIGHT_LIMIT }, (_, i) =>
+              insertClip(player, `paralelo-${i}`),
+            ),
+          ),
+        ),
+      );
+
+      for (const [index, results] of resultsByPlayer.entries()) {
+        const rejected = results.filter((result) => result.error);
+
+        expect(results.length - rejected.length).toBe(HIGHLIGHT_LIMIT);
+        for (const { error } of rejected) {
+          expectLimitReached(error);
+        }
+        expect(await countClips(players[index])).toBe(HIGHLIGHT_LIMIT);
+      }
+    });
+
+    // Prueba que el lock no rechaza de más cuando hay dos jugadores a la vez.
+    // No distingue un lock por jugador de uno global: con uno global los 8
+    // inserts también entrarían, solo que en fila. Eso lo garantiza la clave del
+    // lock en la migración (deriva de `player_id`).
+    it("dos jugadores con 4 inserts en paralelo cada uno: entran todos", async () => {
+      const players = await Promise.all([
+        newPlayerWithClips(0),
+        newPlayerWithClips(0),
+      ]);
+
+      const results = await Promise.all(
+        players.flatMap((player) =>
+          Array.from({ length: HIGHLIGHT_LIMIT }, (_, i) =>
+            insertClip(player, `propio-${i}`),
+          ),
+        ),
+      );
+
+      expect(results.map((result) => result.error)).toEqual(
+        Array(2 * HIGHLIGHT_LIMIT).fill(null),
+      );
+      for (const player of players) {
+        expect(await countClips(player)).toBe(HIGHLIGHT_LIMIT);
+      }
     });
   });
 });

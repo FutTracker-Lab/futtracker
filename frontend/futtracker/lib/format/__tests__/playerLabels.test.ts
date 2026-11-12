@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getPositionLabel, getPreferredFootLabel } from "@/lib/format/playerLabels";
+import {
+  getPositionLabel,
+  getPreferredFootLabel,
+  getPreferredFootText,
+} from "@/lib/format/playerLabels";
 
 describe("getPositionLabel", () => {
   it("traduce un valor conocido", () => {
@@ -25,5 +29,23 @@ describe("getPreferredFootLabel", () => {
 
   it("devuelve null para un valor no contemplado en el mapa", () => {
     expect(getPreferredFootLabel("cabeza")).toBeNull();
+  });
+});
+
+describe("getPreferredFootText", () => {
+  it.each([
+    ["derecha", "Pie derecho"],
+    ["izquierda", "Pie izquierdo"],
+    ["ambidiestro", "Pie ambidiestro"],
+  ])("concuerda con pie para %s", (foot, text) => {
+    expect(getPreferredFootText(foot)).toBe(text);
+  });
+
+  it("devuelve null para null", () => {
+    expect(getPreferredFootText(null)).toBeNull();
+  });
+
+  it("devuelve null para un valor no contemplado en el mapa", () => {
+    expect(getPreferredFootText("cabeza")).toBeNull();
   });
 });

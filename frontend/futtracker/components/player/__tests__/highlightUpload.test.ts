@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   runHighlightUpload,
+  validateHighlightFormat,
   validateHighlightDuration,
   validateHighlightFile,
   validateHighlightTitle,
@@ -18,6 +19,7 @@ function fakeFile(type: string, size: number) {
 
 function fakePort(overrides: Partial<HighlightUploadPort> = {}) {
   return {
+    ensureSession: vi.fn(async () => undefined),
     upload: vi.fn(async () => ({ error: null })),
     remove: vi.fn(async () => undefined),
     persist: vi.fn(async () => ({ ok: true as const })),
@@ -37,13 +39,32 @@ describe("validateHighlightFile", () => {
 
   it("rechaza un PDF", () => {
     expect(validateHighlightFile(fakeFile("application/pdf", MB))).toBe(
-      "Formato no permitido. Subí un video MP4, WebM o MOV.",
+      "Formato no permitido. Subí un video MP4 o MOV en H.264, o WebM.",
     );
   });
 
   it("rechaza un MP4 de 60 MB", () => {
     expect(validateHighlightFile(fakeFile("video/mp4", 60 * MB))).toBe(
       "El video pesa más de 50 MB. Comprimilo e intentá de nuevo.",
+    );
+  });
+});
+
+// Qué formato se acepta lo cubre lib/media/__tests__/videoCodec.test.ts; acá,
+// solo que el error dice qué formatos sirven.
+describe("validateHighlightFormat", () => {
+  it("acepta H.264 en MP4 y un archivo que no se pudo leer", () => {
+    expect(validateHighlightFormat({ container: "mp4", codec: "h264" })).toBeNull();
+    expect(validateHighlightFormat(null)).toBeNull();
+  });
+
+  // Algunos Android (Samsung, por ejemplo) también graban en HEVC: el mensaje
+  // no puede servirle solo a un iPhone (revisión de la #66).
+  it("rechaza HEVC diciendo qué formatos sirven y cómo cambiar la cámara en cualquier celular", () => {
+    expect(validateHighlightFormat({ container: "mp4", codec: "hevc" })).toBe(
+      "Este video no se puede ver en todos los celulares. Subí un MP4 o MOV en H.264, o WebM. " +
+        "Si lo grabaste con el celular, elegí el formato más compatible (H.264) en la configuración " +
+        "de la cámara. En iPhone: Ajustes > Cámara > Formatos > Más compatible.",
     );
   });
 });
@@ -87,6 +108,18 @@ describe("runHighlightUpload", () => {
     expect(port.upload).toHaveBeenCalledWith(PATH, file);
     expect(port.persist).toHaveBeenCalledWith({ title: "Gol vs Racing", storage_path: PATH });
     expect(port.remove).not.toHaveBeenCalled();
+  });
+
+  it("sin sesión deja pasar el redirect y no sube nada", async () => {
+    const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
+      digest: "NEXT_REDIRECT;push;/login;307;",
+    });
+    const port = fakePort({ ensureSession: vi.fn(async () => Promise.reject(redirectError)) });
+
+    await expect(
+      runHighlightUpload({ file: fakeFile("video/mp4", MB), title: "Gol", path: PATH, port }),
+    ).rejects.toBe(redirectError);
+    expect(port.upload).not.toHaveBeenCalled();
   });
 
   it("no persiste si la subida falla", async () => {

@@ -22,6 +22,7 @@ function fakeFile(type: string, size: number) {
 
 function fakePort(overrides: Partial<ImageUploadPort> = {}): ImageUploadPort {
   return {
+    ensureSession: vi.fn(async () => undefined),
     upload: vi.fn(async () => ({ error: null })),
     remove: vi.fn(async () => undefined),
     persist: vi.fn(async () => ({ ok: true }) as const),
@@ -107,6 +108,23 @@ describe("runImageUpload", () => {
     // El anterior sigue siendo el que referencia la fila: borrarlo dejaría el
     // perfil apuntando a un archivo que ya no está.
     expect(port.remove).not.toHaveBeenCalledWith("equipo-1/viejo.png");
+  });
+
+  it("sin sesión deja pasar el redirect y no sube nada", async () => {
+    const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
+      digest: "NEXT_REDIRECT;push;/login;307;",
+    });
+    const port = fakePort({ ensureSession: vi.fn(async () => Promise.reject(redirectError)) });
+
+    await expect(
+      runImageUpload(fakeFile("image/png", 1000), {
+        folder: "equipo-1",
+        previousPath: null,
+        rules: RULES,
+        port,
+      }),
+    ).rejects.toBe(redirectError);
+    expect(port.upload).not.toHaveBeenCalled();
   });
 
   it("no borra el anterior si falla la subida", async () => {

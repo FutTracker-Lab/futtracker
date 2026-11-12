@@ -1,3 +1,5 @@
+import { unstable_rethrow } from "next/navigation";
+
 import {
   HIGHLIGHT_ERRORS,
   mapHighlightUploadError,
@@ -9,18 +11,25 @@ import {
   type HighlightActionResult,
   type HighlightInput,
 } from "@/lib/data/highlights";
+import { isPlayableEverywhere, type VideoFormat } from "@/lib/media/videoCodec";
 
 export const HIGHLIGHT_MAX_SECONDS = 120;
 
 export type HighlightUploadPort = {
+  ensureSession: () => Promise<void>;
   upload: (path: string, file: File) => Promise<{ error: unknown }>;
   remove: (path: string) => Promise<unknown>;
   persist: (input: HighlightInput) => Promise<HighlightActionResult>;
 };
 
+// Lo que se acepta, dicho como lo entiende un jugador. Lo usan el hint del
+// diálogo y los dos errores de formato; el detalle está en
+// docs/highlights-video.md.
+export const HIGHLIGHT_FORMATS = "MP4 o MOV en H.264, o WebM";
+
 export function validateHighlightFile(file: Pick<File, "type" | "size">): string | null {
   if (!(HIGHLIGHT_MIME_TYPES as readonly string[]).includes(file.type)) {
-    return "Formato no permitido. Subí un video MP4, WebM o MOV.";
+    return `Formato no permitido. Subí un video ${HIGHLIGHT_FORMATS}.`;
   }
 
   if (file.size > HIGHLIGHT_MAX_BYTES) {
@@ -28,6 +37,19 @@ export function validateHighlightFile(file: Pick<File, "type" | "size">): string
   }
 
   return null;
+}
+
+// FUT-163: el caso típico es un video HEVC, que graban los iPhone en "Alta
+// eficiencia" y también algunos Android. El mensaje dice cómo cambiarlo en
+// cualquier celular, y el camino exacto en iPhone.
+export const HIGHLIGHT_CODEC_ERROR =
+  `Este video no se puede ver en todos los celulares. Subí un ${HIGHLIGHT_FORMATS}. ` +
+  "Si lo grabaste con el celular, elegí el formato más compatible (H.264) en la configuración " +
+  "de la cámara. En iPhone: Ajustes > Cámara > Formatos > Más compatible.";
+
+// `null` (no se pudo leer el encabezado) pasa, igual que la duración.
+export function validateHighlightFormat(format: VideoFormat | null): string | null {
+  return isPlayableEverywhere(format) ? null : HIGHLIGHT_CODEC_ERROR;
 }
 
 // `null` (duración ilegible) pasa: es validación de cliente, no de seguridad.
@@ -63,6 +85,8 @@ export async function runHighlightUpload({
   port: HighlightUploadPort;
 }): Promise<HighlightActionResult> {
   try {
+    await port.ensureSession();
+
     const { error } = await port.upload(path, file);
 
     if (error) {
@@ -71,7 +95,9 @@ export async function runHighlightUpload({
         error: mapHighlightUploadError(error as { statusCode?: string }),
       };
     }
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
     return { ok: false, error: HIGHLIGHT_ERRORS.network };
   }
 
@@ -79,7 +105,9 @@ export async function runHighlightUpload({
 
   try {
     persisted = await port.persist({ title: title.trim(), storage_path: path });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
     persisted = { ok: false, error: HIGHLIGHT_ERRORS.network };
   }
 

@@ -16,6 +16,7 @@ import type { HighlightTile } from "@/lib/data/highlightGallery";
 
 const removeHighlightMock = vi.fn();
 
+vi.mock("@/app/(auth)/actions", () => ({ ensureSessionAction: vi.fn() }));
 vi.mock("@/app/jugadores/[id]/highlights-actions", () => ({
   addHighlight: vi.fn(),
   removeHighlight: (...args: unknown[]) => removeHighlightMock(...args),

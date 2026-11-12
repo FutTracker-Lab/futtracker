@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { z } from "zod";
 
 import { getCrestSignedUrl, type Team } from "@/lib/data/teams";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +23,14 @@ export type TeamProfile = {
  */
 export const getTeamProfileById = cache(
   async (id: string): Promise<TeamProfile | null> => {
+    // FUT-158: un id que no es uuid no puede ser un equipo. Sin esto Postgres
+    // lo rechaza con 22P02, el error se propaga y /equipos/no-es-uuid daba
+    // 500 en vez de 404. `guid` y no `uuid`: acepta cualquier uuid con el
+    // formato 8-4-4-4-12, como Postgres, sin exigir la versión RFC.
+    if (!z.guid().safeParse(id).success) {
+      return null;
+    }
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("teams")

@@ -105,4 +105,48 @@ describe("vacancyInputSchema", () => {
   ])("rechaza %s = %s", (field, value) => {
     expect(vacancyInputSchema.safeParse({ ...VALID, [field]: value }).success).toBe(false);
   });
+
+  // FUT-157: la Server Action llamada directo guardaba `''`; la base ahora lo
+  // rechaza, así que el schema lo normaliza antes.
+  it.each([
+    ["vacía", ""],
+    ["solo espacios", "   "],
+    ["null", null],
+  ])("una descripción %s queda en null", (_, description) => {
+    expect(vacancyInputSchema.parse({ ...VALID, description }).description).toBeNull();
+  });
+
+  // FUT-158
+  it("saca los controles bidi de la descripción", () => {
+    expect(
+      vacancyInputSchema.parse({ ...VALID, description: "Buscamos\u202E un 9\u2069" }).description,
+    ).toBe("Buscamos un 9");
+  });
+
+  it("una descripción con solo controles bidi queda en null", () => {
+    expect(vacancyInputSchema.parse({ ...VALID, description: "\u202E\u2066" }).description).toBeNull();
+  });
+
+  it("recorta los espacios de los bordes", () => {
+    expect(vacancyInputSchema.parse({ ...VALID, description: "  Buscamos un 9  " }).description).toBe(
+      "Buscamos un 9",
+    );
+  });
+
+  // FUT-157: cuenta caracteres como `char_length` en la base, no unidades
+  // UTF-16. Un emoji ocupa dos unidades y antes 150 se rechazaban.
+  // 🥅 está fuera del plano básico: son dos unidades UTF-16 (300 en total).
+  it("150 emojis entran", () => {
+    const description = "🥅".repeat(150);
+
+    expect(description.length).toBe(300);
+    expect(vacancyInputSchema.safeParse({ ...VALID, description }).success).toBe(true);
+  });
+
+  it("280 emojis entran y 281 no", () => {
+    const emoji = "🥅";
+
+    expect(vacancyInputSchema.safeParse({ ...VALID, description: emoji.repeat(280) }).success).toBe(true);
+    expect(vacancyInputSchema.safeParse({ ...VALID, description: emoji.repeat(281) }).success).toBe(false);
+  });
 });

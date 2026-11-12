@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { stripBidiControls } from "@/lib/format/bidi";
 import type { Database, Tables } from "@/lib/supabase/database.types";
 
 
@@ -21,17 +22,25 @@ const CREST_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
 //
 // Sin `owner_id`, `id` ni `crest_path`: los tres salen de la sesión, de la
 // base o de `updateCrestPath`, nunca de un formulario.
+// Texto libre: saca los controles bidi antes de recortar y de medir (FUT-158).
+function freeText() {
+  return z.string().overwrite(stripBidiControls).trim();
+}
+
 export const teamInputSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  club_name: z.string().trim().min(1).max(120).nullable(),
-  category: z.string().trim().min(1).max(120).nullable(),
-  league: z.string().trim().min(1).max(120).nullable(),
+  name: freeText().min(2).max(80),
+  club_name: freeText().min(1).max(120).nullable(),
+  category: freeText().min(1).max(120).nullable(),
+  league: freeText().min(1).max(120).nullable(),
   country: z.string().trim().length(2).nullable(),
   // `city`, `province` y las coordenadas las deriva de la zona un trigger de
-  // la base (T09c). Si llegan en el input, Zod las descarta.
+  // la base (T09c). Si llegan en el input, Zod las descarta. Ojo: los tipos
+  // generados (`database.types.ts`) siguen ofreciendo `latitude` y `longitude`
+  // en `Insert` y `Update`, pero la base ya no las acepta (FUT-154): un
+  // `.update({ latitude })` compila y falla con 42501.
   zone_id: z.string().trim().min(1),
   founded_year: z.number().int().min(1850).max(2100).nullable(),
-  bio: z.string().trim().max(1000).nullable(),
+  bio: freeText().max(1000).nullable(),
   contact_email: z.email().nullable(),
 });
 

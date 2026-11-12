@@ -136,4 +136,34 @@ describe("PlayerProfileHeader", () => {
     expect(owner).toContain("Todavía no completaste tu perfil.");
     expect(visitor).toContain("Este jugador todavía no completó su perfil.");
   });
+
+  it.each([
+    ["derecha", "Pie derecho"],
+    ["izquierda", "Pie izquierdo"],
+    ["ambidiestro", "Pie ambidiestro"],
+  ])("con pierna hábil %s muestra %s", (foot, text) => {
+    const nodes = flatten(
+      PlayerProfileHeader({
+        profile: profile(),
+        player: player({ preferred_foot: foot }),
+        isOwner: false,
+        avatarUrl: null,
+      }),
+    );
+
+    expect(nodes).toContain(text);
+  });
+
+  it("muestra las iniciales completas de un nombre con emoji", () => {
+    const nodes = flatten(
+      PlayerProfileHeader({
+        profile: profile({ full_name: "Ana 😀" }),
+        player: player(),
+        isOwner: false,
+        avatarUrl: null,
+      }),
+    );
+
+    expect(nodes).toContain("A😀");
+  });
 });

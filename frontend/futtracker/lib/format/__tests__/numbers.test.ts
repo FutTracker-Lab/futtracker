@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatBadgeCount,
   formatCount,
   formatDistanceKm,
   formatGoalsPerMatch,
@@ -51,5 +52,14 @@ describe("formatDistanceKm", () => {
   it("muestra el decimal aunque sea cero", () => {
     expect(formatDistanceKm(0)).toBe("0,0 km");
     expect(formatDistanceKm(12)).toBe("12,0 km");
+  });
+});
+
+describe("formatBadgeCount", () => {
+  it("muestra el número hasta 99 y '99+' desde 100", () => {
+    expect(formatBadgeCount(1)).toBe("1");
+    expect(formatBadgeCount(99)).toBe("99");
+    expect(formatBadgeCount(100)).toBe("99+");
+    expect(formatBadgeCount(250)).toBe("99+");
   });
 });

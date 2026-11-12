@@ -1,10 +1,9 @@
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import ActiveFilterChips from "@/components/search/ActiveFilterChips";
 import PlayerResultRow from "@/components/search/PlayerResultRow";
-import PlayerSearchSkeleton from "@/components/search/PlayerSearchSkeleton";
 import SearchFilters from "@/components/search/SearchFilters";
 import SearchPagination from "@/components/search/SearchPagination";
 import {
@@ -13,6 +12,7 @@ import {
   resultsSubtitle,
 } from "@/components/search/searchView";
 import { getAvatarSignedUrls, searchPlayers } from "@/lib/data/players";
+import { getProfileById } from "@/lib/data/profiles";
 import { getMyTeam } from "@/lib/data/teams";
 import { RouteConstants } from "@/lib/routes";
 import {
@@ -20,25 +20,22 @@ import {
   parseSearchFilters,
   searchHref,
   toSearchPlayersParams,
-  type SearchCriteria,
 } from "@/lib/search/params";
 import { createClient } from "@/lib/supabase/server";
 
+// Sin Suspense ni loading.tsx a propósito (FUT-155).
 export default async function PlayerSearchPage({
   searchParams,
 }: PageProps<"/jugadores">) {
   const filters = parseSearchFilters(await searchParams);
-
-  // loading.tsx no aparece si solo cambian los parámetros; el `key` remonta el Suspense.
-  return (
-    <Suspense key={searchHref(filters, filters.page)} fallback={<PlayerSearchSkeleton />}>
-      <PlayerSearchResults filters={filters} />
-    </Suspense>
-  );
-}
-
-async function PlayerSearchResults({ filters }: { filters: SearchCriteria }) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user && (await getProfileById(user.id)).kind === "error") {
+    throw new Error("No se pudo leer el perfil");
+  }
 
   const [result, team] = await Promise.all([
     searchPlayers(supabase, toSearchPlayersParams(filters)),
@@ -81,7 +78,7 @@ async function PlayerSearchResults({ filters }: { filters: SearchCriteria }) {
   return (
     <SearchLayout subtitle={resultsSubtitle(total, filters.radius, team?.city ?? null)}>
       <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
-        <SearchFilters filters={filters} />
+        <SearchFilters key={searchHref(filters)} filters={filters} />
 
         <div className="flex min-w-0 flex-col gap-4">
           <ActiveFilterChips chips={activeFilterChips(filters)} />

@@ -11,7 +11,7 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Es un chequeo optimista de UX, no la autorización: esa la hacen RLS y los
  * chequeos dentro de cada Server Action.
  */
-const PROTECTED_ROUTES = ["/jugadores", "/equipos", "/vacantes"];
+const PROTECTED_ROUTES = ["/jugadores", "/equipos", "/vacantes", "/sugerencias", "/siguiendo", "/mensajes", "/notificaciones"];
 
 function requiresSession(pathname: string): boolean {
   const isProtected = PROTECTED_ROUTES.some(
@@ -21,10 +21,19 @@ function requiresSession(pathname: string): boolean {
   return isProtected || pathname.endsWith("/editar");
 }
 
-export async function proxy(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+// Con un 307 el cliente repite el POST en el login y termina en un error genérico: redirige la action.
+function isServerAction(request: NextRequest): boolean {
+  return request.method === "POST" && Boolean(request.headers.get("next-action"));
+}
 
-  if (user || !requiresSession(request.nextUrl.pathname)) {
+export async function proxy(request: NextRequest) {
+  const { response, session } = await updateSession(request);
+
+  if (
+    session.status === "signedIn" ||
+    isServerAction(request) ||
+    !requiresSession(request.nextUrl.pathname)
+  ) {
     return response;
   }
 
@@ -34,6 +43,10 @@ export async function proxy(request: NextRequest) {
     "redirectTo",
     `${request.nextUrl.pathname}${request.nextUrl.search}`,
   );
+
+  if (session.status === "unavailable") {
+    login.searchParams.set("aviso", "servicio");
+  }
 
   const redirect = NextResponse.redirect(login);
 

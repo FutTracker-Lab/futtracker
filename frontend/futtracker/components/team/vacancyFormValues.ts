@@ -34,7 +34,9 @@ export function parseVacancyForm(
     position: values.position,
     modality: values.modality,
     level: values.level,
-    description: values.description.trim() || null,
+    // Sin recortar: el schema mide el largo igual que el contador y después
+    // normaliza (recorta, y vacía queda en null).
+    description: values.description,
   });
 
   if (parsed.success) {

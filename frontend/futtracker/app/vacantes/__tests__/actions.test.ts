@@ -21,8 +21,10 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({}),
+const requireSessionMock = vi.fn(async () => ({ supabase: {}, user: { id: "user-1" } }));
+
+vi.mock("@/lib/auth/requireSession", () => ({
+  requireSession: () => requireSessionMock(),
 }));
 
 const ID = "0a000002-0000-4000-8000-000000000120";
@@ -94,4 +96,23 @@ describe("withdrawApplicationAction", () => {
     expect(await withdrawApplicationAction(ID)).toEqual({ ok: false });
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
+});
+
+describe("sin sesión", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each(["applyToVacancyAction", "withdrawApplicationAction"] as const)(
+    "%s deja pasar el redirect y no escribe",
+    async (name) => {
+      const redirectError = new Error("NEXT_REDIRECT");
+      requireSessionMock.mockRejectedValueOnce(redirectError);
+      const actions = await import("@/app/vacantes/actions");
+
+      await expect(actions[name](ID)).rejects.toBe(redirectError);
+      expect(applyToVacancyMock).not.toHaveBeenCalled();
+      expect(withdrawApplicationMock).not.toHaveBeenCalled();
+    },
+  );
 });

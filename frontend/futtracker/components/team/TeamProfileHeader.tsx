@@ -1,4 +1,6 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
+
 import type { Team } from "@/lib/data/teams";
 
 type Props = {
@@ -9,9 +11,10 @@ type Props = {
   // URL firmada de 24 h generada en el servidor, nunca la URL directa del
   // bucket, que es privado.
   crestUrl: string | null;
+  followersSlot?: ReactNode;
 };
 
-export default function TeamProfileHeader({ team, ownerName, crestUrl }: Props) {
+export default function TeamProfileHeader({ team, ownerName, crestUrl, followersSlot }: Props) {
   return (
     <div className="flex items-center gap-4">
       {crestUrl ? (
@@ -38,6 +41,7 @@ export default function TeamProfileHeader({ team, ownerName, crestUrl }: Props) 
         {ownerName ? (
           <p className="text-sm text-zinc-500">Delegado: {ownerName}</p>
         ) : null}
+        {followersSlot}
       </div>
     </div>
   );

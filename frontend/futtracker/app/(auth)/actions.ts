@@ -7,6 +7,7 @@ import {
   PASSWORD_RESET_REDIRECT,
   REDIRECT_BY_ROLE,
   SIGN_UP_REDIRECT,
+  TOO_MANY_REQUESTS,
   UNEXPECTED,
   type ActionResult,
 } from "@/lib/auth/constants";
@@ -20,6 +21,7 @@ import {
   type SignInInput,
   type SignUpInput,
 } from "@/lib/auth/schemas";
+import { requireSession } from "@/lib/auth/requireSession";
 import { createClient } from "@/lib/supabase/server";
 
 async function withMinimumDuration<T>(
@@ -43,10 +45,21 @@ async function withMinimumDuration<T>(
   return outcome.value;
 }
 
+// Un límite de `Authentication → Rate Limits` alcanzado: mails por hora del
+// proyecto (`over_email_send_rate_limit`) o pedidos por IP
+// (`over_request_rate_limit`). Los dos llegan con 429.
+function isRateLimited(error: { status?: number; code?: string } | null) {
+  return (
+    error?.status === 429 ||
+    error?.code === "over_email_send_rate_limit" ||
+    error?.code === "over_request_rate_limit"
+  );
+}
+
 async function runSignUp(input: SignUpInput): Promise<ActionResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
     options: {
@@ -55,11 +68,23 @@ async function runSignUp(input: SignUpInput): Promise<ActionResult> {
     },
   });
 
+  if (isRateLimited(error)) {
+    return { ok: false, error: TOO_MANY_REQUESTS };
+  }
+
   // Requisito 9d: un email ya registrado tiene que responder igual que uno
   // nuevo, o el formulario dice quién tiene cuenta. No sacar sin leer
   // docs/auth.md.
   if (error && error.code !== "user_already_exists") {
     return { ok: false, error: UNEXPECTED };
+  }
+
+  // Con la confirmación de email prendida (prod) no hay sesión hasta abrir el
+  // link: redirigir al perfil terminaba en /login sin ningún aviso. Un email
+  // ya registrado vuelve igual, sin error ni sesión, así que recibe el mismo
+  // aviso (9d).
+  if (!error && !data.session) {
+    return { ok: true, checkEmail: true };
   }
 
   return { ok: true, redirectTo: REDIRECT_BY_ROLE[input.role] };
@@ -72,6 +97,12 @@ async function runSignIn(input: SignInInput): Promise<ActionResult> {
     email: input.email,
     password: input.password,
   });
+
+  // El límite de logins es por IP, no por email: decirlo no revela qué
+  // cuentas existen.
+  if (isRateLimited(error)) {
+    return { ok: false, error: TOO_MANY_REQUESTS };
+  }
 
   if (error || !data.user) {
     return { ok: false, error: INVALID_CREDENTIALS };
@@ -169,4 +200,9 @@ export async function signOut(): Promise<ActionResult> {
   }
 
   return { ok: true };
+}
+
+// Las subidas van del navegador a Storage: sin sesión fallarían ahí, antes de llegar a una action.
+export async function ensureSessionAction(): Promise<void> {
+  await requireSession();
 }

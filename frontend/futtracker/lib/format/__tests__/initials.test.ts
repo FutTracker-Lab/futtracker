@@ -19,11 +19,31 @@ describe("initialsOf", () => {
     expect(initialsOf("  Ana   García  ")).toBe("AG");
   });
 
-  it("con tres o más palabras, usa la primera y la última (ignora los del medio)", () => {
-    expect(initialsOf("Juan Martín Pérez")).toBe("JP");
+  it("con tres o más palabras, usa las dos primeras", () => {
+    expect(initialsOf("Juan Martín Pérez")).toBe("JM");
   });
 
   it("devuelve string vacío para un nombre vacío", () => {
     expect(initialsOf("")).toBe("");
+  });
+
+  it("devuelve las iniciales de un nombre y apellido simples", () => {
+    expect(initialsOf("Ana Gómez")).toBe("AG");
+  });
+
+  it("no parte un emoji en la segunda palabra", () => {
+    expect(initialsOf("Ana 😀")).toBe("A😀");
+  });
+
+  it("no parte un emoji en la primera palabra", () => {
+    expect(initialsOf("😀 Ana")).toBe("😀A");
+  });
+
+  it("no parte un emoji cuando es el único nombre", () => {
+    expect(initialsOf("😀")).toBe("😀");
+  });
+
+  it("ignora un emoji que queda en la tercera palabra", () => {
+    expect(initialsOf("QA Dod25 😀")).toBe("QD");
   });
 });

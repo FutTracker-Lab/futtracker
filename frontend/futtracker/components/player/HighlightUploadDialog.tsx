@@ -2,15 +2,17 @@
 
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
+import { ensureSessionAction } from "@/app/(auth)/actions";
 import { addHighlight } from "@/app/jugadores/[id]/highlights-actions";
 import {
+  HIGHLIGHT_FORMATS,
   runHighlightUpload,
+  validateHighlightFormat,
   validateHighlightDuration,
   validateHighlightFile,
   validateHighlightTitle,
   type HighlightUploadPort,
 } from "@/components/player/highlightUpload";
-import { readVideoDuration } from "@/components/player/videoDuration";
 import Dialog from "@/components/ui/Dialog";
 import Spinner from "@/components/ui/Spinner";
 import TextField from "@/components/ui/TextField";
@@ -19,6 +21,8 @@ import {
   HIGHLIGHT_MIME_TYPES,
   HIGHLIGHTS_BUCKET,
 } from "@/lib/data/highlights";
+import { readVideoFormat } from "@/lib/media/videoCodec";
+import { readVideoDuration } from "@/lib/media/videoDuration";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
@@ -64,14 +68,19 @@ function UploadForm({ onClose, playerId }: Omit<Props, "open">) {
     }
 
     setReading(true);
-    const durationError = validateHighlightDuration(await readVideoDuration(picked));
+    const [format, seconds] = await Promise.all([
+      readVideoFormat(picked),
+      readVideoDuration(picked),
+    ]);
 
     if (pick !== latestPick.current) return;
 
     setReading(false);
 
-    if (durationError) {
-      setFileError(durationError);
+    const readError = validateHighlightFormat(format) ?? validateHighlightDuration(seconds);
+
+    if (readError) {
+      setFileError(readError);
     } else {
       setFile(picked);
     }
@@ -93,6 +102,7 @@ function UploadForm({ onClose, playerId }: Omit<Props, "open">) {
 
     const storage = createClient().storage.from(HIGHLIGHTS_BUCKET);
     const port: HighlightUploadPort = {
+      ensureSession: ensureSessionAction,
       upload: (path, blob) => storage.upload(path, blob, { contentType: blob.type }),
       remove: (path) => storage.remove([path]),
       persist: addHighlight,
@@ -143,7 +153,7 @@ function UploadForm({ onClose, playerId }: Omit<Props, "open">) {
             </span>
           ) : (
             <span id={`${fileId}-hint`} className="text-xs text-zinc-500">
-              MP4, WebM o MOV. Hasta 50 MB y 2 minutos.
+              {HIGHLIGHT_FORMATS}. Hasta 50 MB y 2 minutos.
             </span>
           )}
         </div>

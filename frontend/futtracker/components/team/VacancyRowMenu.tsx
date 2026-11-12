@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 
 import { setVacancyStatusAction } from "@/app/equipos/vacancies-actions";
 import CloseVacancyDialog from "@/components/team/CloseVacancyDialog";
@@ -38,7 +39,8 @@ export default function VacancyRowMenu({ vacancyId, positionLabel, isOpen }: Pro
       try {
         const result = await setVacancyStatusAction(vacancyId, "open");
         notify(result.ok ? "Vacante reabierta." : result.error, result.ok ? "success" : "error");
-      } catch {
+      } catch (error) {
+        unstable_rethrow(error);
         notify(VACANCY_ERROR_MESSAGES.unexpected, "error");
       }
     });
