@@ -47,7 +47,7 @@ export default function AppMobileNav({ role, unread }: Props) {
       </div>
 
       {items.length > 0 ? (
-        <nav className="flex gap-2 overflow-x-auto">
+        <nav className="relative flex gap-2 overflow-x-auto">
           {items.map((item) => {
             const isActive = isNavItemActive(item, pathname);
             return (
