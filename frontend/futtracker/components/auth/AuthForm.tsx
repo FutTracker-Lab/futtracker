@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { signIn, signUp } from "@/app/(auth)/actions";
+import { createClient } from "@/lib/supabase/client";
 import {
   REDIRECT_BY_ROLE,
   type ActionResult,
@@ -57,6 +58,8 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<Role>("player");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // A qué email se mandó la confirmación, cuando el alta queda esperándola.
+  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
 
   async function handleSignIn(
     _prev: ActionResult,
@@ -96,12 +99,60 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
     const input: SignUpInput = { email: signUpEmail, password, fullName, role };
     const result = await signUp(input);
 
-    if (result.ok) {
+    // Sin sesión todavía: navegar al perfil terminaría en /login sin aviso.
+    if (result.ok && result.checkEmail) {
+      setConfirmationSentTo(signUpEmail);
+    } else if (result.ok) {
       router.push(redirectTo ?? REDIRECT_BY_ROLE[role]);
     }
 
     return result;
   }
+
+  // A dónde va después de confirmar el mail.
+  const afterConfirmation = redirectTo ?? REDIRECT_BY_ROLE[role];
+
+  // El link del mail abre otra pestaña y crea la sesión ahí, con las cookies
+  // del mismo navegador. Al volver a esta, si la sesión ya existe, entra sola
+  // en vez de quedarse en el aviso. Si se confirmó en otro dispositivo no hay
+  // sesión acá y el aviso sigue.
+  useEffect(() => {
+    if (!confirmationSentTo) {
+      return;
+    }
+
+    // Al volver a la pestaña llegan `focus` y `visibilitychange` juntos: una
+    // sola consulta a la vez, y una sola navegación.
+    let checking = false;
+    let entered = false;
+
+    async function enterIfConfirmed() {
+      if (document.visibilityState === "hidden" || checking || entered) {
+        return;
+      }
+
+      checking = true;
+
+      try {
+        const { data } = await createClient().auth.getUser();
+
+        if (data.user) {
+          entered = true;
+          router.push(afterConfirmation);
+        }
+      } finally {
+        checking = false;
+      }
+    }
+
+    window.addEventListener("focus", enterIfConfirmed);
+    document.addEventListener("visibilitychange", enterIfConfirmed);
+
+    return () => {
+      window.removeEventListener("focus", enterIfConfirmed);
+      document.removeEventListener("visibilitychange", enterIfConfirmed);
+    };
+  }, [confirmationSentTo, afterConfirmation, router]);
 
   const [signInState, signInAction] = useActionState(handleSignIn, INITIAL_STATE);
   const [signUpState, signUpAction] = useActionState(handleSignUp, INITIAL_STATE);
@@ -109,6 +160,7 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
   function switchTab(next: Tab, event: FormEvent<HTMLButtonElement>) {
     event.preventDefault();
     setClientError(null);
+    setConfirmationSentTo(null);
     setTab(next);
   }
 
@@ -177,6 +229,27 @@ export default function AuthForm({ initialTab = "sign-in", redirectTo }: Props) 
             </a>
             <SubmitButton label="Entrar" />
           </form>
+        ) : confirmationSentTo ? (
+          // Reemplaza al formulario: arriba de él quedaba fuera de la vista y
+          // lo de abajo invitaba a llenarlo de nuevo.
+          <div role="status" className="flex flex-col gap-4">
+            <div className="rounded-md border border-brand-tint-border bg-brand-tint px-4 py-3 text-sm text-zinc-800">
+              <p className="mb-1 font-medium text-zinc-900">Revisá tu mail</p>
+              <p>
+                Te mandamos un mail a <strong>{confirmationSentTo}</strong> para confirmar
+                la cuenta. Abrí el link para entrar; si no lo ves, revisá spam.
+              </p>
+            </div>
+            {/* Sin sesión en este navegador (confirmó en otro dispositivo), el
+                proxy lo manda al login y después sigue a este destino. */}
+            <button
+              type="button"
+              onClick={() => router.push(afterConfirmation)}
+              className="text-sm text-brand hover:underline"
+            >
+              Ya la confirmé, entrar
+            </button>
+          </div>
         ) : (
           <form action={signUpAction} className="flex flex-col gap-4">
             <fieldset className="flex flex-col gap-2">
