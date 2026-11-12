@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { createTeamAction, updateTeamAction } from "@/app/equipos/actions";
 import CrestUploader from "@/components/team/CrestUploader";
+import AlertDialog from "@/components/ui/AlertDialog";
+import { useUnsavedChangesGuard } from "@/components/ui/useUnsavedChangesGuard";
 import {
   BIO_MAX_LENGTH,
   COUNTRIES,
@@ -63,7 +65,19 @@ export default function TeamForm({ team, initialCrestUrl, zones }: Props) {
   const [values, setValues] = useState<TeamFormValues>(() =>
     initialValuesFrom(team, zones),
   );
+  // Lo último que quedó guardado: contra esto se miden los cambios pendientes.
+  const [savedValues, setSavedValues] = useState<TeamFormValues>(() =>
+    initialValuesFrom(team, zones),
+  );
   const zoneGroups = useMemo(() => zoneGroupsFrom(zones), [zones]);
+
+  // FUT-158: cambiar de pestaña con cambios sin guardar los perdía sin aviso.
+  // Solo editando: al crear, el formulario no tiene pestañas.
+  const isDirty =
+    team !== null && (Object.keys(values) as (keyof TeamFormValues)[]).some(
+      (field) => values[field] !== savedValues[field],
+    );
+  const unsavedGuard = useUnsavedChangesGuard(isDirty);
 
   function setField<K extends keyof TeamFormValues>(
     field: K,
@@ -90,6 +104,7 @@ export default function TeamForm({ team, initialCrestUrl, zones }: Props) {
       // Al crear, el ticket pide terminar en el perfil del equipo nuevo. Al
       // editar alcanza con refrescar los datos del servidor.
       if (team) {
+        setSavedValues(values);
         router.refresh();
         // Al crear no hace falta: el redirect al perfil del equipo nuevo ya es
         // la confirmación. Editando, sin esto, guardar no se ve (requisito 9).
@@ -119,6 +134,17 @@ export default function TeamForm({ team, initialCrestUrl, zones }: Props) {
 
   return (
     <form action={action} className="flex flex-col gap-6">
+      {unsavedGuard.pendingHref ? (
+        <AlertDialog
+          title="¿Salir sin guardar?"
+          description="Tenés cambios sin guardar en Datos del club. Si salís, se pierden."
+          cancelLabel="Seguir editando"
+          confirmLabel="Salir sin guardar"
+          onCancel={unsavedGuard.cancel}
+          onConfirm={() => unsavedGuard.leave((href) => router.push(href))}
+        />
+      ) : null}
+
       {state.ok && state.savedAt ? (
         <Toast key={state.savedAt} message="Guardamos los cambios." />
       ) : null}

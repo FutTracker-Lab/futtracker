@@ -116,6 +116,17 @@ describe("vacancyInputSchema", () => {
     expect(vacancyInputSchema.parse({ ...VALID, description }).description).toBeNull();
   });
 
+  // FUT-158
+  it("saca los controles bidi de la descripción", () => {
+    expect(
+      vacancyInputSchema.parse({ ...VALID, description: "Buscamos\u202E un 9\u2069" }).description,
+    ).toBe("Buscamos un 9");
+  });
+
+  it("una descripción con solo controles bidi queda en null", () => {
+    expect(vacancyInputSchema.parse({ ...VALID, description: "\u202E\u2066" }).description).toBeNull();
+  });
+
   it("recorta los espacios de los bordes", () => {
     expect(vacancyInputSchema.parse({ ...VALID, description: "  Buscamos un 9  " }).description).toBe(
       "Buscamos un 9",

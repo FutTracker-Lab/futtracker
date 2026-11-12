@@ -48,6 +48,18 @@ function tabStartingWith(label: string) {
 
 const applicationsTab = () => tabStartingWith("Postulaciones");
 
+// FUT-158: TeamForm solo pregunta antes de salir por los links marcados.
+test("marca todas las pestañas para el aviso de cambios sin guardar", async () => {
+  await renderTabs({ ok: true, counts: {} });
+
+  const links = Array.from(container.querySelectorAll("a"));
+
+  expect(links).toHaveLength(4);
+  for (const link of links) {
+    expect(link.hasAttribute("data-unsaved-guard")).toBe(true);
+  }
+});
+
 test("el badge de Postulaciones suma todas las vacantes", async () => {
   await renderTabs({ ok: true, counts: { v1: 2, v2: 0, v3: 3 } });
 
