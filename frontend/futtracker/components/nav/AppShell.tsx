@@ -19,6 +19,13 @@ import { createClient } from "@/lib/supabase/server";
  * `h-dvh` y no `h-screen` porque en mobile `100vh` no descuenta la barra del
  * navegador y el contenido queda cortado abajo.
  *
+ * `relative` en cada contenedor que scrollea (acá, en AppSidebar y en la
+ * barra de pestañas de AppMobileNav). Un elemento `absolute` adentro, como los
+ * `sr-only` de las filas de Seguidores y Postulaciones, se ubica contra su
+ * ancestro posicionado más cercano. Sin esto era el `<body>`: el elemento
+ * quedaba donde estaría sin scrollear, estiraba la página, y aparecía un
+ * segundo scroll con una franja en blanco abajo.
+ *
  * proxy.ts ya exige sesión para estos segmentos, así que en la práctica
  * siempre va a haber `user`. El chequeo es el mismo chequeo optimista de UX
  * que en el resto del código, no la autorización real (esa la hacen RLS y
@@ -48,7 +55,7 @@ export default async function AppShell({ children }: { children: ReactNode }) {
           <AppSidebar fullName={profile.full_name} role={role.data} unread={unread} />
         </>
       ) : null}
-      <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
+      <main className="relative flex flex-1 flex-col overflow-y-auto">{children}</main>
     </div>
   );
 }
